@@ -22,18 +22,20 @@ public class PresupuestoMapper {
         if (!nuevo) {
             presupuesto.setId(dto.getIdPresupuesto()); // solo si estás editando
         }
-        // presupuesto.setIdCliente(dto.getIdCliente());
+        presupuesto.setIdCliente(dto.getIdCliente());
         presupuesto.setPrecioSinDescuento(dto.getPrecioSinDescuento());
         presupuesto.setPrecioMinuto(dto.getPrecioMinuto());
-        // presupuesto.setAprobado(dto.getAprobado());
-        // presupuesto.setRealizado(dto.getRealizado());
-        // presupuesto.setCobrado(dto.getCobrado());
-        // presupuesto.setEntregado(dto.getEntregado());
+        presupuesto.setPrecioCobrado(dto.getPrecioCobrado());
+        presupuesto.setAprobado(dto.getAprobado());
+        presupuesto.setRealizado(dto.getRealizado());
+        presupuesto.setCobrado(dto.getCobrado());
+        presupuesto.setEntregado(dto.getEntregado());
         presupuesto.setFechaHoraPresupuesto(dto.getFechaHoraPresupuesto());
         presupuesto.setFechaRealizado(dto.getFechaRealizado());
-        // presupuesto.setFechaRealizado(dto.getFechaAprobado());
+        presupuesto.setFechaRealizado(dto.getFechaAprobado());
         presupuesto.setFechaCobrado(dto.getFechaCobrado());
-        // presupuesto.setFechaRealizado(dto.getFechaEntregado());
+        presupuesto.setFechaRealizado(dto.getFechaEntregado());
+        presupuesto.setPuntosCanjeados(0);
 
         return presupuesto;
     }

@@ -1,21 +1,14 @@
 package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.Mapper.PresupuestoMapper;
-import ar.com.lbr.precisionappbe.dto.DescuentoDTO;
-import ar.com.lbr.precisionappbe.dto.MedioPagoDTO;
-import ar.com.lbr.precisionappbe.dto.PagoDTO;
 import ar.com.lbr.precisionappbe.dto.PresupuestoDTO;
-import ar.com.lbr.precisionappbe.dto.TipoDescuentoDTO;
-import ar.com.lbr.precisionappbe.dto.TipoPagoDTO;
 import ar.com.lbr.precisionappbe.dto.response.PresupuestoResponse;
 import ar.com.lbr.precisionappbe.model.Descuento;
-import ar.com.lbr.precisionappbe.model.Pago;
 import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
-import ar.com.lbr.precisionappbe.repositories.PagoRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
 import org.springframework.data.domain.Page;
@@ -23,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -165,14 +159,9 @@ public class PresupuestoService {
         return tipoClienteRepository.findAll();
     }
 
-    public PresupuestoDTO createCliente(PresupuestoDTO dto) {
+    public PresupuestoDTO createPresupuesto(PresupuestoDTO dto) {
 
-        /*
-         * TipoCliente tipoCliente =
-         * tipoClienteRepository.findById(dto.getIdTipoCliente())
-         * .orElseThrow(() -> new RuntimeException("Tipo de cliente no encontrado"));
-         */
-
+        dto.setFechaHoraPresupuesto(LocalDateTime.now());
         Presupuesto presupuestoEntity = presupuestoMapper.toEntity(dto, true);
 
         Presupuesto presupuesto = presupuestoRepository.save(presupuestoEntity);

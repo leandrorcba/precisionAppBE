@@ -7,7 +7,6 @@ import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -69,7 +68,7 @@ public class PresupuestoController {
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<PresupuestoDTO>> createPresupuesto(@RequestBody PresupuestoDTO presupuesto) {
-        PresupuestoDTO presupuestoDTO = presupuestoService.createCliente(presupuesto);
+        PresupuestoDTO presupuestoDTO = presupuestoService.createPresupuesto(presupuesto);
         return ResponseBuilder.ok("Listado obtenido con éxito", presupuestoDTO, 0L);
     }
 
