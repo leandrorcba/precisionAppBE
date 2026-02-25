@@ -1,0 +1,82 @@
+package ar.com.lbr.precisionappbe.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+
+import java.math.BigDecimal;
+
+@Getter
+@Setter
+@Entity
+@Table(name = "trabajo_presupuestado", schema = "precision_schema_v2")
+public class TrabajoPresupuestado {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_trabajo_presupuestado", nullable = false)
+    private Integer id;
+
+    @ColumnDefault("0")
+    @Column(name = "seleccionado", nullable = false)
+    private Boolean seleccionado = false;
+
+    @Column(name = "archivo_cad")
+    private String archivoCad;
+
+    @Column(name = "archivo_original")
+    private String archivoOriginal;
+
+    @Column(name = "id_presupuesto", nullable = false)
+    private Integer idPresupuesto;
+
+    @Column(name = "material")
+    private String material;
+
+    @Column(name = "notas")
+    private String notas;
+
+    @Column(name = "tiempo_de_corte", nullable = false)
+    private Integer tiempoDeCorte;
+
+    @Column(name = "id_materiales")
+    private Integer idMateriales;
+
+    @Column(name = "precio_material", nullable = false, precision = 10, scale = 2)
+    private BigDecimal precioMaterial;
+
+    @Column(name = "precio_trabajo", nullable = false, precision = 10, scale = 2)
+    private BigDecimal precioTrabajo;
+
+    @ColumnDefault("0.00")
+    @Column(name = "precio_corte", precision = 10, scale = 2)
+    private BigDecimal precioCorte;
+
+    @ColumnDefault("0.00")
+    @Column(name = "vinilo", precision = 10, scale = 2)
+    private BigDecimal vinilo;
+
+    @ColumnDefault("0.00")
+    @Column(name = "extra", precision = 10, scale = 2)
+    private BigDecimal extra;
+
+    @ColumnDefault("0.00")
+    @Column(name = "vectorizado", precision = 10, scale = 2)
+    private BigDecimal vectorizado;
+
+    @ColumnDefault("0.00")
+    @Column(name = "precio_minuto", precision = 10, scale = 2)
+    private BigDecimal precioMinuto;
+
+    @Column(name = "descuento", precision = 10, scale = 2)
+    private BigDecimal descuento;
+
+    @Column(name = "id_superficie")
+    private Integer idSuperficie;
+
+}
