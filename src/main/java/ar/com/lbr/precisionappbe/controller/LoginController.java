@@ -6,8 +6,8 @@ import ar.com.lbr.precisionappbe.util.ResponseBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/auth/login")
+// @RestController - Removed because AuthController already handles authentication
+// @RequestMapping("/auth/login")
 public class LoginController {
 
     @PostMapping

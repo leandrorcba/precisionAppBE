@@ -3,6 +3,7 @@ package ar.com.lbr.precisionappbe.controller;
 import ar.com.lbr.precisionappbe.dto.MaquinaDTO;
 import ar.com.lbr.precisionappbe.model.AnioCierre;
 import ar.com.lbr.precisionappbe.model.Maquina;
+import ar.com.lbr.precisionappbe.model.Superficie;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.model.TipoPago;
 import ar.com.lbr.precisionappbe.model.Varios;
@@ -59,5 +60,11 @@ public class UtilsController {
         }
 
         return ResponseBuilder.ok("Listado obtenido con éxito", result, 0L);
+    }
+
+    @GetMapping("/superficies")
+    public ResponseEntity<ApiResponse<List<Superficie>>> getSuperficies() {
+        List<Superficie> superficies = utilsService.getSuperficies();
+        return ResponseBuilder.ok("Listado obtenido con éxito", superficies, 0L);
     }
 }

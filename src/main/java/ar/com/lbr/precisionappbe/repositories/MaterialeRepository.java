@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MaterialeRepository extends JpaRepository<Material, Integer> {
     List<Material> findByIsMaterialTrue();
+
+    List<Material> findByIsMaterialTrueOrderByMaterialesAsc();
 }

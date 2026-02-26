@@ -6,6 +6,7 @@ import ar.com.lbr.precisionappbe.dto.MaterialDTO;
 import ar.com.lbr.precisionappbe.services.MaquinasService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/maquinas")
+@Tag(name = "MaquinasController")
 public class MaquinasController {
 
     MaquinasService maquinasService;

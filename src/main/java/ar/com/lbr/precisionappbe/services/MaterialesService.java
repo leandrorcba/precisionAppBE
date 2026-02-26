@@ -1,10 +1,14 @@
 package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.dto.MaterialDTO;
+import ar.com.lbr.precisionappbe.dto.PrecioMaterialDTO;
 import ar.com.lbr.precisionappbe.model.Material;
+import ar.com.lbr.precisionappbe.model.PrecioMateriale;
 import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
+import ar.com.lbr.precisionappbe.repositories.PrecioMaterialRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -12,9 +16,11 @@ import java.util.stream.Collectors;
 public class MaterialesService {
 
     private final MaterialeRepository materialeRepository;
+    private final PrecioMaterialRepository precioMaterialRepository;
 
-    public MaterialesService(MaterialeRepository materialeRepository) {
+    public MaterialesService(MaterialeRepository materialeRepository, PrecioMaterialRepository precioMaterialRepository) {
         this.materialeRepository = materialeRepository;
+        this.precioMaterialRepository = precioMaterialRepository;
     }
 
     public List<MaterialDTO> getAllMateriales() {
@@ -24,7 +30,7 @@ public class MaterialesService {
     }
 
     public List<MaterialDTO> getSoloMateriales() {
-        return materialeRepository.findByIsMaterialTrue().stream()
+        return materialeRepository.findByIsMaterialTrueOrderByMaterialesAsc().stream()
                 .map(MaterialDTO::toDTO)
                 .collect(Collectors.toList());
     }
@@ -54,5 +60,10 @@ public class MaterialesService {
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
 
         materialeRepository.delete(material);
+    }
+
+    public PrecioMaterialDTO calcularPrecio(Integer idMaterial, Integer idSuperficie) {
+        BigDecimal precio = precioMaterialRepository.findByIdMaterialesAndIdSuperficie(idMaterial, idSuperficie).getPrecioMaterial();
+        return new PrecioMaterialDTO(precio);
     }
 }

@@ -24,10 +24,10 @@ public class PrecioMateriale {
     @Column(name = "id_materiales")
     private Integer idMateriales;
 
-    @Column(name = "unidades", columnDefinition = "tinyint UNSIGNED")
+    @Column(name = "unidades")
     private Short unidades;
 
-    @Column(name = "id_superficie", columnDefinition = "tinyint UNSIGNED")
+    @Column(name = "id_superficie")
     private Short idSuperficie;
 
     @Column(name = "superficie", length = 45)

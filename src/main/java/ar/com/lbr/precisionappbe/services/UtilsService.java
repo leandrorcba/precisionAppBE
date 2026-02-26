@@ -1,10 +1,12 @@
 package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.dto.MaquinaDTO;
+import ar.com.lbr.precisionappbe.model.Superficie;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.model.TipoPago;
 import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
+import ar.com.lbr.precisionappbe.repositories.SuperficieRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoPagoRepository;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
@@ -17,6 +19,7 @@ import java.util.stream.IntStream;
 @Service
 public class UtilsService {
 
+    private final SuperficieRepository superficieRepository;
     TipoClienteRepository tipoClienteRepository;
     TipoPagoRepository tipoPagoRepository;
     VariosRepository variosRepository;
@@ -25,11 +28,12 @@ public class UtilsService {
     public UtilsService(TipoClienteRepository tipoClienteRepository,
                         TipoPagoRepository tipoPagoRepository,
                         VariosRepository variosRepository,
-                        MaquinasRepository maquinaRepository) {
+                        MaquinasRepository maquinaRepository, SuperficieRepository superficieRepository) {
         this.tipoClienteRepository = tipoClienteRepository;
         this.tipoPagoRepository = tipoPagoRepository;
         this.variosRepository = variosRepository;
         this.maquinaRepository = maquinaRepository;
+        this.superficieRepository = superficieRepository;
     }
 
     public List<TipoCliente> getTipoCliente() {
@@ -58,5 +62,9 @@ public class UtilsService {
         return IntStream.rangeClosed(fromYear, currentYear)
                 .boxed()
                 .toList();
+    }
+
+    public List<Superficie> getSuperficies() {
+        return superficieRepository.findAll();
     }
 }
