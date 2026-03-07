@@ -15,7 +15,7 @@ CREATE TABLE usuarios (
                           KEY ix_usuarios_nombre (nombre)
 );
 
-#Creacion la tabla tipo_cliente
+#Creacion de la tabla tipo_cliente
 CREATE TABLE tipo_cliente (
                               id_tipo_cliente INT AUTO_INCREMENT PRIMARY KEY,
                               nombre_tipo VARCHAR(100) NOT NULL

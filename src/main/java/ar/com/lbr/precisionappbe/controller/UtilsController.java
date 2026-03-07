@@ -43,12 +43,6 @@ public class UtilsController {
         return ResponseBuilder.ok("Listado obtenido con éxito", tipoPago, 0L);
     }
 
-    @GetMapping("/varios")
-    public ResponseEntity<ApiResponse<Varios>> getVarios() {
-        Varios varios = utilsService.getVarios();
-        return ResponseBuilder.ok("Listado obtenido con éxito", varios, 0L);
-    }
-
     @GetMapping("/anio-cierre")
     public ResponseEntity<ApiResponse<List<AnioCierre>>> getAnios() {
         List<Integer> years = utilsService.getYears();

@@ -1,18 +1,18 @@
-DROP TABLE `precision_schema_v2`.`cajaahorro`;
+-- DROP TABLE `precision_schema_v2`.`cajaahorro`;
 
-DROP TABLE `precision_schema_v2`.`cajamensual`;
+-- DROP TABLE `precision_schema_v2`.`cajamensual`;
 
-DROP TABLE `precision_schema_v2`.`cierrecuatrimestre`;
+-- DROP TABLE `precision_schema_v2`.`cierrecuatrimestre`;
 
-DROP TABLE `precision_schema_v2`.`controlpuntos`;
+-- DROP TABLE `precision_schema_v2`.`controlpuntos`;
 
-DROP TABLE `precision_schema_v2`.`costosvariables`;
+-- DROP TABLE `precision_schema_v2`.`costosvariables`;
 
-DROP TABLE `precision_schema_v2`.`departamentos`;
+-- DROP TABLE `precision_schema_v2`.`departamentos`;
 
-DROP TABLE `precision_schema_v2`.`movimientocajaahorro`;
+-- DROP TABLE `precision_schema_v2`.`movimientocajaahorro`;
 
-DROP TABLE `precision_schema_v2`.`puntos`;
+-- DROP TABLE `precision_schema_v2`.`puntos`;
 
 
 ALTER TABLE cierre CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;

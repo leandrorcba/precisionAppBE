@@ -35,7 +35,7 @@ public class AuthenticationService {
         var user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER) // Assigning default role USER
+                .role(request.getRole()) // Assigning default role USER
                 .build();
 
         repository.save(user);

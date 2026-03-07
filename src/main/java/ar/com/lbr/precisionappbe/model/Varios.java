@@ -34,6 +34,9 @@ public class Varios {
     @Column(name = "ajuste", precision = 10, scale = 2)
     private BigDecimal ajuste;
 
+    @Column(name = "precio_minuto_empresa", precision = 10, scale = 2)
+    private BigDecimal precioMinutoEmpresa;
+
     @Column(name = "descuento_efectivo", precision = 10, scale = 2)
     private BigDecimal descuentoEfectivo;
 

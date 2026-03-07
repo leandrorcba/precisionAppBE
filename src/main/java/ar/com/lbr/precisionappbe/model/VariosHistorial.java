@@ -2,25 +2,34 @@ package ar.com.lbr.precisionappbe.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "varios", schema = "precision_schema_v2")
-public class Vario {
+@Table(name = "varios_historial", schema = "precision_schema_v2")
+public class VariosHistorial {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_varios", nullable = false)
+    @Column(name = "id_varios_historial", nullable = false)
     private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_varios", nullable = false)
+    private Varios varios;
 
     @Column(name = "precio_minuto", precision = 10, scale = 2)
     private BigDecimal precioMinuto;
@@ -45,5 +54,12 @@ public class Vario {
 
     @Column(name = "hora_cierre_fds")
     private LocalTime horaCierreFds;
+
+    @Column(name = "fecha_cambio", nullable = false, insertable = false, updatable = false)
+    private LocalDateTime fechaCambio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_user")
+    private User user;
 
 }

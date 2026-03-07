@@ -1,10 +1,8 @@
 package ar.com.lbr.precisionappbe.services;
 
-import ar.com.lbr.precisionappbe.dto.MaquinaDTO;
 import ar.com.lbr.precisionappbe.model.Superficie;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.model.TipoPago;
-import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
 import ar.com.lbr.precisionappbe.repositories.SuperficieRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
@@ -21,17 +19,13 @@ public class UtilsService {
 
     private final SuperficieRepository superficieRepository;
     TipoClienteRepository tipoClienteRepository;
-    TipoPagoRepository tipoPagoRepository;
-    VariosRepository variosRepository;
-    MaquinasRepository maquinaRepository;
+    TipoPagoRepository tipoPagoRepository;MaquinasRepository maquinaRepository;
 
     public UtilsService(TipoClienteRepository tipoClienteRepository,
                         TipoPagoRepository tipoPagoRepository,
-                        VariosRepository variosRepository,
                         MaquinasRepository maquinaRepository, SuperficieRepository superficieRepository) {
         this.tipoClienteRepository = tipoClienteRepository;
         this.tipoPagoRepository = tipoPagoRepository;
-        this.variosRepository = variosRepository;
         this.maquinaRepository = maquinaRepository;
         this.superficieRepository = superficieRepository;
     }
@@ -46,10 +40,6 @@ public class UtilsService {
 
     public List<TipoPago> getTipoPago() {
         return tipoPagoRepository.findAll();
-    }
-
-    public Varios getVarios() {
-        return variosRepository.findAll().stream().findFirst().orElse(null);
     }
 
     public List<Integer> getYears() {

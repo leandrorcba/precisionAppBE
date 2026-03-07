@@ -27,10 +27,20 @@ public class ClientesMapper {
         cliente.setEmailCliente(dto.getEmailCliente());
         cliente.setNombreCliente(dto.getNombreCliente());
         cliente.setTelefonoCliente(dto.getTelefonoCliente());
-        //cliente.setFechaCreacion(dto.getFechaCreacion()); // opcional
+        // cliente.setFechaCreacion(dto.getFechaCreacion()); // opcional
         cliente.setMora(dto.getMora());
         cliente.setPrecioMinutoEmpresa(dto.getPrecioMinutoEmpresa());
         cliente.setIdTipoCliente(tipoCliente.getId()); // entidad ya buscada
         return cliente;
+    }
+
+    public void updateEntityFromDto(ClienteDTO dto, Cliente cliente, TipoCliente tipoCliente) {
+        cliente.setDniCliente(dto.getDniCliente());
+        cliente.setEmailCliente(dto.getEmailCliente());
+        cliente.setNombreCliente(dto.getNombreCliente());
+        cliente.setTelefonoCliente(dto.getTelefonoCliente());
+        cliente.setMora(dto.getMora());
+        cliente.setPrecioMinutoEmpresa(dto.getPrecioMinutoEmpresa());
+        cliente.setIdTipoCliente(tipoCliente.getId());
     }
 }

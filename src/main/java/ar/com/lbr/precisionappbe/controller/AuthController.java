@@ -1,7 +1,6 @@
 package ar.com.lbr.precisionappbe.controller;
 
 import ar.com.lbr.precisionappbe.dto.AuthRequest;
-import ar.com.lbr.precisionappbe.dto.ClienteDTO;
 import ar.com.lbr.precisionappbe.dto.response.AuthResponse;
 import ar.com.lbr.precisionappbe.services.AuthenticationService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
