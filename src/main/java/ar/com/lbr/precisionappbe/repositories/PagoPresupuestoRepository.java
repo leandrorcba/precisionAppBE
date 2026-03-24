@@ -1,14 +1,17 @@
 package ar.com.lbr.precisionappbe.repositories;
 
 import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
-import ar.com.lbr.precisionappbe.model.TipoPago;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PagoPresupuestoRepository extends JpaRepository<PagoPresupuesto, Integer> {
-    List<PagoPresupuesto> findPagoPresupuestoByIdPresupuesto(Integer idPresupuesto);
+
+    List<PagoPresupuesto> findByIdPresupuestoAndEnabledTrue(Integer idPresupuesto);
 
     // idTipoPago 1 corresponds to SENIA
-    List<PagoPresupuesto> findPagoPresupuestoByIdPresupuestoAndIdTipoPago_Id(Integer idPresupuesto, Integer idTipoPago);
+    List<PagoPresupuesto> findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(Integer idPresupuesto, Integer idTipoPago);
+
+    Optional<PagoPresupuesto> findByIdAndEnabledTrue(Integer id);
 }

@@ -9,8 +9,6 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.http.HttpHeaders;
 
-import java.io.Serial;
-
 @OpenAPIDefinition(
         info = @Info(
                 title = "API PRECISION APP",

@@ -1,5 +1,6 @@
 package ar.com.lbr.precisionappbe.services;
 
+import ar.com.lbr.precisionappbe.dto.VariosDTO;
 import ar.com.lbr.precisionappbe.model.User;
 import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.model.VariosHistorial;
@@ -19,11 +20,22 @@ public class VariosService {
         this.variosHistorialRepository = variosHistorialRepository;
     }
 
-    public Varios getVarios() {
-        return variosRepository.findAll().stream().findFirst().orElse(null);
+    public VariosDTO getVarios() {
+        Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
+        return VariosDTO.toDTO(varios);
     }
 
-    public Varios updateVarios(Varios varios) {
+    public VariosDTO updateVarios(VariosDTO dto) {
+        Varios varios = variosRepository.findAll().stream().findFirst().orElse(new Varios());
+        varios.setPrecioMinuto(dto.getPrecioMinuto());
+        varios.setHoraInicio(dto.getHoraInicio());
+        varios.setHoraCierre(dto.getHoraCierre());
+        varios.setAjuste(dto.getAjuste());
+        varios.setPrecioMinutoEmpresa(dto.getPrecioMinutoEmpresa());
+        varios.setDescuentoEfectivo(dto.getDescuentoEfectivo());
+        varios.setHoraInicioFds(dto.getHoraInicioFds());
+        varios.setHoraCierreFds(dto.getHoraCierreFds());
+
         Varios updatedVarios = variosRepository.save(varios);
 
         VariosHistorial historial = new VariosHistorial();
@@ -47,6 +59,6 @@ public class VariosService {
 
         variosHistorialRepository.save(historial);
 
-        return updatedVarios;
+        return VariosDTO.toDTO(updatedVarios);
     }
 }

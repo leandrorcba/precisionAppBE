@@ -1,13 +1,9 @@
 package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.Mapper.MaquinasMapper;
-import ar.com.lbr.precisionappbe.dto.ClienteDTO;
 import ar.com.lbr.precisionappbe.dto.MaquinaDTO;
-import ar.com.lbr.precisionappbe.model.Cliente;
 import ar.com.lbr.precisionappbe.model.Maquina;
-import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
-
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -9,7 +9,6 @@ import ar.com.lbr.precisionappbe.model.Punto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.PuntoRepository;
-import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

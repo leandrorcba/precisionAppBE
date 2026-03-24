@@ -61,4 +61,8 @@ public class PagoPresupuesto {
     @Column(name = "notas")
     private String notas;
 
+    @ColumnDefault("1")
+    @Column(name = "enabled", nullable = false)
+    private Boolean enabled = true;
+
 }

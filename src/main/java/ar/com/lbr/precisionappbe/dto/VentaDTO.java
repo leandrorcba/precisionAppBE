@@ -39,7 +39,9 @@ public class VentaDTO {
     }
 
     public static VentaDTO toDTO(Venta v) {
-        if (v == null) return null;
+        if (v == null) {
+            return null;
+        }
         return new VentaDTO(v);
     }
 }

@@ -2,12 +2,11 @@ package ar.com.lbr.precisionappbe.repositories;
 
 import ar.com.lbr.precisionappbe.model.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 public interface EventsRepository extends JpaRepository<Event, Integer> {
         @Query("SELECT e FROM Event e WHERE " +

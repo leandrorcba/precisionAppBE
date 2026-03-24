@@ -1,6 +1,6 @@
 package ar.com.lbr.precisionappbe.controller;
 
-import ar.com.lbr.precisionappbe.model.Varios;
+import ar.com.lbr.precisionappbe.dto.VariosDTO;
 import ar.com.lbr.precisionappbe.services.VariosService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
@@ -24,14 +24,14 @@ public class VariosController {
     }
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<Varios>> getVarios() {
-        Varios varios = variosService.getVarios();
+    public ResponseEntity<ApiResponse<VariosDTO>> getVarios() {
+        VariosDTO varios = variosService.getVarios();
         return ResponseBuilder.ok("Listado obtenido con éxito", varios, 0L);
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<Varios>> updateVarios(@RequestBody Varios varios) {
-        Varios updatedVarios = variosService.updateVarios(varios);
+    public ResponseEntity<ApiResponse<VariosDTO>> updateVarios(@RequestBody VariosDTO varios) {
+        VariosDTO updatedVarios = variosService.updateVarios(varios);
         return ResponseBuilder.ok("Configuración actualizada con éxito", updatedVarios, 0L);
     }
 }

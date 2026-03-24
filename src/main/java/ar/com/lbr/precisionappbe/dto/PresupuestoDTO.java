@@ -52,8 +52,9 @@ public class PresupuestoDTO {
     }
 
     public static PresupuestoDTO toDTO(Presupuesto presupuesto) {
-        if (presupuesto == null)
+        if (presupuesto == null) {
             return null;
+        }
 
         PresupuestoDTO dto = new PresupuestoDTO(presupuesto);
          dto.setIdCliente(presupuesto.getIdCliente());

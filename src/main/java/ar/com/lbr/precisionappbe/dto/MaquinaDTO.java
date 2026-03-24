@@ -22,8 +22,9 @@ public class MaquinaDTO {
     }
 
     public static MaquinaDTO toDTO(Maquina maquina) {
-        if (maquina == null)
+        if (maquina == null) {
             return null;
+        }
         return new MaquinaDTO(maquina);
     }
 }

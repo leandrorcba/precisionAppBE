@@ -2,7 +2,6 @@ package ar.com.lbr.precisionappbe.Mapper;
 
 import ar.com.lbr.precisionappbe.dto.CierreDTO;
 import ar.com.lbr.precisionappbe.model.Cierre;
-import ar.com.lbr.precisionappbe.services.ClienteService;
 import ar.com.lbr.precisionappbe.services.UserService;
 import org.springframework.stereotype.Component;
 

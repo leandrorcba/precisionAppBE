@@ -1,6 +1,5 @@
 package ar.com.lbr.precisionappbe.dto.response;
 
-import ar.com.lbr.precisionappbe.dto.ClienteDTO;
 import ar.com.lbr.precisionappbe.dto.PagoDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

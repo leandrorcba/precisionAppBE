@@ -1,12 +1,9 @@
 package ar.com.lbr.precisionappbe.controller;
 
-import ar.com.lbr.precisionappbe.dto.MaquinaDTO;
+import ar.com.lbr.precisionappbe.dto.SuperficieDTO;
+import ar.com.lbr.precisionappbe.dto.TipoClienteDTO;
+import ar.com.lbr.precisionappbe.dto.TipoPagoDTO;
 import ar.com.lbr.precisionappbe.model.AnioCierre;
-import ar.com.lbr.precisionappbe.model.Maquina;
-import ar.com.lbr.precisionappbe.model.Superficie;
-import ar.com.lbr.precisionappbe.model.TipoCliente;
-import ar.com.lbr.precisionappbe.model.TipoPago;
-import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.services.UtilsService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
@@ -18,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping("/api/utils")
@@ -32,14 +28,14 @@ public class UtilsController {
     }
 
     @GetMapping("/tipo-cliente")
-    public ResponseEntity<ApiResponse<List<TipoCliente>>> getTipoCliente() {
-        List<TipoCliente> tipoCliente = utilsService.getTipoCliente();
+    public ResponseEntity<ApiResponse<List<TipoClienteDTO>>> getTipoCliente() {
+        List<TipoClienteDTO> tipoCliente = utilsService.getTipoCliente();
         return ResponseBuilder.ok("Listado obtenido con éxito", tipoCliente, 0L);
     }
 
     @GetMapping("/tipo-pago")
-    public ResponseEntity<ApiResponse<List<TipoPago>>> getTipoPago() {
-        List<TipoPago> tipoPago = utilsService.getTipoPago();
+    public ResponseEntity<ApiResponse<List<TipoPagoDTO>>> getTipoPago() {
+        List<TipoPagoDTO> tipoPago = utilsService.getTipoPago();
         return ResponseBuilder.ok("Listado obtenido con éxito", tipoPago, 0L);
     }
 
@@ -57,8 +53,8 @@ public class UtilsController {
     }
 
     @GetMapping("/superficies")
-    public ResponseEntity<ApiResponse<List<Superficie>>> getSuperficies() {
-        List<Superficie> superficies = utilsService.getSuperficies();
+    public ResponseEntity<ApiResponse<List<SuperficieDTO>>> getSuperficies() {
+        List<SuperficieDTO> superficies = utilsService.getSuperficies();
         return ResponseBuilder.ok("Listado obtenido con éxito", superficies, 0L);
     }
 }

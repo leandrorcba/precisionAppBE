@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+
+    <!-- Ignorar falsos positivos comunes en Spring Boot -->
+
+    <!-- EI_EXPOSE_REP: ignorado globalmente — DTOs y Responses exponen referencias intencionalmente -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- HE_EQUALS_USE_HASHCODE: Lombok genera ambos, Spotbugs no lo detecta -->
+    <Match>
+        <Bug pattern="HE_EQUALS_USE_HASHCODE"/>
+    </Match>
+
+    <!-- SE_BAD_FIELD: JPA entities no necesitan serialVersionUID -->
+    <Match>
+        <Bug pattern="SE_BAD_FIELD,SE_NO_SERIALVERSIONID"/>
+    </Match>
+
+    <!-- NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE: Falsos positivos con Optional -->
+    <Match>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+        <Class name="~.*Service"/>
+    </Match>
+
+</FindBugsFilter>

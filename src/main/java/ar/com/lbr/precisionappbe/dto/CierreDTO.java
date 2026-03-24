@@ -49,8 +49,10 @@ public class CierreDTO {
     }
 
     public static CierreDTO toDTO(Cierre c) {
-        if (c == null)
+        if (c == null) {
             return null;
+        }
+
         return new CierreDTO(c);
     }
 }

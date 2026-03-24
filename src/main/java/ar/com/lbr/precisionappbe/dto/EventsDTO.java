@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Getter
@@ -32,8 +31,9 @@ public class EventsDTO {
     }
 
     public static EventsDTO toDTO(Event event) {
-        if (event == null)
+        if (event == null) {
             return null;
+        }
         return new EventsDTO(event);
     }
 }

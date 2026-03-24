@@ -32,8 +32,9 @@ public class ExtraccionDTO {
     }
 
     public static ExtraccionDTO toDTO(Extraccione e) {
-        if (e == null)
+        if (e == null) {
             return null;
+        }
         return new ExtraccionDTO(e);
     }
 }

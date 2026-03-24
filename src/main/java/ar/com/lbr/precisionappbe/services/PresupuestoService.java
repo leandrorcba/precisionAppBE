@@ -61,10 +61,10 @@ public class PresupuestoService {
 
         presupuestoDTOS.forEach(dto -> {
             List<PagoPresupuesto> senias = pagoPresupuestoRepository
-                    .findPagoPresupuestoByIdPresupuestoAndIdTipoPago_Id(dto.getIdPresupuesto(), 1);
+                    .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 1);
             List<Descuento> descuentos = descuentoRepository.findDescuentoByIdPresupuesto_Id(dto.getIdPresupuesto());
             List<PagoPresupuesto> pagos = pagoPresupuestoRepository
-                    .findPagoPresupuestoByIdPresupuestoAndIdTipoPago_Id(dto.getIdPresupuesto(), 2);
+                    .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 2);
 
 
             BigDecimal totalSenia = senias.stream()

@@ -1,6 +1,5 @@
 package ar.com.lbr.precisionappbe.dto;
 
-import ar.com.lbr.precisionappbe.model.Material;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -5,6 +5,7 @@ import ar.com.lbr.precisionappbe.dto.PrecioMaterialDTO;
 import ar.com.lbr.precisionappbe.services.MaterialesService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -46,7 +46,8 @@ public class MaterialesController {
     }
 
     @GetMapping("/calcular-precio")
-    public ResponseEntity<ApiResponse<PrecioMaterialDTO>> calcularPrecio(@RequestParam Integer idMaterial, @RequestParam Integer idSuperficie) {
+    public ResponseEntity<ApiResponse<PrecioMaterialDTO>> calcularPrecio(@RequestParam Integer idMaterial,
+                                                                         @RequestParam Integer idSuperficie) {
         PrecioMaterialDTO precio = materialesService.calcularPrecio(idMaterial, idSuperficie);
         return ResponseBuilder.ok("Solo materiales obtenidos con éxito", precio, (long) 0L);
     }

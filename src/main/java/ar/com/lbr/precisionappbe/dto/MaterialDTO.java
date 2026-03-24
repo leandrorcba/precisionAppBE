@@ -27,8 +27,9 @@ public class MaterialDTO {
     }
 
     public static MaterialDTO toDTO(Material m) {
-        if (m == null)
+        if (m == null) {
             return null;
+        }
         return new MaterialDTO(m);
     }
 }

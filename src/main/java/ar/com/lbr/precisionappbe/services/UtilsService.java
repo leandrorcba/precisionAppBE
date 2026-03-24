@@ -1,13 +1,12 @@
 package ar.com.lbr.precisionappbe.services;
 
-import ar.com.lbr.precisionappbe.model.Superficie;
+import ar.com.lbr.precisionappbe.dto.SuperficieDTO;
+import ar.com.lbr.precisionappbe.dto.TipoClienteDTO;
+import ar.com.lbr.precisionappbe.dto.TipoPagoDTO;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
-import ar.com.lbr.precisionappbe.model.TipoPago;
-import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
 import ar.com.lbr.precisionappbe.repositories.SuperficieRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoPagoRepository;
-import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Year;
@@ -19,27 +18,30 @@ public class UtilsService {
 
     private final SuperficieRepository superficieRepository;
     TipoClienteRepository tipoClienteRepository;
-    TipoPagoRepository tipoPagoRepository;MaquinasRepository maquinaRepository;
+    TipoPagoRepository tipoPagoRepository;
 
     public UtilsService(TipoClienteRepository tipoClienteRepository,
                         TipoPagoRepository tipoPagoRepository,
-                        MaquinasRepository maquinaRepository, SuperficieRepository superficieRepository) {
+                        SuperficieRepository superficieRepository) {
         this.tipoClienteRepository = tipoClienteRepository;
         this.tipoPagoRepository = tipoPagoRepository;
-        this.maquinaRepository = maquinaRepository;
         this.superficieRepository = superficieRepository;
     }
 
-    public List<TipoCliente> getTipoCliente() {
-        return tipoClienteRepository.findAll();
+    public List<TipoClienteDTO> getTipoCliente() {
+        return tipoClienteRepository.findAll().stream()
+                .map(TipoClienteDTO::toDTO)
+                .toList();
     }
 
     public TipoCliente getTipoClienteById(Integer id) {
         return tipoClienteRepository.findById(id).orElse(null);
     }
 
-    public List<TipoPago> getTipoPago() {
-        return tipoPagoRepository.findAll();
+    public List<TipoPagoDTO> getTipoPago() {
+        return tipoPagoRepository.findAll().stream()
+                .map(TipoPagoDTO::toDTO)
+                .toList();
     }
 
     public List<Integer> getYears() {
@@ -54,7 +56,9 @@ public class UtilsService {
                 .toList();
     }
 
-    public List<Superficie> getSuperficies() {
-        return superficieRepository.findAll();
+    public List<SuperficieDTO> getSuperficies() {
+        return superficieRepository.findAll().stream()
+                .map(SuperficieDTO::toDTO)
+                .toList();
     }
 }

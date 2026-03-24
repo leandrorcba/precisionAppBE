@@ -27,7 +27,9 @@ public class PuntoDTO {
     }
 
     public static PuntoDTO toDTO(Punto p) {
-        if (p == null) return null;
+        if (p == null) {
+            return null;
+        }
         return new PuntoDTO(p);
     }
 }

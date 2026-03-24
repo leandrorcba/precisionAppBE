@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Ignorar clases generadas por Lombok (getters, setters, constructores) -->
+    <!-- Las violaciones de WhitespaceAround en anotaciones Lombok son inevitables -->
+
+    <!-- Ignorar archivos de test -->
+    <suppress files="[\\/]test[\\/]" checks=".*"/>
+</suppressions>

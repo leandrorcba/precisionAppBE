@@ -62,8 +62,9 @@ public class TrabajoPresupuestadoDTO {
     }
 
     public static TrabajoPresupuestadoDTO toDTO(TrabajoPresupuestado tp) {
-        if (tp == null)
+        if (tp == null) {
             return null;
+        }
         return new TrabajoPresupuestadoDTO(tp);
     }
 }

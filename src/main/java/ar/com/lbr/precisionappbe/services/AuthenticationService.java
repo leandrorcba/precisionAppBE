@@ -2,7 +2,6 @@ package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.dto.AuthRequest;
 import ar.com.lbr.precisionappbe.dto.response.AuthResponse;
-import ar.com.lbr.precisionappbe.model.Role;
 import ar.com.lbr.precisionappbe.model.User;
 import ar.com.lbr.precisionappbe.repositories.UserRepository;
 import ar.com.lbr.precisionappbe.security.JwtService;

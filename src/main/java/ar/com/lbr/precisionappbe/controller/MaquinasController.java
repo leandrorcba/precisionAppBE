@@ -1,8 +1,6 @@
 package ar.com.lbr.precisionappbe.controller;
 
-import ar.com.lbr.precisionappbe.dto.ClienteDTO;
 import ar.com.lbr.precisionappbe.dto.MaquinaDTO;
-import ar.com.lbr.precisionappbe.dto.MaterialDTO;
 import ar.com.lbr.precisionappbe.services.MaquinasService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;

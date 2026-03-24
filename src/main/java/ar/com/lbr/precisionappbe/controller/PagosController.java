@@ -1,68 +1,69 @@
 package ar.com.lbr.precisionappbe.controller;
 
 import ar.com.lbr.precisionappbe.dto.PagoDTO;
-import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
-import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
+import ar.com.lbr.precisionappbe.services.PagosService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/pagos")
 public class PagosController {
 
-    private final PagoPresupuestoRepository pagoPresupuestoRepository;
+    private final PagosService pagosService;
 
-    public PagosController(PagoPresupuestoRepository pagoPresupuestoRepository) {
-        this.pagoPresupuestoRepository = pagoPresupuestoRepository;
+    public PagosController(PagosService pagosService) {
+        this.pagosService = pagosService;
     }
 
-    @GetMapping("/{idPresupuesto}")
+    @GetMapping("/presupuesto/{idPresupuesto}")
     public ResponseEntity<ApiResponse<List<PagoDTO>>> getPagosByPresupuesto(@PathVariable Integer idPresupuesto) {
-        List<PagoPresupuesto> pagos = pagoPresupuestoRepository.findPagoPresupuestoByIdPresupuesto(idPresupuesto);
-
-        List<PagoDTO> pagoDTOs = pagos.stream().map(p -> {
-            PagoDTO dto = new PagoDTO();
-            dto.setId(p.getId());
-            dto.setMonto(p.getMonto());
-            dto.setFechaHora(
-                    p.getFechaHora() != null ? p.getFechaHora().atZone(java.time.ZoneId.systemDefault()).toInstant()
-                            : null);
-            dto.setCuotas(p.getCuotas());
-            dto.setAutorizacion(p.getAutorizacion());
-            dto.setNotas(p.getNotas());
-
-            if (p.getIdCuentaBancaria() != null) {
-                dto.setIdCuentaBancaria(p.getIdCuentaBancaria().getId());
-            }
-
-            if (p.getIdTipoPago() != null) {
-                ar.com.lbr.precisionappbe.dto.TipoPagoDTO tipoDto = new ar.com.lbr.precisionappbe.dto.TipoPagoDTO();
-                tipoDto.setId(p.getIdTipoPago().getId());
-                tipoDto.setTipo(p.getIdTipoPago().getTipo());
-                dto.setTipoPago(tipoDto);
-            }
-
-            if (p.getIdMedioPago() != null) {
-                ar.com.lbr.precisionappbe.dto.MedioPagoDTO medioDto = new ar.com.lbr.precisionappbe.dto.MedioPagoDTO();
-                medioDto.setId(p.getIdMedioPago().getId());
-                medioDto.setTipo(p.getIdMedioPago().getTipo());
-                medioDto.setDescripcion(p.getIdMedioPago().getDescripcion());
-                dto.setMedioPago(medioDto);
-            }
-
-            return dto;
-        }).collect(Collectors.toList());
-
-        return ResponseBuilder.ok("Pagos obtenidos con éxito", pagoDTOs, (long) pagoDTOs.size());
+        List<PagoDTO> pagos = pagosService.getPagosByPresupuesto(idPresupuesto);
+        return ResponseBuilder.ok("Pagos obtenidos con éxito", pagos, (long) pagos.size());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<PagoDTO>> getPagoById(@PathVariable Integer id) {
+        try {
+            return ResponseBuilder.ok("Pago obtenido con éxito", pagosService.getPagoById(id), 1L);
+        } catch (EntityNotFoundException e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
 
+    @PostMapping
+    public ResponseEntity<ApiResponse<PagoDTO>> createPago(@RequestBody PagoDTO dto) {
+        return ResponseBuilder.ok("Pago creado con éxito", pagosService.createPago(dto), 1L);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<PagoDTO>> updatePago(@PathVariable Integer id, @RequestBody PagoDTO dto) {
+        try {
+            return ResponseBuilder.ok("Pago actualizado con éxito", pagosService.updatePago(id, dto), 1L);
+        } catch (EntityNotFoundException e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deletePago(@PathVariable Integer id) {
+        try {
+            pagosService.deletePago(id);
+            return ResponseBuilder.ok("Pago deshabilitado con éxito", null, 0L);
+        } catch (EntityNotFoundException e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
 }

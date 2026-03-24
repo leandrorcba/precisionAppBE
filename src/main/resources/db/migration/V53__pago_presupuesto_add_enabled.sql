@@ -1,0 +1,2 @@
+ALTER TABLE pago_presupuesto
+    ADD COLUMN enabled TINYINT(1) NOT NULL DEFAULT 1;

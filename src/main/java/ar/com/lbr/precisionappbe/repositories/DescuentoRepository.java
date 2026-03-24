@@ -1,11 +1,7 @@
 package ar.com.lbr.precisionappbe.repositories;
 
 import ar.com.lbr.precisionappbe.model.Descuento;
-import ar.com.lbr.precisionappbe.model.Pago;
-import ar.com.lbr.precisionappbe.model.Presupuesto;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 

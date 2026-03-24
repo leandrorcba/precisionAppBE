@@ -4,10 +4,8 @@ import ar.com.lbr.precisionappbe.dto.EventsDTO;
 import ar.com.lbr.precisionappbe.repositories.EventsRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 

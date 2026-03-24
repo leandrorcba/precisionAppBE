@@ -1,6 +1,6 @@
 package ar.com.lbr.precisionappbe.dto;
 
-import ar.com.lbr.precisionappbe.model.TipoPago;
+import ar.com.lbr.precisionappbe.model.Superficie;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,20 +10,20 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TipoPagoDTO {
+public class SuperficieDTO {
 
     private Integer id;
-    private String tipo;
+    private String valor;
 
-    public TipoPagoDTO(TipoPago entity) {
+    public SuperficieDTO(Superficie entity) {
         this.id = entity.getId();
-        this.tipo = entity.getTipo();
+        this.valor = entity.getValor();
     }
 
-    public static TipoPagoDTO toDTO(TipoPago entity) {
+    public static SuperficieDTO toDTO(Superficie entity) {
         if (entity == null) {
             return null;
         }
-        return new TipoPagoDTO(entity);
+        return new SuperficieDTO(entity);
     }
 }
