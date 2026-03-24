@@ -1,3 +1,7 @@
+-- Crear usuario inicial si no existe
+INSERT IGNORE INTO users (id_user, username, password, role)
+VALUES (1, 'lrebolini', '$2a$10$30t3lty/u/UdcArxsTlsXORQ4rrqtttopDzqVT8VBFtJe4Tu2/qoi', 'SUPER_ADMIN');
+
 CREATE TABLE varios_historial (
                                   id_varios_historial INT NOT NULL AUTO_INCREMENT,
                                   id_varios INT NOT NULL,

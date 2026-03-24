@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/presupuestos")
+@RequestMapping("/api/pagos")
 public class PagosController {
 
     private final PagoPresupuestoRepository pagoPresupuestoRepository;
@@ -24,9 +24,9 @@ public class PagosController {
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
     }
 
-    @GetMapping("/{id}/pagos")
-    public ResponseEntity<ApiResponse<List<PagoDTO>>> getPagosByPresupuesto(@PathVariable Integer id) {
-        List<PagoPresupuesto> pagos = pagoPresupuestoRepository.findPagoPresupuestoByIdPresupuesto(id);
+    @GetMapping("/{idPresupuesto}")
+    public ResponseEntity<ApiResponse<List<PagoDTO>>> getPagosByPresupuesto(@PathVariable Integer idPresupuesto) {
+        List<PagoPresupuesto> pagos = pagoPresupuestoRepository.findPagoPresupuestoByIdPresupuesto(idPresupuesto);
 
         List<PagoDTO> pagoDTOs = pagos.stream().map(p -> {
             PagoDTO dto = new PagoDTO();
@@ -63,4 +63,6 @@ public class PagosController {
 
         return ResponseBuilder.ok("Pagos obtenidos con éxito", pagoDTOs, (long) pagoDTOs.size());
     }
+
+
 }

@@ -1,7 +1,6 @@
 package ar.com.lbr.precisionappbe.controller;
 
 import ar.com.lbr.precisionappbe.model.Varios;
-import ar.com.lbr.precisionappbe.services.UtilsService;
 import ar.com.lbr.precisionappbe.services.VariosService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;

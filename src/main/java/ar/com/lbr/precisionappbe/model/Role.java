@@ -2,5 +2,6 @@ package ar.com.lbr.precisionappbe.model;
 
 public enum Role {
     USER,
-    ADMIN
+    ADMIN,
+    SUPER_ADMIN
 }

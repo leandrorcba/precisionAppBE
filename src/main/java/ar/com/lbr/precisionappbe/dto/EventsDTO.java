@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -16,9 +17,10 @@ public class EventsDTO {
 
     private Integer id;
     private Integer calendarId;
-    private Instant endDate;
-    private Instant startDate;
+    private LocalDateTime endDate;
+    private LocalDateTime startDate;
     private String title;
+    private String maquina;
 
     public EventsDTO(Event event) {
        this.id = event.getId();
@@ -26,6 +28,7 @@ public class EventsDTO {
        this.endDate = event.getEndDate();
        this.startDate = event.getStartDate();
        this.title = event.getEventName();
+       this.maquina = event.getIdMaquina().getNombreMaquina();
     }
 
     public static EventsDTO toDTO(Event event) {

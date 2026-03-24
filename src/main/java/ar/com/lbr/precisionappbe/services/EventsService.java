@@ -5,6 +5,9 @@ import ar.com.lbr.precisionappbe.repositories.EventsRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,8 +21,9 @@ public class EventsService {
     }
 
     public List<EventsDTO> getAllEvents(Integer calendar, String startDateStr, String endDateStr) {
-        Instant startDate = startDateStr != null ? Instant.parse(startDateStr) : null;
-        Instant endDate = endDateStr != null ? Instant.parse(endDateStr) : null;
+        LocalDateTime minStartDate = LocalDate.now().minusMonths(1).atStartOfDay();
+        LocalDateTime startDate = startDateStr != null ? LocalDateTime.parse(startDateStr) : minStartDate;
+        LocalDateTime endDate = endDateStr != null ? LocalDateTime.parse(endDateStr) : null;
 
         return eventsRepository.findByFilters(calendar, startDate, endDate).stream()
                 .map(EventsDTO::toDTO)

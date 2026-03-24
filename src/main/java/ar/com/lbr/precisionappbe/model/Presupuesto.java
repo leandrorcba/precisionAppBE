@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,40 +23,49 @@ public class Presupuesto {
     @Column(name = "id_presupuesto", nullable = false)
     private Integer id;
 
+    @NotNull
     @Column(name = "fecha_hora_presupuesto", nullable = false)
     private LocalDateTime fechaHoraPresupuesto;
 
+    @NotNull
     @Column(name = "id_cliente", nullable = false)
     private Integer idCliente;
 
+    @NotNull
     @Column(name = "precio_cobrado", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioCobrado;
 
+    @NotNull
     @Column(name = "precio_sin_descuento", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioSinDescuento;
 
     @Column(name = "precio_minuto", precision = 10, scale = 2)
     private BigDecimal precioMinuto;
 
+    @NotNull
     @Column(name = "aprobado", nullable = false)
-    private Boolean aprobado;
+    private Boolean  aprobado;
 
+    @NotNull
     @Column(name = "realizado", nullable = false)
-    private Boolean realizado;
+    private Boolean  realizado;
 
+    @NotNull
     @Column(name = "cobrado", nullable = false)
-    private Boolean cobrado;
+    private Boolean  cobrado;
 
+    @NotNull
     @Column(name = "entregado", nullable = false)
-    private Boolean entregado;
+    private Boolean  entregado;
 
-    @Column(name = "puntos_canjeados")
+    @NotNull
+    @Column(name = "puntos_canjeados", nullable = false)
     private Integer puntosCanjeados;
 
     @Column(name = "fecha_cobrado")
     private LocalDateTime fechaCobrado;
 
     @Column(name = "fecha_realizado")
-    private LocalDateTime fechaRealizado;
+    private LocalDateTime  fechaRealizado;
 
 }

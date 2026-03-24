@@ -25,6 +25,7 @@ public class ClienteDTO {
     private Boolean mora;
     private BigDecimal precioMinutoEmpresa;
     private Integer idTipoCliente;
+    private PuntoDTO punto;
 
     public ClienteDTO(Cliente cliente) {
         this.idCliente = cliente.getId();

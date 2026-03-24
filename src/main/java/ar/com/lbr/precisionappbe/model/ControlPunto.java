@@ -1,4 +1,4 @@
-package ar.com.lbr.precisionappbe;
+package ar.com.lbr.precisionappbe.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

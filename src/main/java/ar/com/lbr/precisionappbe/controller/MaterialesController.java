@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -30,9 +30,13 @@ public class MaterialesController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<MaterialDTO>>> getAllMateriales() {
-        List<MaterialDTO> materiales = materialesService.getAllMateriales();
-        return ResponseBuilder.ok("Materiales obtenidos con éxito", materiales, (long) materiales.size());
+    public ResponseEntity<ApiResponse<Page<MaterialDTO>>> getAllMateriales(
+            @RequestParam(required = false) String materiales,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Page<MaterialDTO> result = materialesService.getAllMateriales(materiales, enabled, page, size);
+        return ResponseBuilder.ok("Materiales obtenidos con éxito", result, result.getTotalElements());
     }
 
     @GetMapping("/solo-materiales")
@@ -63,6 +67,12 @@ public class MaterialesController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMaterial(@PathVariable Integer id) {
         materialesService.deleteMaterial(id);
-        return ResponseBuilder.ok("Material eliminado con éxito", null, 0L);
+        return ResponseBuilder.ok("Material deshabilitado con éxito", null, 0L);
+    }
+
+    @PutMapping("/{id}/rehabilitar")
+    public ResponseEntity<ApiResponse<MaterialDTO>> rehabilitarMaterial(@PathVariable Integer id) {
+        MaterialDTO rehabilitado = materialesService.rehabilitarMaterial(id);
+        return ResponseBuilder.ok("Material rehabilitado con éxito", rehabilitado, 1L);
     }
 }

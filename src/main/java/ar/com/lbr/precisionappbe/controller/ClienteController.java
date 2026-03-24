@@ -46,12 +46,13 @@ public class ClienteController {
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(required = false) String nombreCliente,
             @RequestParam(required = false) Boolean mora,
-            @RequestParam(required = false) Integer idTipoCliente) {
+            @RequestParam(required = false) Integer idTipoCliente,
+            @RequestParam(required = false) Boolean disabled) {
 
         int page = start / limit;
         Pageable pageable = PageRequest.of(page, limit);
 
-        ClienteResponse clienteResponse = clienteService.buscarClientes(nombreCliente, mora, idTipoCliente, pageable);
+        ClienteResponse clienteResponse = clienteService.buscarClientes(nombreCliente, mora, idTipoCliente, disabled, pageable);
 
         return ResponseBuilder.ok("Listado obtenido con éxito", clienteResponse.getClientes(),
                 clienteResponse.getTotal());
@@ -67,6 +68,18 @@ public class ClienteController {
     public ResponseEntity<ApiResponse<ClienteDTO>> updateCliente(@RequestBody ClienteDTO cliente) {
         ClienteDTO clienteDto = clienteService.updateCliente(cliente);
         return ResponseBuilder.ok("Cliente actualizado con éxito", clienteDto, 0L);
+    }
+
+    @PutMapping("/{id}/rehabilitar")
+    public ResponseEntity<ApiResponse<Void>> rehabilitarCliente(@PathVariable Integer id) {
+        clienteService.rehabilitarCliente(id);
+        return ResponseBuilder.ok("Cliente rehabilitado con éxito", null, 0L);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteCliente(@PathVariable Integer id) {
+        clienteService.deleteCliente(id);
+        return ResponseBuilder.ok("Cliente eliminado con éxito", null, 0L);
     }
 
 }
