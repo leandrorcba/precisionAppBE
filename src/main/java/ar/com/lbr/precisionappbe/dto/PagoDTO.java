@@ -16,6 +16,7 @@ public class PagoDTO {
 
     private Integer id;
     private Integer idPresupuesto;
+    private Integer idVenta;
     private BigDecimal monto;
     private Instant fechaHora;
     private TipoPagoDTO tipoPago;

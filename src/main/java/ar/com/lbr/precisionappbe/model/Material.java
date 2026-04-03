@@ -37,4 +37,12 @@ public class Material {
     @Column(name = "disabled", nullable = false)
     private Boolean disabled = false;
 
+    @ColumnDefault("0.00")
+    @Column(name = "stock", nullable = false, precision = 12, scale = 2)
+    private java.math.BigDecimal stock = java.math.BigDecimal.ZERO;
+
+    @ColumnDefault("0.00")
+    @Column(name = "stock_minimo", nullable = false, precision = 12, scale = 2)
+    private java.math.BigDecimal stockMinimo = java.math.BigDecimal.ZERO;
+
 }

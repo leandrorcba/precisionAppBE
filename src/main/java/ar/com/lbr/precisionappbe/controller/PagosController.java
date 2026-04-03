@@ -34,6 +34,12 @@ public class PagosController {
         return ResponseBuilder.ok("Pagos obtenidos con éxito", pagos, (long) pagos.size());
     }
 
+    @GetMapping("/venta/{idVenta}")
+    public ResponseEntity<ApiResponse<List<PagoDTO>>> getPagosByVenta(@PathVariable Integer idVenta) {
+        List<PagoDTO> pagos = pagosService.getPagosByVenta(idVenta);
+        return ResponseBuilder.ok("Pagos obtenidos con éxito", pagos, (long) pagos.size());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PagoDTO>> getPagoById(@PathVariable Integer id) {
         try {

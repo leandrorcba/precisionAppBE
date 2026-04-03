@@ -1,5 +1,6 @@
 package ar.com.lbr.precisionappbe.controller;
 
+import ar.com.lbr.precisionappbe.dto.MedioPagoDTO;
 import ar.com.lbr.precisionappbe.dto.SuperficieDTO;
 import ar.com.lbr.precisionappbe.dto.TipoClienteDTO;
 import ar.com.lbr.precisionappbe.dto.TipoPagoDTO;
@@ -56,5 +57,11 @@ public class UtilsController {
     public ResponseEntity<ApiResponse<List<SuperficieDTO>>> getSuperficies() {
         List<SuperficieDTO> superficies = utilsService.getSuperficies();
         return ResponseBuilder.ok("Listado obtenido con éxito", superficies, 0L);
+    }
+
+    @GetMapping("/medio-pago")
+    public ResponseEntity<ApiResponse<List<MedioPagoDTO>>> getMediosPago() {
+        List<MedioPagoDTO> mediosPago = utilsService.getMediosPago();
+        return ResponseBuilder.ok("Listado obtenido con éxito", mediosPago, 0L);
     }
 }

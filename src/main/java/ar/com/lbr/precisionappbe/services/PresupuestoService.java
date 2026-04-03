@@ -29,10 +29,10 @@ public class PresupuestoService {
     DescuentoRepository descuentoRepository;
 
     public PresupuestoService(PresupuestoRepository presupuestoRepository,
-            TipoClienteRepository tipoClienteRepository,
-            PresupuestoMapper presupuestoMapper,
-            PagoPresupuestoRepository pagoPresupuestoRepository,
-            DescuentoRepository descuentoRepository) {
+                              TipoClienteRepository tipoClienteRepository,
+                              PresupuestoMapper presupuestoMapper,
+                              PagoPresupuestoRepository pagoPresupuestoRepository,
+                              DescuentoRepository descuentoRepository) {
         this.presupuestoRepository = presupuestoRepository;
         this.tipoClienteRepository = tipoClienteRepository;
         this.presupuestoMapper = presupuestoMapper;
@@ -93,60 +93,60 @@ public class PresupuestoService {
              * pagoDTO.setId(p.getId());
              * pagoDTO.setMonto(p.getMonto());
              * pagoDTO.setFechaHora(p.getFechaHora());
-             * 
+             *
              * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
              * tipoPagoDTO.setId(p..getId());
              * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
              * pagoDTO.setTipoPago(tipoPagoDTO);
-             * 
+             *
              * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
              * //medioPagoDTO.setId(p.getMedioPago().getId());
              * //medioPagoDTO.setTipo(p.getMedioPago().getTipo());
              * // medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
              * pagoDTO.setMedioPago(medioPagoDTO);
-             * 
+             *
              * return pagoDTO;
              * }).collect(java.util.stream.Collectors.toList()));
-             * 
+             *
              * dto.setSenias(senias.stream().map(p -> {
              * PagoDTO pagoDTO = new PagoDTO();
              * pagoDTO.setId(p.getId());
              * pagoDTO.setMonto(p.getMonto());
              * pagoDTO.setFechaHora(p.getFechaHora());
-             * 
+             *
              * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
              * tipoPagoDTO.setId(p.getTipoPago().getId());
              * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
              * pagoDTO.setTipoPago(tipoPagoDTO);
-             * 
+             *
              * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
              * medioPagoDTO.setId(p.getMedioPago().getId());
              * medioPagoDTO.setTipo(p.getMedioPago().getTipo());
              * medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
              * pagoDTO.setMedioPago(medioPagoDTO);
-             * 
+             *
              * return pagoDTO;
              * }).collect(java.util.stream.Collectors.toList()));
-             * 
+             *
              * dto.setDescuentos(descuentos.stream().map(p -> {
              * DescuentoDTO descuentoDTO = new DescuentoDTO();
              * descuentoDTO.setMonto(p.getMonto());
-             * 
+             *
              * TipoDescuentoDTO tipoDescuentoDTO = new TipoDescuentoDTO();
              * //tipoDescuentoDTO.setTipo(p.getIdTipoDescuento().getNombre());
              * descuentoDTO.setTipoDescuento(tipoDescuentoDTO);
-             * 
+             *
              * return descuentoDTO;
              * }).collect(java.util.stream.Collectors.toList()));
-             * 
+             *
              * BigDecimal descuento = descuentos.stream().map(p ->
              * p.getMonto()).reduce(BigDecimal.ZERO, BigDecimal::add);
              * BigDecimal senia = senias.stream().map(p ->
              * p.getMonto()).reduce(BigDecimal.ZERO, BigDecimal::add);
-             * 
+             *
              * dto.setDescuento(descuento);
              * dto.setMontoSenia(senia);
-             * 
+             *
              * dto.setPrecioCobrado(dto.getPrecioSinDescuento().subtract(dto.getDescuento())
              * .subtract(dto.getMontoSenia()));
              */
@@ -188,6 +188,10 @@ public class PresupuestoService {
         return dto;
     }
 
+    /*public PresupuestoDTO aprobarPresupuesto(Integer idPresupuesto, AprobarPresupuestoDTO presupuesto) {
+
+    }*/
+
     /*
      * mapPagos(List<Pago> pagos) {
      * pagos.stream().map(p -> {
@@ -195,18 +199,18 @@ public class PresupuestoService {
      * pagoDTO.setId(p.getId());
      * pagoDTO.setMonto(p.getMonto());
      * pagoDTO.setFechaHora(p.getFechaHora());
-     * 
+     *
      * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
      * tipoPagoDTO.setId(p.getTipoPago().getId());
      * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
      * pagoDTO.setTipoPago(tipoPagoDTO);
-     * 
+     *
      * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
      * medioPagoDTO.setId(p.getMedioPago().getId());
      * medioPagoDTO.setTipo(p.getMedioPago().getTipo());
      * medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
      * pagoDTO.setMedioPago(medioPagoDTO);
-     * 
+     *
      * return pagoDTO;
      * }
      */

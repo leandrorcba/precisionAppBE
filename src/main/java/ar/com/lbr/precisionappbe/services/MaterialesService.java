@@ -3,15 +3,16 @@ package ar.com.lbr.precisionappbe.services;
 import ar.com.lbr.precisionappbe.dto.MaterialDTO;
 import ar.com.lbr.precisionappbe.dto.PrecioMaterialDTO;
 import ar.com.lbr.precisionappbe.model.Material;
+import ar.com.lbr.precisionappbe.model.PrecioMateriale;
 import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.PrecioMaterialRepository;
-import org.springframework.stereotype.Service;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,6 +47,12 @@ public class MaterialesService {
 
     public List<MaterialDTO> getSoloMateriales() {
         return materialeRepository.findByIsMaterialTrueAndDisabledFalseOrderByMaterialesAsc().stream()
+                .map(MaterialDTO::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<MaterialDTO> getSoloGrabado() {
+        return materialeRepository.findByIsGrabadoTrueAndDisabledFalseOrderByMaterialesAsc().stream()
                 .map(MaterialDTO::toDTO)
                 .collect(Collectors.toList());
     }
@@ -85,8 +92,28 @@ public class MaterialesService {
         return MaterialDTO.toDTO(materialeRepository.save(material));
     }
 
-    public PrecioMaterialDTO calcularPrecio(Integer idMaterial, Integer idSuperficie) {
-        BigDecimal precio = precioMaterialRepository.findByIdMaterialesAndIdSuperficie(idMaterial, idSuperficie).getPrecioMaterial();
+    public PrecioMaterialDTO calcularPrecio(Integer idMaterial, Integer idSuperficie, Integer cantidad) {
+        BigDecimal precio;
+        if (cantidad != null) {
+            PrecioMateriale precioMateriale = precioMaterialRepository.findFirstByIdMateriales(idMaterial);
+            if (precioMateriale == null) {
+                throw new RuntimeException("No se encontró precio para el material " + idMaterial);
+            }
+            BigDecimal escala = BigDecimal.valueOf(precioMateriale.getUnidades());
+            BigDecimal precioEscala = precioMateriale.getPrecioMaterial();
+            precio = BigDecimal.valueOf(cantidad)
+                    .divide(escala, 10, RoundingMode.HALF_UP)
+                    .multiply(precioEscala)
+                    .setScale(2, RoundingMode.HALF_UP);
+        } else {
+            PrecioMateriale precioMateriale = precioMaterialRepository.findByIdMaterialesAndIdSuperficie(idMaterial, idSuperficie);
+            if (precioMateriale == null) {
+                throw new RuntimeException("No se encontró precio para el material " + idMaterial + " con superficie " + idSuperficie);
+            }
+            precio = precioMateriale.getPrecioMaterial();
+        }
         return new PrecioMaterialDTO(precio);
     }
+
+
 }

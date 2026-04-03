@@ -42,6 +42,12 @@ public class TrabajosService {
         entity.setPrecioMinuto(dto.getPrecioMinuto() != null ? dto.getPrecioMinuto() : BigDecimal.ZERO);
         entity.setDescuento(dto.getDescuento());
         entity.setIdSuperficie(dto.getIdSuperficie());
+        entity.setIdMaquina(dto.getIdMaquina());
+        entity.setUnidades(dto.getUnidades() != null ? dto.getUnidades() : 0);
+        entity.setGrabado(dto.getGrabado() != null ? dto.getGrabado() : false);
+        entity.setCortesEspeciales(dto.getCortesEspeciales() != null ? dto.getCortesEspeciales() : false);
+        entity.setCarteles(dto.getCarteles() != null ? dto.getCarteles() : false);
+        entity.setPosicionador(dto.getPosicionador() != null ? dto.getPosicionador() : BigDecimal.ZERO);
 
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
         return TrabajoPresupuestadoDTO.toDTO(saved);

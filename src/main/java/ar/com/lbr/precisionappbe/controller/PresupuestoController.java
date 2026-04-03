@@ -78,4 +78,12 @@ public class PresupuestoController {
         return ResponseBuilder.ok("Listado obtenido con éxito", presupuestoDTO, 0L);
     }
 
+    /*@PostMapping("/aprobar/{idPresupuesto}")
+    public ResponseEntity<ApiResponse<PresupuestoDTO>> aprobarPresupuesto(@PathVariable Integer idPresupuesto,
+                                                                          @RequestBody AprobarPresupuestoDTO presupuesto) {
+        PresupuestoDTO presupuestoDTO = presupuestoService.aprobarPresupuesto(idPresupuesto, presupuesto);
+        return ResponseBuilder.ok("Listado obtenido con éxito", presupuestoDTO, 0L);
+    }*/
+
+
 }

@@ -45,11 +45,19 @@ public class MaterialesController {
         return ResponseBuilder.ok("Solo materiales obtenidos con éxito", materiales, (long) materiales.size());
     }
 
+    @GetMapping("/solo-grabado")
+    public ResponseEntity<ApiResponse<List<MaterialDTO>>> getSoloGrabado() {
+        List<MaterialDTO> materiales = materialesService.getSoloGrabado();
+        return ResponseBuilder.ok("Solo grabado obtenidos con éxito", materiales, (long) materiales.size());
+    }
+
     @GetMapping("/calcular-precio")
-    public ResponseEntity<ApiResponse<PrecioMaterialDTO>> calcularPrecio(@RequestParam Integer idMaterial,
-                                                                         @RequestParam Integer idSuperficie) {
-        PrecioMaterialDTO precio = materialesService.calcularPrecio(idMaterial, idSuperficie);
-        return ResponseBuilder.ok("Solo materiales obtenidos con éxito", precio, (long) 0L);
+    public ResponseEntity<ApiResponse<PrecioMaterialDTO>> calcularPrecio(
+            @RequestParam Integer idMaterial,
+            @RequestParam(required = false) Integer idSuperficie,
+            @RequestParam(required = false) Integer cantidad) {
+        PrecioMaterialDTO precio = materialesService.calcularPrecio(idMaterial, idSuperficie, cantidad);
+        return ResponseBuilder.ok("Precio calculado con éxito", precio, 0L);
     }
 
     @PostMapping
@@ -60,7 +68,7 @@ public class MaterialesController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MaterialDTO>> updateMaterial(@PathVariable Integer id,
-            @RequestBody MaterialDTO dto) {
+                                                                   @RequestBody MaterialDTO dto) {
         MaterialDTO updated = materialesService.updateMaterial(id, dto);
         return ResponseBuilder.ok("Material actualizado con éxito", updated, 1L);
     }

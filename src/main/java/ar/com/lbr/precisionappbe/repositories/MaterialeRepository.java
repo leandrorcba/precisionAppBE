@@ -19,4 +19,6 @@ public interface MaterialeRepository extends JpaRepository<Material, Integer> {
     Page<Material> findByMaterialesContainingIgnoreCaseAndDisabledTrue(String materiales, Pageable pageable);
 
     List<Material> findByIsMaterialTrueAndDisabledFalseOrderByMaterialesAsc();
+
+    List<Material> findByIsGrabadoTrueAndDisabledFalseOrderByMaterialesAsc();
 }

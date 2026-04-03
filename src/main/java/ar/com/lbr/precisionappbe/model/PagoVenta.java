@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -26,20 +28,26 @@ public class PagoVenta {
     @Column(name = "id_pago_venta", nullable = false)
     private Integer id;
 
-    @Column(name = "id_venta", nullable = false)
-    private Integer idVenta;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_venta", nullable = false)
+    private Venta idVenta;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_tipo_pago", nullable = false)
     private TipoPago idTipoPago;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_medio_pago", nullable = false)
     private MedioPago idMedioPago;
 
+    @NotNull
     @Column(name = "monto", nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
 
+    @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "fecha_hora", nullable = false)
     private Instant fechaHora;
@@ -55,9 +63,11 @@ public class PagoVenta {
     @JoinColumn(name = "id_cuenta_bancaria")
     private CuentaBancaria idCuentaBancaria;
 
+    @Size(max = 45)
     @Column(name = "autorizacion", length = 45)
     private String autorizacion;
 
+    @Size(max = 255)
     @Column(name = "notas")
     private String notas;
 

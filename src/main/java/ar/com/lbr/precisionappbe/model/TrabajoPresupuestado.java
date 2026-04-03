@@ -79,4 +79,27 @@ public class TrabajoPresupuestado {
     @Column(name = "id_superficie")
     private Integer idSuperficie;
 
+    @Column(name = "id_maquina")
+    private Integer idMaquina;
+
+    @ColumnDefault("0")
+    @Column(name = "unidades")
+    private Integer unidades = 0;
+
+    @ColumnDefault("0")
+    @Column(name = "grabado")
+    private Boolean grabado = false;
+
+    @ColumnDefault("0")
+    @Column(name = "cortes_especiales")
+    private Boolean cortesEspeciales = false;
+
+    @ColumnDefault("0")
+    @Column(name = "carteles")
+    private Boolean carteles = false;
+
+    @ColumnDefault("0.0")
+    @Column(name = "posicionador", precision = 12, scale = 2)
+    private BigDecimal posicionador = BigDecimal.ZERO;
+
 }

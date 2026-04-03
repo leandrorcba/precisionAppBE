@@ -32,6 +32,12 @@ public class TrabajoPresupuestadoDTO {
     private BigDecimal precioMinuto;
     private BigDecimal descuento;
     private Integer idSuperficie;
+    private Integer idMaquina;
+    private Integer unidades;
+    private Boolean grabado;
+    private Boolean cortesEspeciales;
+    private Boolean carteles;
+    private BigDecimal posicionador;
 
     public TrabajoPresupuestadoDTO(TrabajoPresupuestado tp) {
         this.id = tp.getId();
@@ -59,6 +65,12 @@ public class TrabajoPresupuestadoDTO {
         if (tp.getIdSuperficie() != null) {
             this.idSuperficie = tp.getIdSuperficie();
         }
+        this.idMaquina = tp.getIdMaquina();
+        this.unidades = tp.getUnidades();
+        this.grabado = tp.getGrabado();
+        this.cortesEspeciales = tp.getCortesEspeciales();
+        this.carteles = tp.getCarteles();
+        this.posicionador = tp.getPosicionador();
     }
 
     public static TrabajoPresupuestadoDTO toDTO(TrabajoPresupuestado tp) {
