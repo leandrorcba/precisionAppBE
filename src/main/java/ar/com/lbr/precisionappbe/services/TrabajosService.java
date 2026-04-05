@@ -1,14 +1,22 @@
 package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.dto.TrabajoPresupuestadoDTO;
-import java.math.BigDecimal;
+import ar.com.lbr.precisionappbe.model.Material;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
+import ar.com.lbr.precisionappbe.model.Maquina;
+import ar.com.lbr.precisionappbe.model.Superficie;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
+import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
+import ar.com.lbr.precisionappbe.repositories.SuperficieRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -16,11 +24,20 @@ public class TrabajosService {
 
     private final TrabajoPresupuestadoRepository trabajosRepository;
     private final PresupuestoRepository presupuestoRepository;
+    private final MaterialeRepository materialeRepository;
+    private final SuperficieRepository superficieRepository;
+    private final MaquinasRepository maquinasRepository;
 
     public TrabajosService(TrabajoPresupuestadoRepository trabajosRepository,
-                           PresupuestoRepository presupuestoRepository) {
+                           PresupuestoRepository presupuestoRepository,
+                           MaterialeRepository materialeRepository,
+                           SuperficieRepository superficieRepository,
+                           MaquinasRepository maquinasRepository) {
         this.trabajosRepository = trabajosRepository;
         this.presupuestoRepository = presupuestoRepository;
+        this.materialeRepository = materialeRepository;
+        this.superficieRepository = superficieRepository;
+        this.maquinasRepository = maquinasRepository;
     }
 
     public TrabajoPresupuestadoDTO createTrabajo(TrabajoPresupuestadoDTO dto) {
@@ -48,6 +65,8 @@ public class TrabajosService {
         entity.setCortesEspeciales(dto.getCortesEspeciales() != null ? dto.getCortesEspeciales() : false);
         entity.setCarteles(dto.getCarteles() != null ? dto.getCarteles() : false);
         entity.setPosicionador(dto.getPosicionador() != null ? dto.getPosicionador() : BigDecimal.ZERO);
+        entity.setTraeMaterial(dto.getTraeMaterial() != null ? dto.getTraeMaterial() : false);
+        entity.setPrecioSinDescuento(dto.getPrecioSinDescuento() != null ? dto.getPrecioSinDescuento() : BigDecimal.ZERO);
 
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
         return TrabajoPresupuestadoDTO.toDTO(saved);
@@ -70,8 +89,40 @@ public class TrabajosService {
     public List<TrabajoPresupuestadoDTO> getTrabajosByPresupuesto(Integer idPresupuesto) {
         List<TrabajoPresupuestado> trabajos = trabajosRepository.findByIdPresupuesto(idPresupuesto);
 
+        Set<Integer> idsMateriales = trabajos.stream()
+                .filter(t -> t.getIdMateriales() != null)
+                .map(TrabajoPresupuestado::getIdMateriales)
+                .collect(Collectors.toSet());
+
+        Map<Integer, String> nombrePorId = materialeRepository.findAllById(idsMateriales).stream()
+                .collect(Collectors.toMap(Material::getId, Material::getMateriales));
+
+        Set<Integer> idsSuperficies = trabajos.stream()
+                .filter(t -> t.getIdSuperficie() != null)
+                .map(TrabajoPresupuestado::getIdSuperficie)
+                .collect(Collectors.toSet());
+
+        Map<Integer, String> superficiePorId = superficieRepository.findAllById(idsSuperficies).stream()
+                .collect(Collectors.toMap(Superficie::getId, Superficie::getValor));
+
+        Set<Integer> idsMaquinas = trabajos.stream()
+                .filter(t -> t.getIdMaquina() != null)
+                .map(TrabajoPresupuestado::getIdMaquina)
+                .collect(Collectors.toSet());
+
+        Map<Integer, String> maquinaPorId = maquinasRepository.findAllById(idsMaquinas).stream()
+                .collect(Collectors.toMap(Maquina::getId, Maquina::getNombreMaquina));
+
         return trabajos.stream()
-                .map(TrabajoPresupuestadoDTO::toDTO)
+                .map(t -> {
+                    TrabajoPresupuestadoDTO dto = TrabajoPresupuestadoDTO.toDTO(t);
+                    if (t.getIdMateriales() != null) {
+                        dto.setMaterial(nombrePorId.get(t.getIdMateriales()));
+                    }
+                    dto.setSuperficie(t.getIdSuperficie() != null ? superficiePorId.get(t.getIdSuperficie()) : "");
+                    dto.setMaquina(t.getIdMaquina() != null ? maquinaPorId.get(t.getIdMaquina()) : "");
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 }

@@ -102,4 +102,12 @@ public class TrabajoPresupuestado {
     @Column(name = "posicionador", precision = 12, scale = 2)
     private BigDecimal posicionador = BigDecimal.ZERO;
 
+    @ColumnDefault("0")
+    @Column(name = "trae_material")
+    private Boolean traeMaterial = false;
+
+    @ColumnDefault("0.00")
+    @Column(name = "precio_sin_descuento", precision = 10, scale = 2)
+    private BigDecimal precioSinDescuento = BigDecimal.ZERO;
+
 }

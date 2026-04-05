@@ -1,5 +1,6 @@
 package ar.com.lbr.precisionappbe.controller;
 
+import ar.com.lbr.precisionappbe.dto.AprobarPresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.PresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.response.PresupuestoResponse;
 import ar.com.lbr.precisionappbe.services.PresupuestoService;
@@ -78,12 +79,13 @@ public class PresupuestoController {
         return ResponseBuilder.ok("Listado obtenido con éxito", presupuestoDTO, 0L);
     }
 
-    /*@PostMapping("/aprobar/{idPresupuesto}")
-    public ResponseEntity<ApiResponse<PresupuestoDTO>> aprobarPresupuesto(@PathVariable Integer idPresupuesto,
-                                                                          @RequestBody AprobarPresupuestoDTO presupuesto) {
-        PresupuestoDTO presupuestoDTO = presupuestoService.aprobarPresupuesto(idPresupuesto, presupuesto);
-        return ResponseBuilder.ok("Listado obtenido con éxito", presupuestoDTO, 0L);
-    }*/
+    @PostMapping("/aprobar/{idPresupuesto}")
+    public ResponseEntity<ApiResponse<PresupuestoDTO>> aprobarPresupuesto(
+            @PathVariable Integer idPresupuesto,
+            @RequestBody List<AprobarPresupuestoDTO> items) {
+        PresupuestoDTO resultado = presupuestoService.aprobarPresupuesto(idPresupuesto, items);
+        return ResponseBuilder.ok("Presupuesto aprobado con éxito", resultado, 1L);
+    }
 
 
 }

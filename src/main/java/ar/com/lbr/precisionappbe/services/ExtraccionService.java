@@ -6,6 +6,8 @@ import ar.com.lbr.precisionappbe.repositories.ExtraccionRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,8 +20,14 @@ public class ExtraccionService {
         this.extraccionRepository = extraccionRepository;
     }
 
-    public List<ExtraccionDTO> getAllExtracciones() {
-        return extraccionRepository.findAll().stream()
+    public List<ExtraccionDTO> getAllExtracciones(LocalDate fechaDesde, LocalDate fechaHasta) {
+        LocalDate desde = fechaDesde != null ? fechaDesde : LocalDate.now();
+        LocalDate hasta = fechaHasta != null ? fechaHasta : desde;
+
+        Instant desdeInstant = desde.atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant hastaInstant = hasta.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+
+        return extraccionRepository.findByFechaExtraccionBetween(desdeInstant, hastaInstant).stream()
                 .map(ExtraccionDTO::toDTO)
                 .collect(Collectors.toList());
     }

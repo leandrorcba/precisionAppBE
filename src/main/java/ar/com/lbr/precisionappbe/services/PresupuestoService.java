@@ -1,16 +1,19 @@
 package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.Mapper.PresupuestoMapper;
+import ar.com.lbr.precisionappbe.dto.AprobarPresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.PresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.response.PresupuestoResponse;
 import ar.com.lbr.precisionappbe.model.Descuento;
 import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
+import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
+import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class PresupuestoService {
@@ -27,17 +32,20 @@ public class PresupuestoService {
     PresupuestoMapper presupuestoMapper;
     PagoPresupuestoRepository pagoPresupuestoRepository;
     DescuentoRepository descuentoRepository;
+    TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
 
     public PresupuestoService(PresupuestoRepository presupuestoRepository,
                               TipoClienteRepository tipoClienteRepository,
                               PresupuestoMapper presupuestoMapper,
                               PagoPresupuestoRepository pagoPresupuestoRepository,
-                              DescuentoRepository descuentoRepository) {
+                              DescuentoRepository descuentoRepository,
+                              TrabajoPresupuestadoRepository trabajoPresupuestadoRepository) {
         this.presupuestoRepository = presupuestoRepository;
         this.tipoClienteRepository = tipoClienteRepository;
         this.presupuestoMapper = presupuestoMapper;
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.descuentoRepository = descuentoRepository;
+        this.trabajoPresupuestadoRepository = trabajoPresupuestadoRepository;
     }
 
     public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Pageable pageable) {
@@ -188,9 +196,22 @@ public class PresupuestoService {
         return dto;
     }
 
-    /*public PresupuestoDTO aprobarPresupuesto(Integer idPresupuesto, AprobarPresupuestoDTO presupuesto) {
+    public PresupuestoDTO aprobarPresupuesto(Integer idPresupuesto, List<AprobarPresupuestoDTO> items) {
+        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
 
-    }*/
+        presupuesto.setAprobado(true);
+        presupuestoRepository.save(presupuesto);
+
+        Map<Integer, Integer> maquinaPorTrabajo = items.stream()
+                .collect(Collectors.toMap(AprobarPresupuestoDTO::getIdTrabajo, AprobarPresupuestoDTO::getIdMaquina));
+
+        List<TrabajoPresupuestado> trabajos = trabajoPresupuestadoRepository.findAllById(maquinaPorTrabajo.keySet());
+        trabajos.forEach(t -> t.setIdMaquina(maquinaPorTrabajo.get(t.getId())));
+        trabajoPresupuestadoRepository.saveAll(trabajos);
+
+        return PresupuestoDTO.toDTO(presupuesto);
+    }
 
     /*
      * mapPagos(List<Pago> pagos) {

@@ -57,4 +57,7 @@ public class Event {
     @JoinColumn(name = "id_maquina", nullable = false)
     private Maquina idMaquina;
 
+    @Column(name = "notas", length = 255)
+    private String notas;
+
 }

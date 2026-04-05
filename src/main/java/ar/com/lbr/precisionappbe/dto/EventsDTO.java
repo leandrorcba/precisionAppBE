@@ -14,20 +14,26 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class EventsDTO {
 
+    private String notas;
     private Integer id;
     private Integer calendarId;
     private LocalDateTime endDate;
     private LocalDateTime startDate;
-    private String title;
+    private String descripcion;
     private String maquina;
+    private String status;
+    private String tipoDeTrabajo;
 
     public EventsDTO(Event event) {
-       this.id = event.getId();
-       this.calendarId  = event.getIdMaquina().getId();
-       this.endDate = event.getEndDate();
-       this.startDate = event.getStartDate();
-       this.title = event.getEventName();
-       this.maquina = event.getIdMaquina().getNombreMaquina();
+        this.id = event.getId();
+        this.calendarId = event.getIdMaquina().getId();
+        this.endDate = event.getEndDate();
+        this.startDate = event.getStartDate();
+        this.descripcion = event.getEventName();
+        this.maquina = event.getIdMaquina().getNombreMaquina();
+        this.status = event.getStatus();
+        this.tipoDeTrabajo = "Polyfan";
+        this.notas = event.getNotas();
     }
 
     public static EventsDTO toDTO(Event event) {
