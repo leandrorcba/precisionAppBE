@@ -31,7 +31,8 @@ WHERE tp.id_superficie IS NOT NULL
 -- superficies.id_superficie = INT UNSIGNED
 -- ======================================================
 
-SET @col_tp_superficie_unsigned = (
+SET
+@col_tp_superficie_unsigned = (
     SELECT COUNT(*)
     FROM information_schema.columns
     WHERE table_schema = DATABASE()
@@ -40,7 +41,8 @@ SET @col_tp_superficie_unsigned = (
       AND column_type = 'int unsigned'
 );
 
-SET @sql_modify_tp_superficie = IF(
+SET
+@sql_modify_tp_superficie = IF(
     @col_tp_superficie_unsigned = 0,
     'ALTER TABLE trabajo_presupuestado MODIFY COLUMN id_superficie INT UNSIGNED DEFAULT NULL',
     'SELECT "id_superficie already INT UNSIGNED"'
@@ -54,7 +56,8 @@ DEALLOCATE PREPARE stmt;
 -- INDICE idx_tp_material
 -- ======================================================
 
-SET @idx_tp_material_exists = (
+SET
+@idx_tp_material_exists = (
     SELECT COUNT(*)
     FROM information_schema.statistics
     WHERE table_schema = DATABASE()
@@ -62,7 +65,8 @@ SET @idx_tp_material_exists = (
       AND index_name = 'idx_tp_material'
 );
 
-SET @sql_idx_tp_material = IF(
+SET
+@sql_idx_tp_material = IF(
     @idx_tp_material_exists = 0,
     'CREATE INDEX idx_tp_material ON trabajo_presupuestado (id_materiales)',
     'SELECT "idx_tp_material already exists"'
@@ -76,7 +80,8 @@ DEALLOCATE PREPARE stmt;
 -- INDICE idx_tp_superficie
 -- ======================================================
 
-SET @idx_tp_superficie_exists = (
+SET
+@idx_tp_superficie_exists = (
     SELECT COUNT(*)
     FROM information_schema.statistics
     WHERE table_schema = DATABASE()
@@ -84,7 +89,8 @@ SET @idx_tp_superficie_exists = (
       AND index_name = 'idx_tp_superficie'
 );
 
-SET @sql_idx_tp_superficie = IF(
+SET
+@sql_idx_tp_superficie = IF(
     @idx_tp_superficie_exists = 0,
     'CREATE INDEX idx_tp_superficie ON trabajo_presupuestado (id_superficie)',
     'SELECT "idx_tp_superficie already exists"'
@@ -98,7 +104,8 @@ DEALLOCATE PREPARE stmt;
 -- FK fk_tp_material
 -- ======================================================
 
-SET @fk_tp_material_exists = (
+SET
+@fk_tp_material_exists = (
     SELECT COUNT(*)
     FROM information_schema.table_constraints
     WHERE constraint_schema = DATABASE()
@@ -106,7 +113,8 @@ SET @fk_tp_material_exists = (
       AND constraint_name = 'fk_tp_material'
 );
 
-SET @sql_fk_tp_material = IF(
+SET
+@sql_fk_tp_material = IF(
     @fk_tp_material_exists = 0,
     'ALTER TABLE trabajo_presupuestado
         ADD CONSTRAINT fk_tp_material
@@ -123,7 +131,8 @@ DEALLOCATE PREPARE stmt;
 -- FK fk_tp_superficie
 -- ======================================================
 
-SET @fk_tp_superficie_exists = (
+SET
+@fk_tp_superficie_exists = (
     SELECT COUNT(*)
     FROM information_schema.table_constraints
     WHERE constraint_schema = DATABASE()
@@ -131,7 +140,8 @@ SET @fk_tp_superficie_exists = (
       AND constraint_name = 'fk_tp_superficie'
 );
 
-SET @sql_fk_tp_superficie = IF(
+SET
+@sql_fk_tp_superficie = IF(
     @fk_tp_superficie_exists = 0,
     'ALTER TABLE trabajo_presupuestado
         ADD CONSTRAINT fk_tp_superficie

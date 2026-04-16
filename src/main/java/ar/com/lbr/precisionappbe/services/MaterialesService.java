@@ -2,6 +2,7 @@ package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.dto.MaterialDTO;
 import ar.com.lbr.precisionappbe.dto.PrecioMaterialDTO;
+import ar.com.lbr.precisionappbe.dto.PrecioMaterialesDTO;
 import ar.com.lbr.precisionappbe.model.Material;
 import ar.com.lbr.precisionappbe.model.PrecioMateriale;
 import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
@@ -90,6 +91,13 @@ public class MaterialesService {
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
         material.setDisabled(false);
         return MaterialDTO.toDTO(materialeRepository.save(material));
+    }
+
+
+    public List<PrecioMaterialesDTO> getAllPreciosMateriales() {
+        return precioMaterialRepository.findAllWithNombreMaterial().stream()
+                .map(row -> PrecioMaterialesDTO.toDTO((PrecioMateriale) row[0], (String) row[1]))
+                .collect(Collectors.toList());
     }
 
     public PrecioMaterialDTO calcularPrecio(Integer idMaterial, Integer idSuperficie, Integer cantidad) {

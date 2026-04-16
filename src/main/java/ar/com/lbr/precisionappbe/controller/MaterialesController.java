@@ -2,6 +2,7 @@ package ar.com.lbr.precisionappbe.controller;
 
 import ar.com.lbr.precisionappbe.dto.MaterialDTO;
 import ar.com.lbr.precisionappbe.dto.PrecioMaterialDTO;
+import ar.com.lbr.precisionappbe.dto.PrecioMaterialesDTO;
 import ar.com.lbr.precisionappbe.services.MaterialesService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
@@ -49,6 +50,12 @@ public class MaterialesController {
     public ResponseEntity<ApiResponse<List<MaterialDTO>>> getSoloGrabado() {
         List<MaterialDTO> materiales = materialesService.getSoloGrabado();
         return ResponseBuilder.ok("Solo grabado obtenidos con éxito", materiales, (long) materiales.size());
+    }
+
+    @GetMapping("/precios")
+    public ResponseEntity<ApiResponse<List<PrecioMaterialesDTO>>> getAllPreciosMateriales() {
+        List<PrecioMaterialesDTO> precios = materialesService.getAllPreciosMateriales();
+        return ResponseBuilder.ok("Precios de materiales obtenidos con éxito", precios, (long) precios.size());
     }
 
     @GetMapping("/calcular-precio")

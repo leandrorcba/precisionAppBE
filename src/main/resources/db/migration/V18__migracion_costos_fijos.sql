@@ -9,10 +9,10 @@ CREATE TABLE IF NOT EXISTS tipo_costo_fijo (
 
 -- 2) Cabecera por mes
 CREATE TABLE IF NOT EXISTS costo_fijo (
-                                          id_costo_fijo INT NOT NULL AUTO_INCREMENT,
-                                          periodo DATE NOT NULL,  -- usar siempre YYYY-MM-01
-                                          fecha_cambio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                          total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+     id_costo_fijo INT NOT NULL AUTO_INCREMENT,
+     periodo DATE NOT NULL,  -- usar siempre YYYY-MM-01
+     fecha_cambio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     PRIMARY KEY (id_costo_fijo),
     UNIQUE KEY uq_costo_fijo_periodo (periodo)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

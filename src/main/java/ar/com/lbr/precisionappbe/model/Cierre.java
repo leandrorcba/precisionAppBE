@@ -52,7 +52,7 @@ public class Cierre {
     @Column(name = "responsable", length = 100)
     private String responsable;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("(UTC_TIMESTAMP())")
     @Column(name = "fecha_cierre", nullable = false)
     private Instant fechaCierre;
 

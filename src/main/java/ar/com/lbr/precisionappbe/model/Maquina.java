@@ -29,7 +29,7 @@ public class Maquina {
     @Column(name = "habilitada", nullable = false)
     private Boolean habilitada = false;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("(UTC_TIMESTAMP())")
     @Column(name = "fecha_creacion", nullable = false)
     private Instant fechaCreacion;
 

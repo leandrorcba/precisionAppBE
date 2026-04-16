@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -34,6 +35,7 @@ public class Extraccione {
     @Column(name = "responsable_extraccion", length = 100)
     private String responsableExtraccion;
 
+    @ColumnDefault("(UTC_TIMESTAMP())")
     @Column(name = "fecha_extraccion", nullable = false)
     private Instant fechaExtraccion;
 

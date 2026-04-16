@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -29,10 +29,10 @@ public class Event {
     private String eventName;
 
     @Column(name = "start_date", nullable = false)
-    private LocalDateTime startDate;
+    private Instant startDate;
 
     @Column(name = "end_date", nullable = false)
-    private LocalDateTime endDate;
+    private Instant endDate;
 
     @Lob
     @Column(name = "details")

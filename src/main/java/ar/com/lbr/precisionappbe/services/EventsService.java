@@ -9,9 +9,10 @@ import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,17 +28,34 @@ public class EventsService {
     }
 
     public List<EventsDTO> getAllEvents(Integer calendar, String startDateStr, String endDateStr) {
-        LocalDateTime minStartDate = LocalDate.now().minusMonths(3).atStartOfDay();
-        LocalDateTime startDate = startDateStr != null
-                ? OffsetDateTime.parse(startDateStr).toLocalDateTime()
+        Instant minStartDate = LocalDate.now().minusMonths(3).atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant startDate = startDateStr != null
+                ? OffsetDateTime.parse(startDateStr).toInstant()
                 : minStartDate;
-        LocalDateTime endDate = endDateStr != null
-                ? OffsetDateTime.parse(endDateStr).toLocalDateTime()
-                : LocalDateTime.now();
+        Instant endDate = endDateStr != null
+                ? OffsetDateTime.parse(endDateStr).toInstant()
+                : Instant.now();
 
         return eventsRepository.findByFilters(calendar, startDate, endDate).stream()
                 .map(EventsDTO::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    public EventsDTO createEvent(UpdateEventDTO dto) {
+        Maquina maquina = maquinasRepository.findById(dto.getCalendarId())
+                .orElseThrow(() -> new EntityNotFoundException("Maquina not found: " + dto.getCalendarId()));
+
+        Event event = new Event();
+        event.setIdMaquina(maquina);
+        event.setStartDate(dto.getStartDate().toInstant());
+        event.setEndDate(dto.getEndDate().toInstant());
+        event.setEventName(dto.getEventName() != null ? dto.getEventName() : "");
+        event.setStatus(dto.getStatus());
+        event.setNotas(dto.getNotas());
+        event.setDetails(dto.getDetails());
+        event.setDuracion(dto.getDuracion());
+
+        return EventsDTO.toDTO(eventsRepository.save(event));
     }
 
     public EventsDTO updateEvent(Integer id, UpdateEventDTO dto) {
@@ -48,10 +66,10 @@ public class EventsService {
             event.setEventName(dto.getEventName());
         }
         if (dto.getStartDate() != null) {
-            event.setStartDate(dto.getStartDate().toLocalDateTime());
+            event.setStartDate(dto.getStartDate().toInstant());
         }
         if (dto.getEndDate() != null) {
-            event.setEndDate(dto.getEndDate().toLocalDateTime());
+            event.setEndDate(dto.getEndDate().toInstant());
         }
         if (dto.getDetails() != null) {
             event.setDetails(dto.getDetails());
