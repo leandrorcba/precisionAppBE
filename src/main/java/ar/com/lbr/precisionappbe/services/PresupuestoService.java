@@ -4,11 +4,13 @@ import ar.com.lbr.precisionappbe.Mapper.PresupuestoMapper;
 import ar.com.lbr.precisionappbe.dto.AprobarPresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.PresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.response.PresupuestoResponse;
+import ar.com.lbr.precisionappbe.model.Cliente;
 import ar.com.lbr.precisionappbe.model.Descuento;
 import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
@@ -33,19 +35,23 @@ public class PresupuestoService {
     PagoPresupuestoRepository pagoPresupuestoRepository;
     DescuentoRepository descuentoRepository;
     TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
+    ClienteRepository clienteRepository;
 
     public PresupuestoService(PresupuestoRepository presupuestoRepository,
                               TipoClienteRepository tipoClienteRepository,
                               PresupuestoMapper presupuestoMapper,
                               PagoPresupuestoRepository pagoPresupuestoRepository,
                               DescuentoRepository descuentoRepository,
-                              TrabajoPresupuestadoRepository trabajoPresupuestadoRepository) {
+                              TrabajoPresupuestadoRepository trabajoPresupuestadoRepository,
+                              ClienteRepository clienteRepository
+    ) {
         this.presupuestoRepository = presupuestoRepository;
         this.tipoClienteRepository = tipoClienteRepository;
         this.presupuestoMapper = presupuestoMapper;
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.descuentoRepository = descuentoRepository;
         this.trabajoPresupuestadoRepository = trabajoPresupuestadoRepository;
+        this.clienteRepository = clienteRepository;
     }
 
     public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Pageable pageable) {
@@ -163,9 +169,6 @@ public class PresupuestoService {
         return presupuestoDTOS;
     }
 
-    public List<TipoCliente> getTipoCliente() {
-        return tipoClienteRepository.findAll();
-    }
 
     public PresupuestoDTO createPresupuesto(PresupuestoDTO dto) {
 
@@ -179,13 +182,7 @@ public class PresupuestoService {
         return dto;
     }
 
-    public PresupuestoDTO updateCliente(PresupuestoDTO dto) {
-
-        /*
-         * TipoCliente tipoCliente =
-         * tipoClienteRepository.findById(dto.getIdTipoCliente())
-         * .orElseThrow(() -> new RuntimeException("Tipo de cliente no encontrado"));
-         */
+    public PresupuestoDTO updatePresupuesto(PresupuestoDTO dto) {
 
         Presupuesto presupuestoEntity = presupuestoMapper.toEntity(dto, false);
 
@@ -211,6 +208,27 @@ public class PresupuestoService {
         trabajoPresupuestadoRepository.saveAll(trabajos);
 
         return PresupuestoDTO.toDTO(presupuesto);
+    }
+
+    public String getTipoClienteByPresupuestoId(Integer idPresupuesto) {
+        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
+
+        Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + presupuesto.getIdCliente()));
+
+        TipoCliente tipoCliente = tipoClienteRepository.findTipoClienteById(cliente.getIdTipoCliente());
+
+        return tipoCliente.getNombreTipo();
+    }
+
+    public Cliente getClienteByPresupuestoId(Integer idPresupuesto) {
+        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
+
+        Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + presupuesto.getIdCliente()));
+        return cliente;
     }
 
     /*

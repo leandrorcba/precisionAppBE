@@ -28,8 +28,6 @@ public class VentaDTO {
 
     public VentaDTO(Venta v) {
         this.id = v.getId();
-        this.fechaVenta = v.getFechaVenta();
-        this.horaVenta = v.getHoraVenta();
         this.material = v.getMaterial();
         this.idMateriales = v.getIdMateriales() != null ? v.getIdMateriales().getId() : null;
         this.superficie = v.getSuperficie();

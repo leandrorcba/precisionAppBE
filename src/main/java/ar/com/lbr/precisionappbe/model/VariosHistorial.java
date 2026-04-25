@@ -9,8 +9,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,14 +42,17 @@ public class VariosHistorial {
     @Column(name = "hora_cierre")
     private LocalTime horaCierre;
 
-    @Column(name = "ajuste", precision = 10, scale = 2)
-    private BigDecimal ajuste;
+    @Column(name = "ajuste")
+    private Integer ajuste;
 
     @Column(name = "precio_minuto_empresa", precision = 10, scale = 2)
     private BigDecimal precioMinutoEmpresa;
 
-    @Column(name = "descuento_efectivo", precision = 10, scale = 2)
-    private BigDecimal descuentoEfectivo;
+    @Column(name = "descuento_efectivo")
+    private Integer descuentoEfectivo;
+
+    @Column(name = "descuento_por_punto")
+    private Integer descuentoPorPunto;
 
     @Column(name = "hora_inicio_fds")
     private LocalTime horaInicioFds;
@@ -61,5 +66,13 @@ public class VariosHistorial {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_user")
     private User user;
+
+    @ColumnDefault("5")
+    @Column(name = "minutos_por_punto")
+    private Integer minutosPorPunto;
+
+    @Size(max = 45)
+    @Column(name = "varios_historialcol", length = 45)
+    private String variosHistorialcol;
 
 }

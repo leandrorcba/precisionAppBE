@@ -75,7 +75,7 @@ public class PresupuestoController {
 
     @PostMapping("/update")
     public ResponseEntity<ApiResponse<PresupuestoDTO>> updatePresupuesto(@RequestBody PresupuestoDTO presupuesto) {
-        PresupuestoDTO presupuestoDTO = presupuestoService.updateCliente(presupuesto);
+        PresupuestoDTO presupuestoDTO = presupuestoService.updatePresupuesto(presupuesto);
         return ResponseBuilder.ok("Listado obtenido con éxito", presupuestoDTO, 0L);
     }
 

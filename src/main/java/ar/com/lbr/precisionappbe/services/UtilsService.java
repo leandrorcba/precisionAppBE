@@ -9,8 +9,10 @@ import ar.com.lbr.precisionappbe.repositories.MedioPagoRepository;
 import ar.com.lbr.precisionappbe.repositories.SuperficieRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoPagoRepository;
+import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Year;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -22,15 +24,18 @@ public class UtilsService {
     private final MedioPagoRepository medioPagoRepository;
     TipoClienteRepository tipoClienteRepository;
     TipoPagoRepository tipoPagoRepository;
+    VariosRepository variosRepository;
 
     public UtilsService(TipoClienteRepository tipoClienteRepository,
                         TipoPagoRepository tipoPagoRepository,
                         SuperficieRepository superficieRepository,
-                        MedioPagoRepository medioPagoRepository) {
+                        MedioPagoRepository medioPagoRepository,
+                        VariosRepository variosRepository) {
         this.tipoClienteRepository = tipoClienteRepository;
         this.tipoPagoRepository = tipoPagoRepository;
         this.superficieRepository = superficieRepository;
         this.medioPagoRepository = medioPagoRepository;
+        this.variosRepository = variosRepository;
     }
 
     public List<TipoClienteDTO> getTipoCliente() {
@@ -71,5 +76,9 @@ public class UtilsService {
         return medioPagoRepository.findAll().stream()
                 .map(MedioPagoDTO::toDTO)
                 .toList();
+    }
+
+    public BigDecimal getPrecioMinutoEmpresa() {
+        return variosRepository.findAll().getFirst().getPrecioMinutoEmpresa();
     }
 }

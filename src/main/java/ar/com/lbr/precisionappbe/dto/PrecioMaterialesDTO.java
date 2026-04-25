@@ -18,7 +18,7 @@ public class PrecioMaterialesDTO {
     private Integer idMateriales;
     private String nombreMaterial;
     private Short unidades;
-    private Short idSuperficie;
+    private Integer idSuperficie;
     private String superficie;
     private BigDecimal precioMaterial;
 

@@ -1,11 +1,15 @@
 package ar.com.lbr.precisionappbe.services;
 
+import ar.com.lbr.precisionappbe.dto.ClienteDTO;
 import ar.com.lbr.precisionappbe.dto.TrabajoPresupuestadoDTO;
+import ar.com.lbr.precisionappbe.model.Cliente;
+import ar.com.lbr.precisionappbe.model.Descuento;
+import ar.com.lbr.precisionappbe.model.Maquina;
 import ar.com.lbr.precisionappbe.model.Material;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
-import ar.com.lbr.precisionappbe.model.Maquina;
 import ar.com.lbr.precisionappbe.model.Superficie;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
 import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
@@ -27,26 +31,42 @@ public class TrabajosService {
     private final MaterialeRepository materialeRepository;
     private final SuperficieRepository superficieRepository;
     private final MaquinasRepository maquinasRepository;
+    private final PresupuestoService presupuestoService;
+    private final VariosService variosService;
+    private final ClienteService clienteService;
+    private final PresupuestoCalculadorService presupuestoCalculadorService;
+    private final DescuentoRepository descuentoRepository;
 
     public TrabajosService(TrabajoPresupuestadoRepository trabajosRepository,
                            PresupuestoRepository presupuestoRepository,
                            MaterialeRepository materialeRepository,
                            SuperficieRepository superficieRepository,
-                           MaquinasRepository maquinasRepository) {
+                           MaquinasRepository maquinasRepository, PresupuestoService presupuestoService,
+                           VariosService variosService, ClienteService clienteService, PresupuestoCalculadorService presupuestoCalculadorService, DescuentoRepository descuentoRepository) {
         this.trabajosRepository = trabajosRepository;
         this.presupuestoRepository = presupuestoRepository;
         this.materialeRepository = materialeRepository;
         this.superficieRepository = superficieRepository;
         this.maquinasRepository = maquinasRepository;
+        this.presupuestoService = presupuestoService;
+        this.variosService = variosService;
+        this.clienteService = clienteService;
+        this.presupuestoCalculadorService = presupuestoCalculadorService;
+        this.descuentoRepository = descuentoRepository;
     }
 
     public TrabajoPresupuestadoDTO createTrabajo(TrabajoPresupuestadoDTO dto) {
+
+        Cliente cliente = presupuestoService.getClienteByPresupuestoId(dto.getIdPresupuesto());
+        ClienteDTO clienteDTO = ClienteDTO.toDTO(cliente);
+
+        presupuestoCalculadorService.calcularYValidarTrabajo(dto, clienteDTO);
+
         TrabajoPresupuestado entity = new TrabajoPresupuestado();
         entity.setIdPresupuesto(dto.getIdPresupuesto());
         entity.setSeleccionado(dto.getSeleccionado() != null ? dto.getSeleccionado() : false);
         entity.setArchivoCad(dto.getArchivoCad());
         entity.setArchivoOriginal(dto.getArchivoOriginal());
-        entity.setMaterial(dto.getMaterial());
         entity.setNotas(dto.getNotas());
         entity.setTiempoDeCorte(dto.getTiempoDeCorte() != null ? dto.getTiempoDeCorte() : 0);
         entity.setIdMateriales(dto.getIdMateriales());
@@ -69,6 +89,15 @@ public class TrabajosService {
         entity.setPrecioSinDescuento(dto.getPrecioSinDescuento() != null ? dto.getPrecioSinDescuento() : BigDecimal.ZERO);
 
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
+
+        Descuento descuento = new Descuento();
+        descuento.setIdTipoDescuento(2);
+        descuento.setIdTrabajoPresupuestado(saved.getId());
+        descuento.setIdPresupuesto(dto.getIdPresupuesto());
+        descuento.setMonto(dto.getDescuento());
+
+        descuentoRepository.save(descuento);
+
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 

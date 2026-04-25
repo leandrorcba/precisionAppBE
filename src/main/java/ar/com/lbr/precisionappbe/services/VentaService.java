@@ -1,8 +1,8 @@
 package ar.com.lbr.precisionappbe.services;
 
-import ar.com.lbr.precisionappbe.model.Venta;
 import ar.com.lbr.precisionappbe.dto.VentaDTO;
 import ar.com.lbr.precisionappbe.model.Material;
+import ar.com.lbr.precisionappbe.model.Venta;
 import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.VentaRepository;
 import org.springframework.stereotype.Service;
@@ -26,11 +26,11 @@ public class VentaService {
         List<Venta> ventas;
 
         if (Boolean.TRUE.equals(hoy)) {
-            ventas = ventaRepository.findByFechaVenta(LocalDate.now());
+            ventas = ventaRepository.findByFechaHoraVenta(LocalDate.now());
         } else if (fechaFrom != null && fechaTo != null) {
-            ventas = ventaRepository.findByFechaVentaBetween(fechaFrom, fechaTo);
+            ventas = ventaRepository.findByFechaHoraVentaBetween(fechaFrom, fechaTo);
         } else if (fechaFrom != null) {
-            ventas = ventaRepository.findByFechaVenta(fechaFrom);
+            ventas = ventaRepository.findByFechaHoraVenta(fechaFrom);
         } else {
             ventas = ventaRepository.findAll();
         }
@@ -64,8 +64,6 @@ public class VentaService {
     }
 
     private void mapDtoToEntity(VentaDTO dto, Venta venta) {
-        venta.setFechaVenta(dto.getFechaVenta());
-        venta.setHoraVenta(dto.getHoraVenta());
         venta.setMaterial(dto.getMaterial());
         venta.setSuperficie(dto.getSuperficie());
         venta.setPrecioMaterial(dto.getPrecioMaterial());

@@ -67,6 +67,13 @@ public class ClienteController {
                 clienteResponse.getTotal());
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Get Cliente by ID", description = "Trae un cliente por su ID", tags = { "Clientes" })
+    public ResponseEntity<ApiResponse<ClienteDTO>> getCliente(@PathVariable Integer id) {
+        ClienteDTO clienteDto = clienteService.getClienteById(id);
+        return ResponseBuilder.ok("Cliente obtenido con éxito", clienteDto, 0L);
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<ClienteDTO>> createCliente(@RequestBody ClienteDTO cliente) {
         ClienteDTO clienteDto = clienteService.createCliente(cliente);

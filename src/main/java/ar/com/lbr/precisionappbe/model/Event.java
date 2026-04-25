@@ -7,7 +7,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -34,7 +33,6 @@ public class Event {
     @Column(name = "end_date", nullable = false)
     private Instant endDate;
 
-    @Lob
     @Column(name = "details")
     private String details;
 

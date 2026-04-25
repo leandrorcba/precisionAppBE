@@ -42,13 +42,14 @@ public class TrabajoPresupuestadoDTO {
     private BigDecimal posicionador;
     private Boolean traeMaterial;
     private BigDecimal precioSinDescuento;
+    private Integer minutosPorPuntos;
+
 
     public TrabajoPresupuestadoDTO(TrabajoPresupuestado tp) {
         this.id = tp.getId();
         this.seleccionado = tp.getSeleccionado();
         this.archivoCad = tp.getArchivoCad();
         this.archivoOriginal = tp.getArchivoOriginal();
-        this.material = tp.getMaterial();
         this.notas = tp.getNotas();
         this.tiempoDeCorte = tp.getTiempoDeCorte();
         this.precioMaterial = tp.getPrecioMaterial();
@@ -77,6 +78,7 @@ public class TrabajoPresupuestadoDTO {
         this.posicionador = tp.getPosicionador();
         this.traeMaterial = tp.getTraeMaterial();
         this.precioSinDescuento = tp.getPrecioSinDescuento();
+        this.minutosPorPuntos = tp.getMinutosPorPunto();
     }
 
     public static TrabajoPresupuestadoDTO toDTO(TrabajoPresupuestado tp) {

@@ -2,12 +2,9 @@ package ar.com.lbr.precisionappbe.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,14 +21,25 @@ public class Descuento {
     @Column(name = "id_descuento", nullable = false)
     private Integer id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_presupuesto", nullable = false)
-    private Presupuesto idPresupuesto;
+    @Column(name = "id_presupuesto")
+    private Integer idPresupuesto;
 
     @Column(name = "id_tipo_descuento", nullable = false)
     private Integer idTipoDescuento;
 
     @Column(name = "monto", nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
+
+    @Column(name = "id_trabajo_presupuestado")
+    private Integer idTrabajoPresupuestado;
+
+    @Column(name = "minutos_por_punto")
+    private Integer minutosPorPunto;
+
+    @Column(name = "precio_minuto", precision = 10, scale = 2)
+    private BigDecimal precioMinuto;
+
+    @Column(name = "minutos_descontados")
+    private Integer minutosDescontados;
 
 }

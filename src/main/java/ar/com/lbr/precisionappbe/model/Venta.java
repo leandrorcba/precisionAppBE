@@ -15,8 +15,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -27,12 +26,6 @@ public class Venta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_ventas", nullable = false)
     private Integer id;
-
-    @Column(name = "fecha_venta")
-    private LocalDate fechaVenta;
-
-    @Column(name = "hora_venta")
-    private LocalTime horaVenta;
 
     @Size(max = 45)
     @Column(name = "material", length = 45)
@@ -57,5 +50,8 @@ public class Venta {
     @NotNull
     @Column(name = "precio_venta", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioVenta;
+
+    @Column(name = "fecha_hora_venta")
+    private Instant fechaHoraVenta;
 
 }

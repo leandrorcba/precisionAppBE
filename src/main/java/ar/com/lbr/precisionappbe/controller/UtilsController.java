@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,5 +64,11 @@ public class UtilsController {
     public ResponseEntity<ApiResponse<List<MedioPagoDTO>>> getMediosPago() {
         List<MedioPagoDTO> mediosPago = utilsService.getMediosPago();
         return ResponseBuilder.ok("Listado obtenido con éxito", mediosPago, 0L);
+    }
+
+    @GetMapping("/minuto_empresa")
+    public ResponseEntity<ApiResponse<BigDecimal>> getPrecioMinutoEmpresa() {
+        BigDecimal precioMinutoEmpresa = utilsService.getPrecioMinutoEmpresa();
+        return ResponseBuilder.ok("Listado obtenido con éxito", precioMinutoEmpresa, 0L);
     }
 }

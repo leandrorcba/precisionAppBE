@@ -35,6 +35,8 @@ public class VariosService {
         varios.setDescuentoEfectivo(dto.getDescuentoEfectivo());
         varios.setHoraInicioFds(dto.getHoraInicioFds());
         varios.setHoraCierreFds(dto.getHoraCierreFds());
+        varios.setMinutosPorPunto(dto.getMinutosPorPunto());
+        varios.setDescuentoPorPunto(dto.getDescuentoPorPunto());
 
         Varios updatedVarios = variosRepository.save(varios);
 
@@ -48,6 +50,8 @@ public class VariosService {
         historial.setDescuentoEfectivo(updatedVarios.getDescuentoEfectivo());
         historial.setHoraInicioFds(updatedVarios.getHoraInicioFds());
         historial.setHoraCierreFds(updatedVarios.getHoraCierreFds());
+        historial.setMinutosPorPunto(updatedVarios.getMinutosPorPunto());
+        historial.setDescuentoPorPunto(updatedVarios.getDescuentoPorPunto());
 
         Object principal = SecurityContextHolder.getContext().getAuthentication() != null
                 ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()

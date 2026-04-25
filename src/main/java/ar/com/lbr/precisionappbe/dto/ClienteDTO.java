@@ -38,4 +38,13 @@ public class ClienteDTO {
         this.precioMinutoEmpresa = cliente.getPrecioMinutoEmpresa();
         this.idTipoCliente = cliente.getIdTipoCliente();
     }
+
+    public static ClienteDTO toDTO(Cliente cliente) {
+        if (cliente == null) {
+            return null;
+        }
+
+        ClienteDTO dto = new ClienteDTO(cliente);
+        return dto;
+    }
 }

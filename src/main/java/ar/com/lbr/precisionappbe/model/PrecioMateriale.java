@@ -28,7 +28,7 @@ public class PrecioMateriale {
     private Short unidades;
 
     @Column(name = "id_superficie")
-    private Short idSuperficie;
+    private Integer idSuperficie;
 
     @Column(name = "superficie", length = 45)
     private String superficie;

@@ -12,6 +12,21 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DescuentoDTO {
-    private TipoDescuentoDTO tipoDescuento;
+    private Integer tipoDescuento;
+
     private BigDecimal monto;
+
+    private Integer idPresupuesto;
+
+    private Integer idTipoDescuento;
+
+    private Integer idTrabajoPresupuestado;
+
+    private Integer minutosPorPunto;
+
+    private BigDecimal precioMinuto;
+
+    private Integer minutosDescontados;
 }
+
+

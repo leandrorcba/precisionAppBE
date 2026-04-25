@@ -43,20 +43,20 @@ public class Presupuesto {
     private BigDecimal precioMinuto;
 
     @NotNull
-    @Column(name = "aprobado", nullable = false)
-    private Boolean  aprobado;
+    @Column(name = "aprobado", nullable = false, columnDefinition = "TINYINT(1)")
+    private Boolean aprobado;
 
     @NotNull
-    @Column(name = "realizado", nullable = false)
-    private Boolean  realizado;
+    @Column(name = "realizado", nullable = false, columnDefinition = "TINYINT(1)")
+    private Boolean realizado;
 
     @NotNull
-    @Column(name = "cobrado", nullable = false)
-    private Boolean  cobrado;
+    @Column(name = "cobrado", nullable = false, columnDefinition = "TINYINT(1)")
+    private Boolean cobrado;
 
     @NotNull
-    @Column(name = "entregado", nullable = false)
-    private Boolean  entregado;
+    @Column(name = "entregado", nullable = false, columnDefinition = "TINYINT(1)")
+    private Boolean entregado;
 
     @NotNull
     @Column(name = "puntos_canjeados", nullable = false)
@@ -66,6 +66,6 @@ public class Presupuesto {
     private LocalDateTime fechaCobrado;
 
     @Column(name = "fecha_realizado")
-    private LocalDateTime  fechaRealizado;
+    private LocalDateTime fechaRealizado;
 
 }

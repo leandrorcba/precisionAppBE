@@ -116,7 +116,7 @@ class MaterialesServiceTest {
     private PrecioMateriale precioMaterialConSuperficie(Integer idMaterial, Integer idSuperficie, BigDecimal precio) {
         PrecioMateriale pm = new PrecioMateriale();
         pm.setIdMateriales(idMaterial);
-        pm.setIdSuperficie(idSuperficie.shortValue());
+        pm.setIdSuperficie(idSuperficie);
         pm.setPrecioMaterial(precio);
         return pm;
     }

@@ -18,9 +18,12 @@ public class VariosDTO {
     private BigDecimal precioMinuto;
     private LocalTime horaInicio;
     private LocalTime horaCierre;
-    private BigDecimal ajuste;
+    private Integer ajuste;
     private BigDecimal precioMinutoEmpresa;
-    private BigDecimal descuentoEfectivo;
+    private Integer descuentoEfectivo;
+    private Integer descuentoPorPunto;
+    private Integer minutosPorPunto;
+
     private LocalTime horaInicioFds;
     private LocalTime horaCierreFds;
 
@@ -33,6 +36,8 @@ public class VariosDTO {
         this.descuentoEfectivo = entity.getDescuentoEfectivo();
         this.horaInicioFds = entity.getHoraInicioFds();
         this.horaCierreFds = entity.getHoraCierreFds();
+        this.descuentoPorPunto = entity.getDescuentoPorPunto();
+        this.minutosPorPunto = entity.getMinutosPorPunto();
     }
 
     public static VariosDTO toDTO(Varios entity) {

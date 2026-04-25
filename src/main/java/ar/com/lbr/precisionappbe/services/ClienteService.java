@@ -28,7 +28,7 @@ public class ClienteService {
     PuntoRepository puntoRepository;
 
     public ClienteService(ClienteRepository clienteRepository, ClientesMapper clientesMapper,
-            UtilsService utilsService, PuntoRepository puntoRepository) {
+                          UtilsService utilsService, PuntoRepository puntoRepository) {
         this.clienteRepository = clienteRepository;
         this.clientesMapper = clientesMapper;
         this.utilsService = utilsService;
@@ -36,7 +36,7 @@ public class ClienteService {
     }
 
     public ClienteResponse buscarClientes(String nombreCliente, Boolean mora, Integer idTipoCliente,
-            Boolean soloDeshabilitados, Pageable pageable) {
+                                          Boolean soloDeshabilitados, Pageable pageable) {
         Page<Cliente> clientePage = clienteRepository.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -107,6 +107,12 @@ public class ClienteService {
         clienteRepository.save(cliente);
     }
 
+    public ClienteDTO getClienteById(Integer id) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
+        return new ClienteDTO(cliente);
+    }
+
     public ClienteDTO updateCliente(ClienteDTO dto) {
 
         TipoCliente tipoCliente = utilsService.getTipoClienteById(dto.getIdTipoCliente());
@@ -122,4 +128,6 @@ public class ClienteService {
 
         return dto;
     }
+
+
 }

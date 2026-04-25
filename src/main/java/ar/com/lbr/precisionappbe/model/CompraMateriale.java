@@ -6,48 +6,51 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "compramateriales", schema = "precision_schema_v2")
-public class Compramateriale {
+@Table(name = "compra_materiales", schema = "precision_schema_v2")
+public class CompraMateriale {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idcompraMateriales", nullable = false)
+    @Column(name = "id_compra_materiales", nullable = false)
     private Integer id;
 
+    @Column(name = "id_materiales")
+    private Integer idMateriales;
+
+    @Size(max = 45)
     @Column(name = "material", length = 45)
     private String material;
 
+    @Size(max = 45)
     @Column(name = "tipo", length = 45)
     private String tipo;
 
-    @Column(name = "montounitario", precision = 12, scale = 2)
-    private BigDecimal montounitario;
+    @Column(name = "monto_unitario", precision = 12, scale = 2)
+    private BigDecimal montoUnitario;
 
     @Column(name = "cantidad")
     private Integer cantidad;
 
-    @Column(name = "montototal", precision = 12, scale = 2)
-    private BigDecimal montototal;
+    @Column(name = "monto_total", precision = 12, scale = 2)
+    private BigDecimal montoTotal;
 
-    @Column(name = "fechacompra")
-    private LocalDate fechacompra;
+    @Column(name = "fecha_hora_compra")
+    private Instant fechaHoraCompra;
 
-    @Column(name = "mesCompra", length = 45)
-    private String mesCompra;
-
+    @Size(max = 45)
     @Column(name = "caja", length = 45)
     private String caja;
 
-    @Column(name = "horaCompra")
-    private LocalTime horaCompra;
+    @Column(name = "id_user")
+    private Integer idUser;
 
 }

@@ -35,9 +35,6 @@ public class TrabajoPresupuestado {
     @Column(name = "id_presupuesto", nullable = false)
     private Integer idPresupuesto;
 
-    @Column(name = "material")
-    private String material;
-
     @Column(name = "notas")
     private String notas;
 
@@ -87,15 +84,15 @@ public class TrabajoPresupuestado {
     private Integer unidades = 0;
 
     @ColumnDefault("0")
-    @Column(name = "grabado")
+    @Column(name = "grabado", columnDefinition = "TINYINT(1)")
     private Boolean grabado = false;
 
     @ColumnDefault("0")
-    @Column(name = "cortes_especiales")
+    @Column(name = "cortes_especiales", columnDefinition = "TINYINT(1)")
     private Boolean cortesEspeciales = false;
 
     @ColumnDefault("0")
-    @Column(name = "carteles")
+    @Column(name = "carteles", columnDefinition = "TINYINT(1)")
     private Boolean carteles = false;
 
     @ColumnDefault("0.0")
@@ -103,11 +100,15 @@ public class TrabajoPresupuestado {
     private BigDecimal posicionador = BigDecimal.ZERO;
 
     @ColumnDefault("0")
-    @Column(name = "trae_material")
+    @Column(name = "trae_material", columnDefinition = "TINYINT(1)")
     private Boolean traeMaterial = false;
 
     @ColumnDefault("0.00")
     @Column(name = "precio_sin_descuento", precision = 10, scale = 2)
     private BigDecimal precioSinDescuento = BigDecimal.ZERO;
+
+    @ColumnDefault("5")
+    @Column(name = "minutos_por_punto")
+    private Integer minutosPorPunto;
 
 }

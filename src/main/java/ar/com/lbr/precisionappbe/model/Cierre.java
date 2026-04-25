@@ -72,6 +72,6 @@ public class Cierre {
     private String mesCierre;
 
     @Column(name = "id_user")
-    private String idUsuario;
+    private Integer idUsuario;
 
 }
