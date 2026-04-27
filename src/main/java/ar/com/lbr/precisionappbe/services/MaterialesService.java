@@ -28,20 +28,38 @@ public class MaterialesService {
         this.precioMaterialRepository = precioMaterialRepository;
     }
 
-    public Page<MaterialDTO> getAllMateriales(String materiales, Boolean enabled, int page, int size) {
+    public Page<MaterialDTO> getAllMateriales(String materiales, String tipo, Boolean enabled, int page, int size) {
         boolean disabled = Boolean.FALSE.equals(enabled);
         boolean hasFilter = materiales != null && !materiales.isBlank();
+        boolean esCorte = "corte".equalsIgnoreCase(tipo);
+        boolean esGrabado = "grabado".equalsIgnoreCase(tipo);
         PageRequest pageable = PageRequest.of(page, size, Sort.by("materiales").ascending());
 
         Page<Material> result;
-        if (hasFilter) {
-            result = disabled
-                    ? materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledTrue(materiales, pageable)
-                    : materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledFalse(materiales, pageable);
+        if (esCorte) {
+            result = hasFilter
+                    ? (disabled
+                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledTrue(materiales, pageable)
+                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledFalse(materiales, pageable))
+                    : (disabled
+                        ? materialeRepository.findByIsMaterialTrueAndDisabledTrue(pageable)
+                        : materialeRepository.findByIsMaterialTrueAndDisabledFalse(pageable));
+        } else if (esGrabado) {
+            result = hasFilter
+                    ? (disabled
+                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledTrue(materiales, pageable)
+                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledFalse(materiales, pageable))
+                    : (disabled
+                        ? materialeRepository.findByIsGrabadoTrueAndDisabledTrue(pageable)
+                        : materialeRepository.findByIsGrabadoTrueAndDisabledFalse(pageable));
         } else {
-            result = disabled
-                    ? materialeRepository.findByDisabledTrue(pageable)
-                    : materialeRepository.findByDisabledFalse(pageable);
+            result = hasFilter
+                    ? (disabled
+                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledTrue(materiales, pageable)
+                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledFalse(materiales, pageable))
+                    : (disabled
+                        ? materialeRepository.findByDisabledTrue(pageable)
+                        : materialeRepository.findByDisabledFalse(pageable));
         }
         return result.map(MaterialDTO::toDTO);
     }

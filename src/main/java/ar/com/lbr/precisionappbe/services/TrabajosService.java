@@ -87,6 +87,7 @@ public class TrabajosService {
         entity.setPosicionador(dto.getPosicionador() != null ? dto.getPosicionador() : BigDecimal.ZERO);
         entity.setTraeMaterial(dto.getTraeMaterial() != null ? dto.getTraeMaterial() : false);
         entity.setPrecioSinDescuento(dto.getPrecioSinDescuento() != null ? dto.getPrecioSinDescuento() : BigDecimal.ZERO);
+        entity.setMinutosPorPunto(dto.getMinutosPorPuntos());
 
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
 
@@ -94,6 +95,9 @@ public class TrabajosService {
         descuento.setIdTipoDescuento(2);
         descuento.setIdTrabajoPresupuestado(saved.getId());
         descuento.setIdPresupuesto(dto.getIdPresupuesto());
+        descuento.setMinutosDescontados(dto.getMinutosDescontados() != null ? dto.getMinutosDescontados() : 0);
+        descuento.setMinutosPorPunto(dto.getMinutosPorPuntos());
+        descuento.setPrecioMinuto(dto.getPrecioMinuto() != null ? dto.getPrecioMinuto() : BigDecimal.ZERO);
         descuento.setMonto(dto.getDescuento());
 
         descuentoRepository.save(descuento);

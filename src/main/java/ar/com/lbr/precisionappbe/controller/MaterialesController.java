@@ -33,10 +33,11 @@ public class MaterialesController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<MaterialDTO>>> getAllMateriales(
             @RequestParam(required = false) String materiales,
-            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(defaultValue = "true") Boolean enabled,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<MaterialDTO> result = materialesService.getAllMateriales(materiales, enabled, page, size);
+        Page<MaterialDTO> result = materialesService.getAllMateriales(materiales, tipo, enabled, page, size);
         return ResponseBuilder.ok("Materiales obtenidos con éxito", result, result.getTotalElements());
     }
 

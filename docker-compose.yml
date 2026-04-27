@@ -1,0 +1,9 @@
+services:
+  db:
+    image: mysql:8.0.43
+    container_name: precision_db
+    environment:
+      MYSQL_ROOT_PASSWORD: "Escaramujo;01"
+      MYSQL_DATABASE: "precision_schema_v2"
+    ports:
+      - "3306:3306"

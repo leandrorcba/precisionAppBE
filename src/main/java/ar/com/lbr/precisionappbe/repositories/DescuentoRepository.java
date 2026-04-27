@@ -6,9 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface DescuentoRepository extends JpaRepository<Descuento, Integer> {
-  //List<Descuento> findByIdPresupuesto(Integer idPresupuesto);
-  
-  List<Descuento> findDescuentoByIdPresupuesto_Id(Integer idPresupuestoId);
+  List<Descuento> findByIdPresupuesto(Integer idPresupuesto);
 
   //List<Pago> findByIdOrigenPagoAndTipoPago_Tipo(Integer idOrigenPago, String tipoPago_Tipo);
 

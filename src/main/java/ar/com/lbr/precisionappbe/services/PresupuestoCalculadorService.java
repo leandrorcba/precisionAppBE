@@ -31,36 +31,37 @@ public class PresupuestoCalculadorService {
 
     public TrabajoPresupuestadoDTO calcularYValidarTrabajo(TrabajoPresupuestadoDTO trabajo, ClienteDTO cliente) {
         VariosDTO config = variosService.getVarios();
-        TrabajoPresupuestadoDTO dto = new TrabajoPresupuestadoDTO();
+
         String tipoCliente = tipoClienteService.getTipoClienteById(cliente.getIdTipoCliente()).getNombreTipo();
 
         // 1. Material (Delegado a materialesService)
-        dto.setPrecioMaterial(obtenerPrecioMaterial(trabajo));
+        trabajo.setPrecioMaterial(obtenerPrecioMaterial(trabajo));
 
         // 2. Precio Minuto
         BigDecimal precioMinuto = calcularPrecioMinuto(cliente, config);
-        dto.setPrecioMinuto(precioMinuto);
+        trabajo.setPrecioMinuto(precioMinuto);
 
 
         // 3. Lógica de Corte (SRP + OCP)
         if (esTrabajoManual(trabajo)) {
             BigDecimal precioCorte = nullToZero(trabajo.getPrecioCorte());
-            dto.setPrecioCorte(nullToZero(precioCorte));
-            dto.setDescuento(calcularDescuento(trabajo, tipoCliente, config, precioCorte));
+            trabajo.setPrecioCorte(nullToZero(precioCorte));
+            trabajo.setDescuento(calcularDescuento(trabajo, tipoCliente, config, precioCorte));
         } else {
             BigDecimal precioBase = precioMinuto.multiply(new BigDecimal(trabajo.getTiempoDeCorte()));
-            dto.setPrecioSinDescuento(precioBase);
+            trabajo.setPrecioSinDescuento(precioBase);
 
             // Buscamos la estrategia que corresponda (Strategy Pattern)
             BigDecimal descuento = calcularDescuento(trabajo, tipoCliente, config, precioBase);
 
-            dto.setDescuento(descuento);
-            dto.setPrecioCorte(precioBase.subtract(descuento));
+            trabajo.setMinutosDescontados(trabajo.getTiempoDeCorte() / config.getMinutosPorPunto());
+            trabajo.setDescuento(descuento);
+            trabajo.setPrecioCorte(precioBase.subtract(descuento));
         }
 
         // 4. Total Final
-        dto.setPrecioTrabajo(calcularTotal(dto, trabajo));
-        return dto;
+        trabajo.setPrecioTrabajo(calcularTotal(trabajo, trabajo));
+        return trabajo;
     }
 
     private BigDecimal calcularDescuento(TrabajoPresupuestadoDTO trabajo, String tipoCliente, VariosDTO config, BigDecimal precioBase) {

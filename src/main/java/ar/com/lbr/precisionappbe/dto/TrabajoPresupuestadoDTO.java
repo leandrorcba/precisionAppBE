@@ -43,6 +43,7 @@ public class TrabajoPresupuestadoDTO {
     private Boolean traeMaterial;
     private BigDecimal precioSinDescuento;
     private Integer minutosPorPuntos;
+    private Integer minutosDescontados;
 
 
     public TrabajoPresupuestadoDTO(TrabajoPresupuestado tp) {

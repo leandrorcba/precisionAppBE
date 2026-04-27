@@ -76,7 +76,7 @@ public class PresupuestoService {
         presupuestoDTOS.forEach(dto -> {
             List<PagoPresupuesto> senias = pagoPresupuestoRepository
                     .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 1);
-            List<Descuento> descuentos = descuentoRepository.findDescuentoByIdPresupuesto_Id(dto.getIdPresupuesto());
+            List<Descuento> descuentos = descuentoRepository.findByIdPresupuesto(dto.getIdPresupuesto());
             List<PagoPresupuesto> pagos = pagoPresupuestoRepository
                     .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 2);
 
