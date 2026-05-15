@@ -1,4 +1,4 @@
-ALTER TABLE precision_schema_v2.materiales
+ALTER TABLE materiales
     ADD COLUMN disabled BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Materiales que estaban antes
