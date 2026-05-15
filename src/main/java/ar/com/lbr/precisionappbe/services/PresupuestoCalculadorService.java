@@ -75,7 +75,9 @@ public class PresupuestoCalculadorService {
 
     // Métodos privados para limpiar el flujo principal (SRP)
     private BigDecimal obtenerPrecioMaterial(TrabajoPresupuestadoDTO t) {
-        if (Boolean.TRUE.equals(t.getTraeMaterial())) return BigDecimal.ZERO;
+        if (Boolean.TRUE.equals(t.getTraeMaterial())) {
+            return BigDecimal.ZERO;
+        }
         return materialesService.calcularPrecio(t.getIdMateriales(), t.getIdSuperficie(), t.getUnidades()).getPrecio();
     }
 

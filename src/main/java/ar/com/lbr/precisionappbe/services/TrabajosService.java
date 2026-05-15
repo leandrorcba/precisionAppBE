@@ -42,7 +42,9 @@ public class TrabajosService {
                            MaterialeRepository materialeRepository,
                            SuperficieRepository superficieRepository,
                            MaquinasRepository maquinasRepository, PresupuestoService presupuestoService,
-                           VariosService variosService, ClienteService clienteService, PresupuestoCalculadorService presupuestoCalculadorService, DescuentoRepository descuentoRepository) {
+                           VariosService variosService, ClienteService clienteService,
+                           PresupuestoCalculadorService presupuestoCalculadorService,
+                           DescuentoRepository descuentoRepository) {
         this.trabajosRepository = trabajosRepository;
         this.presupuestoRepository = presupuestoRepository;
         this.materialeRepository = materialeRepository;
