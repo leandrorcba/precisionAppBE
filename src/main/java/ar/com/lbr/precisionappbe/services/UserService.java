@@ -40,6 +40,7 @@ public class UserService {
                 .username(userDTO.getUsername())
                 .password(passwordEncoder.encode(userDTO.getPassword()))
                 .role(userDTO.getRole())
+                .enabled(true)
                 .build();
         User savedUser = userRepository.save(user);
         return mapToDTO(savedUser);
@@ -54,6 +55,7 @@ public class UserService {
             if (userDTO.getRole() != null) {
                 user.setRole(userDTO.getRole());
             }
+            user.setEnabled(userDTO.isEnabled());
             User updatedUser = userRepository.save(user);
             return mapToDTO(updatedUser);
         }).orElse(null);
@@ -68,7 +70,7 @@ public class UserService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .role(user.getRole())
-                // Intentionally omitted password for security reasons
+                .enabled(user.isEnabled())
                 .build();
     }
 }

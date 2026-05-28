@@ -1,9 +1,14 @@
 package ar.com.lbr.precisionappbe.controller;
 
 import ar.com.lbr.precisionappbe.dto.TrabajoPresupuestadoDTO;
+import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
+import ar.com.lbr.precisionappbe.services.RemitoPdfService;
 import ar.com.lbr.precisionappbe.services.TrabajosService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,9 +26,11 @@ import java.util.List;
 public class TrabajosController {
 
     private final TrabajosService trabajosService;
+    private final RemitoPdfService remitoPdfService;
 
-    public TrabajosController(TrabajosService trabajosService) {
+    public TrabajosController(TrabajosService trabajosService, RemitoPdfService remitoPdfService) {
         this.trabajosService = trabajosService;
+        this.remitoPdfService = remitoPdfService;
     }
 
     @PostMapping
@@ -41,6 +48,14 @@ public class TrabajosController {
         return ResponseBuilder.ok("Seleccionado actualizado con éxito", updated, 0L);
     }
 
+    @PatchMapping("/{idTrabajo}/estado")
+    public ResponseEntity<ApiResponse<TrabajoPresupuestadoDTO>> updateEstado(
+            @PathVariable Integer idTrabajo,
+            @RequestParam("nuevo_estado") EstadoTrabajo nuevoEstado) {
+        TrabajoPresupuestadoDTO updated = trabajosService.updateEstado(idTrabajo, nuevoEstado);
+        return ResponseBuilder.ok("Estado actualizado con éxito", updated, 0L);
+    }
+
     @PatchMapping("/{idPresupuesto}/confirmar_presupuesto")
     public ResponseEntity<ApiResponse<Void>> confirmarPresupuesto(
             @PathVariable Integer idPresupuesto) {
@@ -54,6 +69,16 @@ public class TrabajosController {
         List<TrabajoPresupuestadoDTO> trabajoDTOs = trabajosService.getTrabajosByPresupuesto(idPresupuesto);
 
         return ResponseBuilder.ok("Trabajos obtenidos con éxito", trabajoDTOs, (long) trabajoDTOs.size());
+    }
+
+    @GetMapping("/{idPresupuesto}/remito")
+    public ResponseEntity<byte[]> getRemito(@PathVariable Integer idPresupuesto) {
+        byte[] pdf = remitoPdfService.generateRemito(idPresupuesto);
+        String filename = "remito-" + idPresupuesto + ".pdf";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.attachment().filename(filename).build());
+        return ResponseEntity.ok().headers(headers).body(pdf);
     }
 
 }

@@ -10,18 +10,22 @@ import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
+import ar.com.lbr.precisionappbe.repositories.MaterialRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
+import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,6 +40,9 @@ public class PresupuestoService {
     DescuentoRepository descuentoRepository;
     TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
     ClienteRepository clienteRepository;
+    MaterialRepository materialRepository;
+    VariosRepository variosRepository;
+    EventsService eventsService;
 
     public PresupuestoService(PresupuestoRepository presupuestoRepository,
                               TipoClienteRepository tipoClienteRepository,
@@ -43,7 +50,10 @@ public class PresupuestoService {
                               PagoPresupuestoRepository pagoPresupuestoRepository,
                               DescuentoRepository descuentoRepository,
                               TrabajoPresupuestadoRepository trabajoPresupuestadoRepository,
-                              ClienteRepository clienteRepository
+                              ClienteRepository clienteRepository,
+                              MaterialRepository materialRepository,
+                              VariosRepository variosRepository,
+                              EventsService eventsService
     ) {
         this.presupuestoRepository = presupuestoRepository;
         this.tipoClienteRepository = tipoClienteRepository;
@@ -52,6 +62,9 @@ public class PresupuestoService {
         this.descuentoRepository = descuentoRepository;
         this.trabajoPresupuestadoRepository = trabajoPresupuestadoRepository;
         this.clienteRepository = clienteRepository;
+        this.materialRepository = materialRepository;
+        this.variosRepository = variosRepository;
+        this.eventsService = eventsService;
     }
 
     public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Pageable pageable) {
@@ -197,7 +210,13 @@ public class PresupuestoService {
         Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
                 .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
 
+        BigDecimal precioSinDescuento = trabajoPresupuestadoRepository.findByIdPresupuesto(idPresupuesto).stream()
+                .filter(t -> Boolean.TRUE.equals(t.getSeleccionado()))
+                .map(t -> t.getPrecioTrabajo() != null ? t.getPrecioTrabajo() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         presupuesto.setAprobado(true);
+        presupuesto.setPrecioSinDescuento(precioSinDescuento);
         presupuestoRepository.save(presupuesto);
 
         Map<Integer, Integer> maquinaPorTrabajo = items.stream()
@@ -206,6 +225,33 @@ public class PresupuestoService {
         List<TrabajoPresupuestado> trabajos = trabajoPresupuestadoRepository.findAllById(maquinaPorTrabajo.keySet());
         trabajos.forEach(t -> t.setIdMaquina(maquinaPorTrabajo.get(t.getId())));
         trabajoPresupuestadoRepository.saveAll(trabajos);
+
+        Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + presupuesto.getIdCliente()));
+
+        Varios varios = variosRepository.findFirstByOrderByIdAsc();
+        LocalTime horaInicio = (varios != null && varios.getHoraInicio() != null)
+                ? varios.getHoraInicio() : LocalTime.of(8, 0);
+        LocalTime horaCierre = (varios != null && varios.getHoraCierre() != null)
+                ? varios.getHoraCierre() : LocalTime.of(18, 0);
+
+        for (TrabajoPresupuestado trabajo : trabajos) {
+            String materialNombre = "";
+            if (trabajo.getIdMateriales() != null) {
+                materialNombre = materialRepository.findById(trabajo.getIdMateriales())
+                        .map(m -> m.getMateriales() != null ? m.getMateriales() : "")
+                        .orElse("");
+            }
+            String precioStr = trabajo.getPrecioTrabajo() != null
+                    ? trabajo.getPrecioTrabajo().toPlainString() : "0";
+            String eventName = String.format("%s - %s - %d - %s",
+                    cliente.getNombreCliente(), materialNombre,
+                    trabajo.getTiempoDeCorte(), precioStr);
+
+            eventsService.createEventForTrabajo(
+                    trabajo.getIdMaquina(), idPresupuesto, trabajo.getId(),
+                    eventName, trabajo.getTiempoDeCorte(), horaInicio, horaCierre);
+        }
 
         return PresupuestoDTO.toDTO(presupuesto);
     }

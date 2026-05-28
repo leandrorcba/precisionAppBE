@@ -81,3 +81,47 @@ if (entity == null) return null;
 ./gradlew check    # corre Checkstyle + SpotBugs
 ./gradlew bootRun  # levanta la app (también corre Flyway)
 ```
+
+---
+
+## Seguridad de Dependencias (Supply Chain)
+
+### Regla de antigüedad
+- No instalar ni recomendar dependencias publicadas hace menos de 7 días
+- Verificar fecha en Maven Central antes de agregar nuevas dependencias
+
+### Cómo verificar antigüedad
+```bash
+# Verificar fecha via Maven Central (HEAD request devuelve last-modified)
+curl -I https://repo1.maven.org/maven2/{group/artifact/version}/{artifact}-{version}.pom
+
+# Escanear vulnerabilidades conocidas
+./gradlew dependencyCheckAnalyze
+```
+
+### Lockfile con verificación de hashes
+```groovy
+// build.gradle — activar dependency locking
+dependencyLocking {
+    lockAllConfigurations()
+}
+```
+```bash
+./gradlew dependencies --write-locks   # genera lockfile
+./gradlew build                        # usa lockfile exacto
+```
+
+### Red flags — consultar antes de agregar
+- Dependencia publicada hace menos de 7 días
+- Group ID similar a uno conocido (typosquatting: `org.spring.boot` vs `org.springframework.boot`)
+- Repositorio adicional en `build.gradle` que no sea `mavenCentral()`
+- Dependencia con transferencia de propietario reciente
+
+### Repositorios permitidos
+Solo usar repositorios declarados actualmente:
+```groovy
+repositories {
+    mavenCentral()  // único permitido
+}
+```
+No agregar repositorios externos sin consultar.

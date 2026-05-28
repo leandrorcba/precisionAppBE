@@ -4,6 +4,7 @@ import ar.com.lbr.precisionappbe.dto.ClienteDTO;
 import ar.com.lbr.precisionappbe.dto.TrabajoPresupuestadoDTO;
 import ar.com.lbr.precisionappbe.model.Cliente;
 import ar.com.lbr.precisionappbe.model.Descuento;
+import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.Maquina;
 import ar.com.lbr.precisionappbe.model.Material;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
@@ -114,9 +115,17 @@ public class TrabajosService {
         return TrabajoPresupuestadoDTO.toDTO(trabajosRepository.save(entity));
     }
 
+    public TrabajoPresupuestadoDTO updateEstado(Integer idTrabajo, EstadoTrabajo nuevoEstado) {
+        TrabajoPresupuestado entity = trabajosRepository.findById(idTrabajo)
+                .orElseThrow(() -> new RuntimeException("Trabajo no encontrado: " + idTrabajo));
+        entity.setEstado(nuevoEstado);
+        return TrabajoPresupuestadoDTO.toDTO(trabajosRepository.save(entity));
+    }
+
     public void confirmarPresupuesto(Integer idPresupuesto) {
         Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
                 .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
+        
         presupuesto.setAprobado(true);
         presupuestoRepository.save(presupuesto);
     }

@@ -1,5 +1,6 @@
 package ar.com.lbr.precisionappbe.dto;
 
+import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -44,6 +45,7 @@ public class TrabajoPresupuestadoDTO {
     private BigDecimal precioSinDescuento;
     private Integer minutosPorPuntos;
     private Integer minutosDescontados;
+    private EstadoTrabajo estado;
 
 
     public TrabajoPresupuestadoDTO(TrabajoPresupuestado tp) {
@@ -80,6 +82,7 @@ public class TrabajoPresupuestadoDTO {
         this.traeMaterial = tp.getTraeMaterial();
         this.precioSinDescuento = tp.getPrecioSinDescuento();
         this.minutosPorPuntos = tp.getMinutosPorPunto();
+        this.estado = tp.getEstado();
     }
 
     public static TrabajoPresupuestadoDTO toDTO(TrabajoPresupuestado tp) {

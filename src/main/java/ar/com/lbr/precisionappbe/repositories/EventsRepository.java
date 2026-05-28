@@ -16,4 +16,7 @@ public interface EventsRepository extends JpaRepository<Event, Integer> {
         List<Event> findByFilters(@Param("calendarId") Integer calendarId,
                         @Param("startDate") Instant startDate,
                         @Param("endDate") Instant endDate);
+
+        List<Event> findByIdMaquinaIdAndStartDateGreaterThanEqualOrderByStartDate(
+                        Integer idMaquinaId, Instant from);
 }

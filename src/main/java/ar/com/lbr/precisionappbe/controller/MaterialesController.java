@@ -74,6 +74,13 @@ public class MaterialesController {
         return ResponseBuilder.ok("Material creado con éxito", created, 1L);
     }
 
+    @PutMapping("/precios/{id}")
+    public ResponseEntity<ApiResponse<PrecioMaterialesDTO>> updatePrecioMaterial(@PathVariable Integer id,
+                                                                                 @RequestBody PrecioMaterialDTO dto) {
+        PrecioMaterialesDTO updated = materialesService.updatePrecioMaterial(id, dto);
+        return ResponseBuilder.ok("Precio actualizado con éxito", updated, 1L);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MaterialDTO>> updateMaterial(@PathVariable Integer id,
                                                                    @RequestBody MaterialDTO dto) {

@@ -24,4 +24,10 @@
         <Class name="~.*Service"/>
     </Match>
 
+    <!-- XSS_SERVLET: Falso positivo en LoginRateLimitFilter — string generado por servidor, sin datos de usuario -->
+    <Match>
+        <Bug pattern="XSS_SERVLET"/>
+        <Class name="ar.com.lbr.precisionappbe.security.LoginRateLimitFilter"/>
+    </Match>
+
 </FindBugsFilter>

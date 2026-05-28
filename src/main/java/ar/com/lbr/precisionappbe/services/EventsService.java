@@ -9,15 +9,22 @@ import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class EventsService {
+
+    private static final ZoneId ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
 
     private final EventsRepository eventsRepository;
     private final MaquinasRepository maquinasRepository;
@@ -90,5 +97,81 @@ public class EventsService {
         }
 
         return EventsDTO.toDTO(eventsRepository.save(event));
+    }
+
+    public EventsDTO createEventForTrabajo(Integer idMaquina, Integer idPresupuesto, Integer idTrabajo,
+                                           String eventName, int durationMinutes,
+                                           LocalTime horaInicio, LocalTime horaCierre) {
+        Maquina maquina = maquinasRepository.findById(idMaquina)
+                .orElseThrow(() -> new EntityNotFoundException("Maquina not found: " + idMaquina));
+
+        Instant slotStart = findFirstAvailableSlot(idMaquina, durationMinutes, horaInicio, horaCierre);
+        Instant slotEnd = slotStart.plus(durationMinutes, ChronoUnit.MINUTES);
+
+        String name = eventName != null && eventName.length() > 127 ? eventName.substring(0, 127) : eventName;
+
+        Event event = new Event();
+        event.setIdMaquina(maquina);
+        event.setStartDate(slotStart);
+        event.setEndDate(slotEnd);
+        event.setEventName(name != null ? name : "");
+        event.setIdPresupuesto(idPresupuesto);
+        event.setIdTrabajo(idTrabajo);
+        event.setDuracion(durationMinutes);
+        event.setStatus("PENDIENTE");
+
+        return EventsDTO.toDTO(eventsRepository.save(event));
+    }
+
+    public Instant findFirstAvailableSlot(Integer idMaquina, int durationMinutes,
+                                          LocalTime horaInicio, LocalTime horaCierre) {
+        Instant now = Instant.now();
+        List<Event> events = eventsRepository
+                .findByIdMaquinaIdAndStartDateGreaterThanEqualOrderByStartDate(idMaquina, now);
+
+        ZonedDateTime candidate = nextWorkingSlotStart(now.atZone(ZONE), horaInicio, horaCierre);
+
+        for (Event event : events) {
+            ZonedDateTime eventStart = event.getStartDate().atZone(ZONE);
+            ZonedDateTime slotEnd = candidate.plusMinutes(durationMinutes);
+
+            if (!slotEnd.isAfter(eventStart)) {
+                return candidate.toInstant();
+            }
+
+            ZonedDateTime afterEvent = event.getEndDate().atZone(ZONE);
+            candidate = nextWorkingSlotStart(afterEvent, horaInicio, horaCierre);
+        }
+
+        return candidate.toInstant();
+    }
+
+    private ZonedDateTime nextWorkingSlotStart(ZonedDateTime from, LocalTime horaInicio, LocalTime horaCierre) {
+        ZonedDateTime result = from;
+
+        for (int i = 0; i < 14; i++) {
+            if (result.toLocalTime().compareTo(horaCierre) >= 0) {
+                result = result.toLocalDate().plusDays(1).atTime(horaInicio).atZone(ZONE);
+                continue;
+            }
+
+            DayOfWeek dow = result.getDayOfWeek();
+            if (dow == DayOfWeek.SATURDAY) {
+                result = result.toLocalDate().plusDays(2).atTime(horaInicio).atZone(ZONE);
+                continue;
+            }
+            if (dow == DayOfWeek.SUNDAY) {
+                result = result.toLocalDate().plusDays(1).atTime(horaInicio).atZone(ZONE);
+                continue;
+            }
+
+            if (result.toLocalTime().isBefore(horaInicio)) {
+                result = result.toLocalDate().atTime(horaInicio).atZone(ZONE);
+            }
+
+            return result;
+        }
+
+        return result;
     }
 }

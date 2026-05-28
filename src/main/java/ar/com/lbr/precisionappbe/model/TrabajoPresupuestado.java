@@ -2,6 +2,8 @@ package ar.com.lbr.precisionappbe.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -110,5 +112,9 @@ public class TrabajoPresupuestado {
     @ColumnDefault("5")
     @Column(name = "minutos_por_punto")
     private Integer minutosPorPunto;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", length = 20)
+    private EstadoTrabajo estado;
 
 }

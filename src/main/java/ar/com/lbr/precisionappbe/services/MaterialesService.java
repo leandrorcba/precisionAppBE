@@ -118,6 +118,16 @@ public class MaterialesService {
                 .collect(Collectors.toList());
     }
 
+    public PrecioMaterialesDTO updatePrecioMaterial(Integer id, PrecioMaterialDTO dto) {
+        PrecioMateriale precioMateriale = precioMaterialRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Precio de material no encontrado con id: " + id));
+        precioMateriale.setPrecioMaterial(dto.getPrecio());
+        PrecioMateriale saved = precioMaterialRepository.save(precioMateriale);
+        Material material = materialeRepository.findById(saved.getIdMateriales()).orElse(null);
+        String nombreMaterial = material != null ? material.getMateriales() : null;
+        return PrecioMaterialesDTO.toDTO(saved, nombreMaterial);
+    }
+
     public PrecioMaterialDTO calcularPrecio(Integer idMaterial, Integer idSuperficie, Integer cantidad) {
         BigDecimal precio;
         if (cantidad != null) {

@@ -4,7 +4,19 @@
       "Bash(xargs grep:*)",
       "Bash(xargs -I {} head -30 {})",
       "Read(//mnt/c/Users/LEandro/Documents/development/Migracion_PrecisionApp/**)",
-      "Bash(./gradlew bootRun)"
+      "Bash(./gradlew bootRun)",
+      "Bash(findstr /i \"error\\\\|exception\\\\|failed\\\\|flyway\\\\|migration\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\LEandro\\\\Documents\\\\development\\\\Migracion_PrecisionApp\\\\precisionAppBE\" -Recurse -File)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(./gradlew compileJava)",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\LEandro\\\\Documents\\\\development\\\\Migracion_PrecisionApp\\\\precisionAppBE\\\\build\\\\reports\\\\spotbugs\\\\main.html\" -Raw; \\($content -replace '<[^>]+>',''\\) -replace '\\\\s+',' ' | Select-String -Pattern 'Bug|Mutable|EI_|MS_|OBL|RemitoPdf|Color|static' -SimpleMatch | Select-Object -First 20)",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\LEandro\\\\Documents\\\\development\\\\Migracion_PrecisionApp\\\\precisionAppBE\\\\build\\\\reports\\\\spotbugs\\\\main.html\" -Raw; $text = $content -replace '<[^>]+>',''; $lines = $text -split '\\\\n' | Where-Object { $_.Trim\\(\\) -ne '' }; $lines | Select-Object -First 80)",
+      "Bash(./gradlew check *)",
+      "Bash(./gradlew test *)",
+      "Bash(./gradlew compileJava --daemon)",
+      "Bash(./gradlew compileJava --rerun-tasks --daemon)",
+      "Bash(./gradlew checkstyleMain --daemon)",
+      "Bash(./gradlew checkstyleMain --rerun-tasks --daemon)"
     ]
   }
 }

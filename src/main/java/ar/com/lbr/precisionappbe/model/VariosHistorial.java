@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -70,9 +69,4 @@ public class VariosHistorial {
     @ColumnDefault("5")
     @Column(name = "minutos_por_punto")
     private Integer minutosPorPunto;
-
-    @Size(max = 45)
-    @Column(name = "varios_historialcol", length = 45)
-    private String variosHistorialcol;
-
 }
