@@ -91,6 +91,7 @@ public class TrabajosService {
         entity.setTraeMaterial(dto.getTraeMaterial() != null ? dto.getTraeMaterial() : false);
         entity.setPrecioSinDescuento(dto.getPrecioSinDescuento() != null ? dto.getPrecioSinDescuento() : BigDecimal.ZERO);
         entity.setMinutosPorPunto(dto.getMinutosPorPuntos());
+        entity.setEstado(EstadoTrabajo.PENDIENTE);
 
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
 
