@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "presupuesto", schema = "precision_schema_v2")
+@Table(name = "presupuesto")
 public class Presupuesto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

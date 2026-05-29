@@ -16,7 +16,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "control_puntos", schema = "precision_schema_v2")
+@Table(name = "control_puntos")
 public class ControlPunto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

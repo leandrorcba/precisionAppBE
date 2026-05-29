@@ -36,6 +36,9 @@ public class PresupuestoDTO {
     private List<PagoDTO> pagos;
     private List<PagoDTO> senias;
     private List<DescuentoDTO> descuentos;
+    private Integer trabajosSeleccionados;
+    private Integer trabajosRealizados;
+    private Integer trabajosEntregados;
 
     public PresupuestoDTO(Presupuesto presupuesto) {
 

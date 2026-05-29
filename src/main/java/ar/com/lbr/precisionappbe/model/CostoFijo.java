@@ -17,7 +17,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Entity
-@Table(name = "costo_fijo", schema = "precision_schema_v2")
+@Table(name = "costo_fijo")
 public class CostoFijo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

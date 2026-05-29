@@ -19,18 +19,14 @@ public class VentaDTO {
     private Integer id;
     private LocalDate fechaVenta;
     private LocalTime horaVenta;
-    private String material;
     private Integer idMateriales;
-    private String superficie;
     private BigDecimal precioMaterial;
     private Integer cantidad;
     private BigDecimal precioVenta;
 
     public VentaDTO(Venta v) {
         this.id = v.getId();
-        this.material = v.getMaterial();
         this.idMateriales = v.getIdMateriales() != null ? v.getIdMateriales().getId() : null;
-        this.superficie = v.getSuperficie();
         this.precioMaterial = v.getPrecioMaterial();
         this.cantidad = v.getCantidad();
         this.precioVenta = v.getPrecioVenta();

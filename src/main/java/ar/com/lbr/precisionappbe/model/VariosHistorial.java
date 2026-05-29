@@ -20,7 +20,7 @@ import java.time.LocalTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "varios_historial", schema = "precision_schema_v2")
+@Table(name = "varios_historial")
 public class VariosHistorial {
 
     @Id

@@ -13,7 +13,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Entity
-@Table(name = "cuenta_bancaria", schema = "precision_schema_v2")
+@Table(name = "cuenta_bancaria")
 public class CuentaBancaria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

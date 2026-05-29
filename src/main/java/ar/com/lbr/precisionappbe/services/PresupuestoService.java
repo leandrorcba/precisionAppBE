@@ -23,6 +23,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
+import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -113,6 +116,20 @@ public class PresupuestoService {
             dto.setDescuento(totalDescuento);
             dto.setPrecioCobrado(totalPagos);
             dto.setPrecioSinDescuento(dto.getPrecioSinDescuento());
+
+            List<TrabajoPresupuestado> seleccionados = trabajoPresupuestadoRepository
+                    .findByIdPresupuesto(dto.getIdPresupuesto()).stream()
+                    .filter(t -> Boolean.TRUE.equals(t.getSeleccionado()))
+                    .collect(Collectors.toList());
+            int realizados = (int) seleccionados.stream()
+                    .filter(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()))
+                    .count();
+            int entregados = (int) seleccionados.stream()
+                    .filter(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado()))
+                    .count();
+            dto.setTrabajosSeleccionados(seleccionados.size());
+            dto.setTrabajosRealizados(realizados);
+            dto.setTrabajosEntregados(entregados);
 
             /*
              * dto.setPagos(pagos.stream().map(p -> {

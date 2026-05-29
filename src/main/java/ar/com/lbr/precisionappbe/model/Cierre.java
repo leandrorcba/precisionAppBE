@@ -16,7 +16,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "cierre", schema = "precision_schema_v2")
+@Table(name = "cierre")
 public class Cierre {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

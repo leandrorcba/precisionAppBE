@@ -37,7 +37,6 @@ public class ExtraccionService {
         extraccione.setIdUsuario(dto.getIdUsuario());
         extraccione.setMontoExtraccion(dto.getMontoExtraccion());
         extraccione.setMotivoExtraccion(dto.getMotivoExtraccion());
-        extraccione.setResponsableExtraccion(dto.getResponsableExtraccion());
         extraccione.setFechaExtraccion(dto.getFechaExtraccion() != null ? dto.getFechaExtraccion() : Instant.now());
 
         Extraccione saved = extraccionRepository.save(extraccione);
@@ -51,7 +50,6 @@ public class ExtraccionService {
         extraccione.setIdUsuario(dto.getIdUsuario());
         extraccione.setMontoExtraccion(dto.getMontoExtraccion());
         extraccione.setMotivoExtraccion(dto.getMotivoExtraccion());
-        extraccione.setResponsableExtraccion(dto.getResponsableExtraccion());
         if (dto.getFechaExtraccion() != null) {
             extraccione.setFechaExtraccion(dto.getFechaExtraccion());
         }

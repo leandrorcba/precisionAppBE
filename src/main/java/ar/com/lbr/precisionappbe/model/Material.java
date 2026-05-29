@@ -14,7 +14,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Entity
-@Table(name = "materiales", schema = "precision_schema_v2")
+@Table(name = "materiales")
 public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

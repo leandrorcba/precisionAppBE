@@ -11,7 +11,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Entity
-@Table(name = "tipo_costo_fijo", schema = "precision_schema_v2")
+@Table(name = "tipo_costo_fijo")
 public class TipoCostoFijo {
     @Id
     @Column(name = "id_tipo_costo_fijo", nullable = false)

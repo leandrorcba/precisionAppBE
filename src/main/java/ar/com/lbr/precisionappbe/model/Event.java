@@ -17,7 +17,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "events", schema = "precision_schema_v2")
+@Table(name = "events")
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,9 +47,6 @@ public class Event {
 
     @Column(name = "status")
     private String status;
-
-    @Column(name = "maquina", length = 4)
-    private String maquina;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_maquina", nullable = false)

@@ -147,13 +147,21 @@ public class PagosService {
     // ---------------------------------------------------------------
 
     private TipoPago resolveTipoPago(PagoDTO dto) {
-        return tipoPagoRepository.findById(dto.getTipoPago().getId())
-                .orElseThrow(() -> new EntityNotFoundException("TipoPago no encontrado: " + dto.getTipoPago().getId()));
+        Integer id = dto.getTipoPago() != null ? dto.getTipoPago().getId() : dto.getIdTipoPago();
+        if (id == null) {
+            throw new EntityNotFoundException("TipoPago no especificado");
+        }
+        return tipoPagoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("TipoPago no encontrado: " + id));
     }
 
     private MedioPago resolveMedioPago(PagoDTO dto) {
-        return medioPagoRepository.findById(dto.getMedioPago().getId())
-                .orElseThrow(() -> new EntityNotFoundException("MedioPago no encontrado: " + dto.getMedioPago().getId()));
+        Integer id = dto.getMedioPago() != null ? dto.getMedioPago().getId() : dto.getIdMedioPago();
+        if (id == null) {
+            throw new EntityNotFoundException("MedioPago no especificado");
+        }
+        return medioPagoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("MedioPago no encontrado: " + id));
     }
 
     /** Mapea los campos comunes a ambos tipos de pago. */

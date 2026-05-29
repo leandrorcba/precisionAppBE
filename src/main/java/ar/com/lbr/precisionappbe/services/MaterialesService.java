@@ -79,8 +79,11 @@ public class MaterialesService {
     public MaterialDTO createMaterial(MaterialDTO dto) {
         Material material = new Material();
         material.setMateriales(dto.getMateriales());
-        material.setIsMaterial(dto.getIsMaterial());
-        material.setIsMaterial(dto.getIsGrabado());
+        material.setIsMaterial(dto.getIsMaterial() != null ? dto.getIsMaterial() : false);
+        material.setIsGrabado(dto.getIsGrabado() != null ? dto.getIsGrabado() : false);
+        material.setStock(dto.getStock() != null ? dto.getStock() : java.math.BigDecimal.ZERO);
+        material.setStockMinimo(dto.getStockMinimo() != null ? dto.getStockMinimo() : java.math.BigDecimal.ZERO);
+        material.setDisabled(dto.getDisabled() != null ? dto.getDisabled() : false);
 
         Material saved = materialeRepository.save(material);
         return MaterialDTO.toDTO(saved);
@@ -91,7 +94,11 @@ public class MaterialesService {
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
 
         material.setMateriales(dto.getMateriales());
-        material.setIsMaterial(dto.getIsMaterial());
+        material.setIsMaterial(dto.getIsMaterial() != null ? dto.getIsMaterial() : false);
+        material.setIsGrabado(dto.getIsGrabado() != null ? dto.getIsGrabado() : false);
+        material.setStock(dto.getStock() != null ? dto.getStock() : java.math.BigDecimal.ZERO);
+        material.setStockMinimo(dto.getStockMinimo() != null ? dto.getStockMinimo() : java.math.BigDecimal.ZERO);
+        material.setDisabled(dto.getDisabled() != null ? dto.getDisabled() : false);
 
         Material updated = materialeRepository.save(material);
         return MaterialDTO.toDTO(updated);

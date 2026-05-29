@@ -24,7 +24,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users", schema = "precision_schema_v2")
+@Table(name = "users")
 public class User implements UserDetails {
 
     @Id

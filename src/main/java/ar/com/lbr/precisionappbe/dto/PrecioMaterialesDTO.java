@@ -19,7 +19,6 @@ public class PrecioMaterialesDTO {
     private String nombreMaterial;
     private Short unidades;
     private Integer idSuperficie;
-    private String superficie;
     private BigDecimal precioMaterial;
 
     public PrecioMaterialesDTO(PrecioMateriale entity, String nombreMaterial) {
@@ -28,7 +27,6 @@ public class PrecioMaterialesDTO {
         this.nombreMaterial = nombreMaterial;
         this.unidades = entity.getUnidades();
         this.idSuperficie = entity.getIdSuperficie();
-        this.superficie = entity.getSuperficie();
         this.precioMaterial = entity.getPrecioMaterial();
     }
 

@@ -10,7 +10,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,25 +19,17 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "ventas", schema = "precision_schema_v2")
+@Table(name = "ventas")
 public class Venta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_ventas", nullable = false)
     private Integer id;
 
-    @Size(max = 45)
-    @Column(name = "material", length = 45)
-    private String material;
-
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_materiales", nullable = false)
     private Material idMateriales;
-
-    @Size(max = 45)
-    @Column(name = "superficie", length = 45)
-    private String superficie;
 
     @Column(name = "precio_material", precision = 10, scale = 2)
     private BigDecimal precioMaterial;

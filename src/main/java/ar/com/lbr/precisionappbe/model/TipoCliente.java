@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "tipo_cliente", schema = "precision_schema_v2")
+@Table(name = "tipo_cliente")
 public class TipoCliente {
     @Id
     @Column(name = "id_tipo_cliente", nullable = false)

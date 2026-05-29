@@ -19,6 +19,7 @@ import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -120,7 +121,47 @@ public class TrabajosService {
         TrabajoPresupuestado entity = trabajosRepository.findById(idTrabajo)
                 .orElseThrow(() -> new RuntimeException("Trabajo no encontrado: " + idTrabajo));
         entity.setEstado(nuevoEstado);
-        return TrabajoPresupuestadoDTO.toDTO(trabajosRepository.save(entity));
+        TrabajoPresupuestado saved = trabajosRepository.save(entity);
+
+        if (nuevoEstado == EstadoTrabajo.REALIZADO) {
+            propagarRealizadoAPresupuesto(entity.getIdPresupuesto());
+        }
+        if (nuevoEstado == EstadoTrabajo.ENTREGADO) {
+            propagarEntregadoAPresupuesto(entity.getIdPresupuesto());
+        }
+
+        return TrabajoPresupuestadoDTO.toDTO(saved);
+    }
+
+    private List<TrabajoPresupuestado> getSeleccionados(Integer idPresupuesto) {
+        return trabajosRepository.findByIdPresupuesto(idPresupuesto).stream()
+                .filter(t -> Boolean.TRUE.equals(t.getSeleccionado()))
+                .collect(Collectors.toList());
+    }
+
+    private void propagarRealizadoAPresupuesto(Integer idPresupuesto) {
+        List<TrabajoPresupuestado> seleccionados = getSeleccionados(idPresupuesto);
+        boolean todosRealizados = !seleccionados.isEmpty() &&
+                seleccionados.stream().allMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()));
+        if (todosRealizados) {
+            Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
+                    .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
+            presupuesto.setRealizado(true);
+            presupuesto.setFechaRealizado(LocalDateTime.now());
+            presupuestoRepository.save(presupuesto);
+        }
+    }
+
+    private void propagarEntregadoAPresupuesto(Integer idPresupuesto) {
+        List<TrabajoPresupuestado> seleccionados = getSeleccionados(idPresupuesto);
+        boolean todosEntregados = !seleccionados.isEmpty() &&
+                seleccionados.stream().allMatch(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
+        if (todosEntregados) {
+            Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
+                    .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
+            presupuesto.setEntregado(true);
+            presupuestoRepository.save(presupuesto);
+        }
     }
 
     public void confirmarPresupuesto(Integer idPresupuesto) {

@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Entity
-@Table(name = "costo_fijo_detalle", schema = "precision_schema_v2")
+@Table(name = "costo_fijo_detalle")
 public class CostoFijoDetalle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

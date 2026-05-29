@@ -20,7 +20,9 @@ public class PagoDTO {
     private BigDecimal monto;
     private Instant fechaHora;
     private TipoPagoDTO tipoPago;
+    private Integer idTipoPago;
     private MedioPagoDTO medioPago;
+    private Integer idMedioPago;
     private Integer idTarjeta;
     private Integer idCuentaBancaria;
     private Short cuotas;

@@ -16,7 +16,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "extracciones", schema = "precision_schema_v2")
+@Table(name = "extracciones")
 public class Extraccione {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,9 +31,6 @@ public class Extraccione {
 
     @Column(name = "motivo_extraccion")
     private String motivoExtraccion;
-
-    @Column(name = "responsable_extraccion", length = 100)
-    private String responsableExtraccion;
 
     @ColumnDefault("(UTC_TIMESTAMP())")
     @Column(name = "fecha_extraccion", nullable = false)

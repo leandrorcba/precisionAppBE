@@ -19,7 +19,6 @@ public class ExtraccionDTO {
     private Integer idUsuario;
     private BigDecimal montoExtraccion;
     private String motivoExtraccion;
-    private String responsableExtraccion;
     private Instant fechaExtraccion;
 
     public ExtraccionDTO(Extraccione e) {
@@ -27,7 +26,6 @@ public class ExtraccionDTO {
         this.idUsuario = e.getIdUsuario();
         this.montoExtraccion = e.getMontoExtraccion();
         this.motivoExtraccion = e.getMotivoExtraccion();
-        this.responsableExtraccion = e.getResponsableExtraccion();
         this.fechaExtraccion = e.getFechaExtraccion();
     }
 

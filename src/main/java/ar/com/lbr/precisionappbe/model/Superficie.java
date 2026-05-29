@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "superficies", schema = "precision_schema_v2")
+@Table(name = "superficies")
 public class Superficie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

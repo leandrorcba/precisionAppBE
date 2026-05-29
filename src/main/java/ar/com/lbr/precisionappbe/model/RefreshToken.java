@@ -23,7 +23,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "refresh_tokens", schema = "precision_schema_v2")
+@Table(name = "refresh_tokens")
 public class RefreshToken {
 
     @Id

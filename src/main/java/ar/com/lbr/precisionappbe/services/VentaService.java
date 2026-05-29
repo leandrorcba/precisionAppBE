@@ -64,8 +64,6 @@ public class VentaService {
     }
 
     private void mapDtoToEntity(VentaDTO dto, Venta venta) {
-        venta.setMaterial(dto.getMaterial());
-        venta.setSuperficie(dto.getSuperficie());
         venta.setPrecioMaterial(dto.getPrecioMaterial());
         venta.setCantidad(dto.getCantidad());
         venta.setPrecioVenta(dto.getPrecioVenta());
