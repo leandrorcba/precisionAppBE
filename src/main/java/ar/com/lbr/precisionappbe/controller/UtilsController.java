@@ -1,7 +1,10 @@
 package ar.com.lbr.precisionappbe.controller;
 
+import ar.com.lbr.precisionappbe.dto.CuentaBancariaDTO;
 import ar.com.lbr.precisionappbe.dto.MedioPagoDTO;
+import ar.com.lbr.precisionappbe.dto.MercadoPagoDTO;
 import ar.com.lbr.precisionappbe.dto.SuperficieDTO;
+import ar.com.lbr.precisionappbe.dto.TarjetaDTO;
 import ar.com.lbr.precisionappbe.dto.TipoClienteDTO;
 import ar.com.lbr.precisionappbe.dto.TipoPagoDTO;
 import ar.com.lbr.precisionappbe.model.AnioCierre;
@@ -70,5 +73,23 @@ public class UtilsController {
     public ResponseEntity<ApiResponse<BigDecimal>> getPrecioMinutoEmpresa() {
         BigDecimal precioMinutoEmpresa = utilsService.getPrecioMinutoEmpresa();
         return ResponseBuilder.ok("Listado obtenido con éxito", precioMinutoEmpresa, 0L);
+    }
+
+    @GetMapping("/cuentas-bancarias")
+    public ResponseEntity<ApiResponse<List<CuentaBancariaDTO>>> getCuentasBancarias() {
+        List<CuentaBancariaDTO> cuentas = utilsService.getCuentasBancarias();
+        return ResponseBuilder.ok("Cuentas bancarias obtenidas con éxito", cuentas, (long) cuentas.size());
+    }
+
+    @GetMapping("/tarjetas")
+    public ResponseEntity<ApiResponse<List<TarjetaDTO>>> getTarjetas() {
+        List<TarjetaDTO> tarjetas = utilsService.getTarjetas();
+        return ResponseBuilder.ok("Tarjetas obtenidas con éxito", tarjetas, (long) tarjetas.size());
+    }
+
+    @GetMapping("/cuentas-mp")
+    public ResponseEntity<ApiResponse<List<MercadoPagoDTO>>> getMercadoPagos() {
+        List<MercadoPagoDTO> mps = utilsService.getMercadoPagos();
+        return ResponseBuilder.ok("MercadoPago obtenido con éxito", mps, (long) mps.size());
     }
 }

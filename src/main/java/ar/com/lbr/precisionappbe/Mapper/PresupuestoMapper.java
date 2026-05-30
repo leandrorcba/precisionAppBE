@@ -32,9 +32,7 @@ public class PresupuestoMapper {
         presupuesto.setEntregado(dto.getEntregado());
         presupuesto.setFechaHoraPresupuesto(dto.getFechaHoraPresupuesto());
         presupuesto.setFechaRealizado(dto.getFechaRealizado());
-        presupuesto.setFechaRealizado(dto.getFechaAprobado());
         presupuesto.setFechaCobrado(dto.getFechaCobrado());
-        presupuesto.setFechaRealizado(dto.getFechaEntregado());
         presupuesto.setPuntosCanjeados(0);
 
         return presupuesto;

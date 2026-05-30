@@ -2,6 +2,7 @@ package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.Mapper.PresupuestoMapper;
 import ar.com.lbr.precisionappbe.dto.AprobarPresupuestoDTO;
+import ar.com.lbr.precisionappbe.dto.DescuentoDTO;
 import ar.com.lbr.precisionappbe.dto.PresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.response.PresupuestoResponse;
 import ar.com.lbr.precisionappbe.model.Cliente;
@@ -92,7 +93,9 @@ public class PresupuestoService {
         presupuestoDTOS.forEach(dto -> {
             List<PagoPresupuesto> senias = pagoPresupuestoRepository
                     .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 1);
-            List<Descuento> descuentos = descuentoRepository.findByIdPresupuesto(dto.getIdPresupuesto());
+            List<Descuento> descuentos = descuentoRepository.findByIdPresupuesto(dto.getIdPresupuesto()).stream()
+                    .filter(d -> d.getIdTipoDescuento() != null && d.getIdTipoDescuento() == 1)
+                    .collect(Collectors.toList());
             List<PagoPresupuesto> pagos = pagoPresupuestoRepository
                     .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 2);
 
@@ -116,6 +119,17 @@ public class PresupuestoService {
             dto.setDescuento(totalDescuento);
             dto.setPrecioCobrado(totalPagos);
             dto.setPrecioSinDescuento(dto.getPrecioSinDescuento());
+            dto.setDescuentos(descuentos.stream().map(d -> {
+                DescuentoDTO dDto = new DescuentoDTO();
+                dDto.setIdPresupuesto(d.getIdPresupuesto());
+                dDto.setIdTipoDescuento(d.getIdTipoDescuento());
+                dDto.setMonto(d.getMonto());
+                dDto.setIdTrabajoPresupuestado(d.getIdTrabajoPresupuestado());
+                dDto.setMinutosPorPunto(d.getMinutosPorPunto());
+                dDto.setPrecioMinuto(d.getPrecioMinuto());
+                dDto.setMinutosDescontados(d.getMinutosDescontados());
+                return dDto;
+            }).collect(Collectors.toList()));
 
             List<TrabajoPresupuestado> seleccionados = trabajoPresupuestadoRepository
                     .findByIdPresupuesto(dto.getIdPresupuesto()).stream()

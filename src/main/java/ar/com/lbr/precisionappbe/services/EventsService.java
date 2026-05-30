@@ -2,10 +2,13 @@ package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.dto.EventsDTO;
 import ar.com.lbr.precisionappbe.dto.UpdateEventDTO;
+import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.Event;
 import ar.com.lbr.precisionappbe.model.Maquina;
+import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 import ar.com.lbr.precisionappbe.repositories.EventsRepository;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
+import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -28,10 +31,64 @@ public class EventsService {
 
     private final EventsRepository eventsRepository;
     private final MaquinasRepository maquinasRepository;
+    private final TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
+    private final TrabajosService trabajosService;
 
-    public EventsService(EventsRepository eventsRepository, MaquinasRepository maquinasRepository) {
+    public EventsService(EventsRepository eventsRepository, MaquinasRepository maquinasRepository, TrabajoPresupuestadoRepository trabajoPresupuestadoRepository, @org.springframework.context.annotation.Lazy TrabajosService trabajosService) {
         this.eventsRepository = eventsRepository;
         this.maquinasRepository = maquinasRepository;
+        this.trabajoPresupuestadoRepository = trabajoPresupuestadoRepository;
+        this.trabajosService = trabajosService;
+    }
+
+    private EstadoTrabajo mapStatusToEstado(String status) {
+        if (status == null) {
+            return EstadoTrabajo.PENDIENTE;
+        }
+        String st = status.trim().toLowerCase();
+        if (st.equals("realizado")) {
+            return EstadoTrabajo.REALIZADO;
+        } else if (st.equals("entregado")) {
+            return EstadoTrabajo.ENTREGADO;
+        }
+        return EstadoTrabajo.PENDIENTE;
+    }
+
+    private String mapEstadoToStatus(EstadoTrabajo estado) {
+        if (estado == EstadoTrabajo.PENDIENTE) {
+            return "aprobado";
+        } else if (estado == EstadoTrabajo.REALIZADO) {
+            return "realizado";
+        } else if (estado == EstadoTrabajo.ENTREGADO) {
+            return "entregado";
+        }
+        return "aprobado";
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null) {
+            return "aprobado";
+        }
+        String st = status.trim().toLowerCase();
+        if (st.equals("pendiente")) {
+            return "aprobado";
+        }
+        return st;
+    }
+
+    private EventsDTO toDTO(Event event) {
+        if (event == null) {
+            return null;
+        }
+        EventsDTO dto = EventsDTO.toDTO(event);
+        if (event.getIdTrabajo() != null) {
+            trabajoPresupuestadoRepository.findById(event.getIdTrabajo()).ifPresent(trabajo -> {
+                dto.setStatus(mapEstadoToStatus(trabajo.getEstado()));
+            });
+        } else {
+            dto.setStatus(normalizeStatus(event.getStatus()));
+        }
+        return dto;
     }
 
     public List<EventsDTO> getAllEvents(Integer calendar, String startDateStr, String endDateStr) {
@@ -43,8 +100,42 @@ public class EventsService {
                 ? OffsetDateTime.parse(endDateStr).toInstant()
                 : Instant.now();
 
-        return eventsRepository.findByFilters(calendar, startDate, endDate).stream()
-                .map(EventsDTO::toDTO)
+        List<Event> events = eventsRepository.findByFilters(calendar, startDate, endDate);
+
+        // Gather all job IDs
+        List<Integer> jobIds = events.stream()
+                .map(Event::getIdTrabajo)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // Query them in bulk
+        java.util.Map<Integer, EstadoTrabajo> jobStatusMap = new java.util.HashMap<>();
+        if (!jobIds.isEmpty()) {
+            List<TrabajoPresupuestado> trabajos = trabajoPresupuestadoRepository.findAllById(jobIds);
+            for (TrabajoPresupuestado t : trabajos) {
+                if (t.getEstado() != null) {
+                    jobStatusMap.put(t.getId(), t.getEstado());
+                }
+            }
+        }
+
+        return events.stream()
+                .map(event -> {
+                    EventsDTO dto = EventsDTO.toDTO(event);
+                    if (dto != null) {
+                        if (event.getIdTrabajo() != null) {
+                            EstadoTrabajo estado = jobStatusMap.get(event.getIdTrabajo());
+                            if (estado != null) {
+                                dto.setStatus(mapEstadoToStatus(estado));
+                            } else {
+                                dto.setStatus(normalizeStatus(event.getStatus()));
+                            }
+                        } else {
+                            dto.setStatus(normalizeStatus(event.getStatus()));
+                        }
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -62,7 +153,7 @@ public class EventsService {
         event.setDetails(dto.getDetails());
         event.setDuracion(dto.getDuracion());
 
-        return EventsDTO.toDTO(eventsRepository.save(event));
+        return toDTO(eventsRepository.save(event));
     }
 
     public EventsDTO updateEvent(Integer id, UpdateEventDTO dto) {
@@ -86,6 +177,10 @@ public class EventsService {
         }
         if (dto.getStatus() != null) {
             event.setStatus(dto.getStatus());
+            if (event.getIdTrabajo() != null) {
+                EstadoTrabajo nuevoEstado = mapStatusToEstado(dto.getStatus());
+                trabajosService.updateEstado(event.getIdTrabajo(), nuevoEstado);
+            }
         }
         if (dto.getNotas() != null) {
             event.setNotas(dto.getNotas());
@@ -96,7 +191,7 @@ public class EventsService {
             event.setIdMaquina(maquina);
         }
 
-        return EventsDTO.toDTO(eventsRepository.save(event));
+        return toDTO(eventsRepository.save(event));
     }
 
     public EventsDTO createEventForTrabajo(Integer idMaquina, Integer idPresupuesto, Integer idTrabajo,
@@ -120,7 +215,7 @@ public class EventsService {
         event.setDuracion(durationMinutes);
         event.setStatus("PENDIENTE");
 
-        return EventsDTO.toDTO(eventsRepository.save(event));
+        return toDTO(eventsRepository.save(event));
     }
 
     public Instant findFirstAvailableSlot(Integer idMaquina, int durationMinutes,
@@ -173,5 +268,12 @@ public class EventsService {
         }
 
         return result;
+    }
+
+    public void deleteEvent(Integer id) {
+        if (!eventsRepository.existsById(id)) {
+            throw new EntityNotFoundException("Event not found: " + id);
+        }
+        eventsRepository.deleteById(id);
     }
 }

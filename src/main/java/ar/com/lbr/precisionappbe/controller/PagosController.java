@@ -51,7 +51,13 @@ public class PagosController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PagoDTO>> createPago(@RequestBody PagoDTO dto) {
-        return ResponseBuilder.ok("Pago creado con éxito", pagosService.createPago(dto), 1L);
+        try {
+            return ResponseBuilder.ok("Pago creado con éxito", pagosService.createPago(dto), 1L);
+        } catch (IllegalArgumentException e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (EntityNotFoundException e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
     }
 
     @PutMapping("/{id}")

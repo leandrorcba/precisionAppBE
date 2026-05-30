@@ -23,6 +23,8 @@ public class EventsDTO {
     private String maquina;
     private String status;
     private String tipoDeTrabajo;
+    private Integer idTrabajo;
+    private Integer idPresupuesto;
 
     public EventsDTO(Event event) {
         this.id = event.getId();
@@ -34,6 +36,8 @@ public class EventsDTO {
         this.status = event.getStatus();
         this.tipoDeTrabajo = "Polyfan";
         this.notas = event.getNotas();
+        this.idTrabajo = event.getIdTrabajo();
+        this.idPresupuesto = event.getIdPresupuesto();
     }
 
     public static EventsDTO toDTO(Event event) {

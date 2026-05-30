@@ -49,4 +49,10 @@ public class EventsController {
         EventsDTO updated = eventService.updateEvent(id, dto);
         return ResponseBuilder.ok("Event actualizado con éxito", updated, 1L);
     }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable Integer id) {
+        eventService.deleteEvent(id);
+        return ResponseBuilder.ok("Event eliminado con éxito", null, 0L);
+    }
 }
