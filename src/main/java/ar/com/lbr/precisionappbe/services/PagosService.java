@@ -131,7 +131,9 @@ public class PagosService {
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
                         
                         BigDecimal discountPercentage = BigDecimal.valueOf(varios.getDescuentoEfectivo());
-                        BigDecimal discountAmount = totalPresupuesto.multiply(discountPercentage).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+                        BigDecimal discountAmount = totalPresupuesto
+                                .multiply(discountPercentage)
+                                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
                         
                         BigDecimal expectedNetRemaining = totalPresupuesto.subtract(totalAbonadoPrevio).subtract(discountAmount);
                         

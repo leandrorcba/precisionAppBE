@@ -42,6 +42,9 @@ public class Venta {
     @Column(name = "precio_venta", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioVenta;
 
+    @Column(name = "superficie", length = 45)
+    private String superficie;
+
     @Column(name = "fecha_hora_venta")
     private Instant fechaHoraVenta;
 

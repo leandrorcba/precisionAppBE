@@ -34,7 +34,10 @@ public class EventsService {
     private final TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
     private final TrabajosService trabajosService;
 
-    public EventsService(EventsRepository eventsRepository, MaquinasRepository maquinasRepository, TrabajoPresupuestadoRepository trabajoPresupuestadoRepository, @org.springframework.context.annotation.Lazy TrabajosService trabajosService) {
+    public EventsService(EventsRepository eventsRepository,
+                         MaquinasRepository maquinasRepository,
+                         TrabajoPresupuestadoRepository trabajoPresupuestadoRepository,
+                         @org.springframework.context.annotation.Lazy TrabajosService trabajosService) {
         this.eventsRepository = eventsRepository;
         this.maquinasRepository = maquinasRepository;
         this.trabajoPresupuestadoRepository = trabajoPresupuestadoRepository;

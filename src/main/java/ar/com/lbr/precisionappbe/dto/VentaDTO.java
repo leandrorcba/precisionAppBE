@@ -23,6 +23,9 @@ public class VentaDTO {
     private BigDecimal precioMaterial;
     private Integer cantidad;
     private BigDecimal precioVenta;
+    private String material;
+    private String superficie;
+    private BigDecimal montoAbonado;
 
     public VentaDTO(Venta v) {
         this.id = v.getId();
@@ -30,6 +33,14 @@ public class VentaDTO {
         this.precioMaterial = v.getPrecioMaterial();
         this.cantidad = v.getCantidad();
         this.precioVenta = v.getPrecioVenta();
+        this.material = v.getIdMateriales() != null ? v.getIdMateriales().getMateriales() : null;
+        this.superficie = v.getSuperficie();
+        this.montoAbonado = BigDecimal.ZERO;
+        if (v.getFechaHoraVenta() != null) {
+            java.time.ZonedDateTime zdt = v.getFechaHoraVenta().atZone(java.time.ZoneId.of("America/Argentina/Buenos_Aires"));
+            this.fechaVenta = zdt.toLocalDate();
+            this.horaVenta = zdt.toLocalTime();
+        }
     }
 
     public static VentaDTO toDTO(Venta v) {
