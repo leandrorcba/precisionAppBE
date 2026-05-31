@@ -43,6 +43,7 @@ public class PagosService {
     private final PresupuestoRepository presupuestoRepository;
     private final VariosRepository variosRepository;
     private final DescuentoRepository descuentoRepository;
+    private final PresupuestoService presupuestoService;
 
     public PagosService(PagoPresupuestoRepository pagoPresupuestoRepository,
                         PagoVentaRepository pagoVentaRepository,
@@ -51,7 +52,8 @@ public class PagosService {
                         VentaRepository ventaRepository,
                         PresupuestoRepository presupuestoRepository,
                         VariosRepository variosRepository,
-                        DescuentoRepository descuentoRepository) {
+                        DescuentoRepository descuentoRepository,
+                        PresupuestoService presupuestoService) {
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.pagoVentaRepository = pagoVentaRepository;
         this.tipoPagoRepository = tipoPagoRepository;
@@ -60,6 +62,7 @@ public class PagosService {
         this.presupuestoRepository = presupuestoRepository;
         this.variosRepository = variosRepository;
         this.descuentoRepository = descuentoRepository;
+        this.presupuestoService = presupuestoService;
     }
 
     // ---------------------------------------------------------------
@@ -267,6 +270,7 @@ public class PagosService {
             presupuesto.setFechaCobrado(null);
         }
         presupuestoRepository.save(presupuesto);
+        presupuestoService.actualizarPdfFisico(idPresupuesto);
     }
 
     // ---------------------------------------------------------------

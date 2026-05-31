@@ -185,6 +185,38 @@ public class FolderService {
         }
     }
 
+    public void guardarPdfEnCarpeta(String nombreCliente, Integer idPresupuesto, byte[] pdfBytes) {
+        if (nombreCliente == null || nombreCliente.trim().isEmpty() || idPresupuesto == null || pdfBytes == null) {
+            return;
+        }
+
+        Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
+        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+            log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema. No se puede guardar el PDF.");
+            return;
+        }
+
+        String rootPath = varios.getDirectorioRaizCarpetas().trim();
+        String sanitizedClientName = sanitizeFolderName(nombreCliente);
+        String budgetFolderName = String.valueOf(idPresupuesto);
+
+        try {
+            File rootDir = new File(rootPath);
+            File clientDir = new File(rootDir, sanitizedClientName);
+            File budgetDir = new File(clientDir, budgetFolderName);
+            
+            if (!budgetDir.exists()) {
+                budgetDir.mkdirs();
+            }
+
+            File pdfFile = new File(budgetDir, "remito-" + idPresupuesto + ".pdf");
+            java.nio.file.Files.write(pdfFile.toPath(), pdfBytes);
+            log.info("PDF del remito guardado/actualizado en: {}", pdfFile.getAbsolutePath());
+        } catch (Exception e) {
+            log.error("Error al guardar el PDF del remito en la carpeta para el presupuesto {}", idPresupuesto, e);
+        }
+    }
+
 
 
     public static String sanitizeFolderName(String name) {

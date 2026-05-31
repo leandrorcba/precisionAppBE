@@ -48,6 +48,7 @@ public class PresupuestoService {
     VariosRepository variosRepository;
     EventsService eventsService;
     FolderService folderService;
+    RemitoPdfService remitoPdfService;
 
     public PresupuestoService(PresupuestoRepository presupuestoRepository,
                               TipoClienteRepository tipoClienteRepository,
@@ -59,7 +60,8 @@ public class PresupuestoService {
                               MaterialRepository materialRepository,
                               VariosRepository variosRepository,
                               EventsService eventsService,
-                              FolderService folderService
+                              FolderService folderService,
+                              RemitoPdfService remitoPdfService
     ) {
         this.presupuestoRepository = presupuestoRepository;
         this.tipoClienteRepository = tipoClienteRepository;
@@ -72,6 +74,7 @@ public class PresupuestoService {
         this.variosRepository = variosRepository;
         this.eventsService = eventsService;
         this.folderService = folderService;
+        this.remitoPdfService = remitoPdfService;
     }
 
     public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Pageable pageable) {
@@ -236,6 +239,7 @@ public class PresupuestoService {
         }
 
         dto.setIdCliente(presupuesto.getId());
+        actualizarPdfFisico(presupuesto.getId());
 
         return dto;
     }
@@ -247,6 +251,7 @@ public class PresupuestoService {
         Presupuesto presupuesto = presupuestoRepository.save(presupuestoEntity);
 
         dto.setIdCliente(presupuesto.getId());
+        actualizarPdfFisico(presupuesto.getId());
 
         return dto;
     }
@@ -298,6 +303,8 @@ public class PresupuestoService {
                     eventName, trabajo.getTiempoDeCorte(), horaInicio, horaCierre);
         }
 
+        actualizarPdfFisico(idPresupuesto);
+
         return PresupuestoDTO.toDTO(presupuesto);
     }
 
@@ -320,6 +327,20 @@ public class PresupuestoService {
         Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + presupuesto.getIdCliente()));
         return cliente;
+    }
+
+    public void actualizarPdfFisico(Integer idPresupuesto) {
+        try {
+            Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto).orElse(null);
+            if (presupuesto == null) return;
+            Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente()).orElse(null);
+            if (cliente == null) return;
+
+            byte[] pdfBytes = remitoPdfService.generateRemito(idPresupuesto);
+            folderService.guardarPdfEnCarpeta(cliente.getNombreCliente(), idPresupuesto, pdfBytes);
+        } catch (Exception e) {
+            System.err.println("Error al actualizar PDF físico para presupuesto " + idPresupuesto + ": " + e.getMessage());
+        }
     }
 
     /*

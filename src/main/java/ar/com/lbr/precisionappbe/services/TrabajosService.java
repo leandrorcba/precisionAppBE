@@ -114,6 +114,8 @@ public class TrabajosService {
             folderService.crearCarpetaTrabajo(cliente.getNombreCliente(), dto.getIdPresupuesto(), saved.getId());
         }
 
+        presupuestoService.actualizarPdfFisico(dto.getIdPresupuesto());
+
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
@@ -121,7 +123,9 @@ public class TrabajosService {
         TrabajoPresupuestado entity = trabajosRepository.findById(idTrabajo)
                 .orElseThrow(() -> new RuntimeException("Trabajo no encontrado: " + idTrabajo));
         entity.setSeleccionado(newValue);
-        return TrabajoPresupuestadoDTO.toDTO(trabajosRepository.save(entity));
+        TrabajoPresupuestado saved = trabajosRepository.save(entity);
+        presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
+        return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
     public TrabajoPresupuestadoDTO updateEstado(Integer idTrabajo, EstadoTrabajo nuevoEstado) {
@@ -136,6 +140,8 @@ public class TrabajosService {
         if (nuevoEstado == EstadoTrabajo.ENTREGADO) {
             propagarEntregadoAPresupuesto(entity.getIdPresupuesto());
         }
+
+        presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
 
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
