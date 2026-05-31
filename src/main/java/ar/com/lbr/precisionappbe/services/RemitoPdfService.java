@@ -4,10 +4,14 @@ import ar.com.lbr.precisionappbe.model.Cliente;
 import ar.com.lbr.precisionappbe.model.Material;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
+import ar.com.lbr.precisionappbe.model.Descuento;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.MaterialRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
+import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
+import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
@@ -29,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RemitoPdfService {
@@ -44,15 +49,21 @@ public class RemitoPdfService {
     private final ClienteRepository clienteRepository;
     private final TrabajoPresupuestadoRepository trabajoRepository;
     private final MaterialRepository materialRepository;
+    private final PagoPresupuestoRepository pagoPresupuestoRepository;
+    private final DescuentoRepository descuentoRepository;
 
     public RemitoPdfService(PresupuestoRepository presupuestoRepository,
             ClienteRepository clienteRepository,
             TrabajoPresupuestadoRepository trabajoRepository,
-            MaterialRepository materialRepository) {
+            MaterialRepository materialRepository,
+            PagoPresupuestoRepository pagoPresupuestoRepository,
+            DescuentoRepository descuentoRepository) {
         this.presupuestoRepository = presupuestoRepository;
         this.clienteRepository = clienteRepository;
         this.trabajoRepository = trabajoRepository;
         this.materialRepository = materialRepository;
+        this.pagoPresupuestoRepository = pagoPresupuestoRepository;
+        this.descuentoRepository = descuentoRepository;
     }
 
     public byte[] generateRemito(Integer idPresupuesto) {
@@ -68,8 +79,12 @@ public class RemitoPdfService {
             PdfWriter.getInstance(doc, baos);
             doc.open();
             addHeader(doc, presupuesto);
+            doc.add(new Paragraph("\n"));
             addClientData(doc, cliente);
+            doc.add(new Paragraph("\n"));
             addTrabajosTable(doc, trabajos);
+            addBudgetFinancials(doc, presupuesto);
+            doc.add(new Paragraph("\n"));
             addFooter(doc);
         } catch (DocumentException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error generando PDF");
@@ -161,11 +176,14 @@ public class RemitoPdfService {
         Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
         Font cellFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
 
-        PdfPTable table = new PdfPTable(7);
+        // PdfPTable table = new PdfPTable(7);
+        // table.setWidths(new float[]{8f, 15f, 20f, 16f, 13f, 15f, 13f});
+        PdfPTable table = new PdfPTable(6);
         table.setWidthPercentage(100);
-        table.setWidths(new float[]{8f, 15f, 18f, 13f, 18f, 14f, 14f});
+        table.setWidths(new float[]{8f, 15f, 20f, 29f, 15f, 13f});
 
-        String[] headers = {"Nro", "Tipo", "Precio Sin Desc.", "Descuento", "Material", "Seña", "Pendiente"};
+        // String[] headers = {"Nro", "Tipo", "Material", "Precio Sin Desc.", "Descuento", "Precio Trabajo", "Estado"};
+        String[] headers = {"Nro", "Tipo", "Material", "Nota", "Precio Trabajo", "Estado"};
         for (String h : headers) {
             PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -176,20 +194,113 @@ public class RemitoPdfService {
         }
 
         for (TrabajoPresupuestado t : trabajos) {
-            BigDecimal sinDesc = nvl(t.getPrecioSinDescuento());
-            BigDecimal descuento = nvl(t.getDescuento());
-            BigDecimal pendiente = sinDesc.subtract(descuento);
+            // BigDecimal sinDesc = nvl(t.getPrecioSinDescuento());
+            // BigDecimal descuento = nvl(t.getDescuento());
+            BigDecimal precioTrabajo = nvl(t.getPrecioTrabajo());
+
+            String estadoText = "-";
+            if (t.getEstado() != null) {
+                switch (t.getEstado()) {
+                    case PENDIENTE: estadoText = "Pendiente"; break;
+                    case REALIZADO: estadoText = "Realizado"; break;
+                    case ENTREGADO: estadoText = "Entregado"; break;
+                }
+            }
 
             dataCell(table, String.valueOf(t.getId()), cellFont, Element.ALIGN_CENTER);
             dataCell(table, derivarTipo(t), cellFont, Element.ALIGN_LEFT);
-            dataCell(table, formatMoney(sinDesc), cellFont, Element.ALIGN_RIGHT);
-            dataCell(table, formatMoney(descuento), cellFont, Element.ALIGN_RIGHT);
             dataCell(table, resolverMaterial(t.getIdMateriales()), cellFont, Element.ALIGN_LEFT);
-            dataCell(table, formatMoney(BigDecimal.ZERO), cellFont, Element.ALIGN_RIGHT);
-            dataCell(table, formatMoney(pendiente), cellFont, Element.ALIGN_RIGHT);
+            // dataCell(table, formatMoney(sinDesc), cellFont, Element.ALIGN_RIGHT);
+            // dataCell(table, formatMoney(descuento), cellFont, Element.ALIGN_RIGHT);
+            dataCell(table, nullSafe(t.getNotas()), cellFont, Element.ALIGN_LEFT);
+            dataCell(table, formatMoney(precioTrabajo), cellFont, Element.ALIGN_RIGHT);
+            dataCell(table, estadoText, cellFont, Element.ALIGN_CENTER);
         }
 
         doc.add(table);
+    }
+
+    private void addBudgetFinancials(Document doc, Presupuesto presupuesto) throws DocumentException {
+        List<PagoPresupuesto> senias = pagoPresupuestoRepository
+                .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(presupuesto.getId(), 1);
+        List<Descuento> descuentos = descuentoRepository.findByIdPresupuesto(presupuesto.getId()).stream()
+                .filter(d -> d.getIdTipoDescuento() != null && d.getIdTipoDescuento() == 1)
+                .collect(Collectors.toList());
+        List<PagoPresupuesto> pagos = pagoPresupuestoRepository
+                .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(presupuesto.getId(), 2);
+
+        BigDecimal totalSenia = senias.stream()
+                .map(PagoPresupuesto::getMonto)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalDescuento = descuentos.stream()
+                .map(Descuento::getMonto)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalPagos = pagos.stream()
+                .map(PagoPresupuesto::getMonto)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalPresupuesto = presupuesto.getPrecioSinDescuento() != null
+                ? presupuesto.getPrecioSinDescuento() : BigDecimal.ZERO;
+
+        BigDecimal saldoPendiente = totalPresupuesto
+                .subtract(totalSenia)
+                .subtract(totalDescuento)
+                .subtract(totalPagos);
+
+        Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+        Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
+        Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+
+        doc.add(new Paragraph("\n"));
+
+        PdfPTable table = new PdfPTable(2);
+        table.setWidthPercentage(45);
+        table.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        table.setWidths(new float[]{60f, 40f});
+
+        addFinancialRow(table, "Total Presupuesto:", formatMoney(totalPresupuesto), labelFont, valueFont);
+        if (totalSenia.compareTo(BigDecimal.ZERO) > 0) {
+            addFinancialRow(table, "Seña Abonada:", formatMoney(totalSenia), labelFont, valueFont);
+        }
+        if (totalDescuento.compareTo(BigDecimal.ZERO) > 0) {
+            addFinancialRow(table, "Descuento Efectivo:", formatMoney(totalDescuento), labelFont, valueFont);
+        }
+        if (totalPagos.compareTo(BigDecimal.ZERO) > 0) {
+            addFinancialRow(table, "Pagos Registrados:", formatMoney(totalPagos), labelFont, valueFont);
+        }
+
+        PdfPCell pendingLabel = new PdfPCell(new Phrase("Saldo Pendiente:", totalFont));
+        pendingLabel.setBorder(Rectangle.BOX);
+        pendingLabel.setPadding(5);
+        pendingLabel.setBackgroundColor(HEADER_BG);
+        table.addCell(pendingLabel);
+
+        PdfPCell pendingValue = new PdfPCell(new Phrase(formatMoney(saldoPendiente), totalFont));
+        pendingValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        pendingValue.setBorder(Rectangle.BOX);
+        pendingValue.setPadding(5);
+        pendingValue.setBackgroundColor(HEADER_BG);
+        table.addCell(pendingValue);
+
+        doc.add(table);
+    }
+
+    private void addFinancialRow(PdfPTable table, String label, String value, Font labelFont, Font valueFont) {
+        PdfPCell labelCell = new PdfPCell(new Phrase(label, labelFont));
+        labelCell.setBorder(Rectangle.BOX);
+        labelCell.setPadding(4);
+        table.addCell(labelCell);
+
+        PdfPCell valueCell = new PdfPCell(new Phrase(value, valueFont));
+        valueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        valueCell.setBorder(Rectangle.BOX);
+        valueCell.setPadding(4);
+        table.addCell(valueCell);
     }
 
     private void dataCell(PdfPTable table, String value, Font font, int alignment) {
