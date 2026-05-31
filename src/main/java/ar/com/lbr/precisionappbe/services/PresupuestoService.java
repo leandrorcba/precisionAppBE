@@ -229,6 +229,12 @@ public class PresupuestoService {
 
         Presupuesto presupuesto = presupuestoRepository.save(presupuestoEntity);
 
+        // Crear carpeta física para el presupuesto dentro de la carpeta del cliente
+        Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente()).orElse(null);
+        if (cliente != null) {
+            folderService.crearCarpetaPresupuesto(cliente.getNombreCliente(), presupuesto.getId());
+        }
+
         dto.setIdCliente(presupuesto.getId());
 
         return dto;
@@ -267,6 +273,11 @@ public class PresupuestoService {
 
         Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + presupuesto.getIdCliente()));
+
+        // Crear carpeta física para cada trabajo aprobado
+        for (TrabajoPresupuestado trabajo : trabajos) {
+            folderService.crearCarpetaTrabajo(cliente.getNombreCliente(), idPresupuesto, trabajo.getId());
+        }
 
         Varios varios = variosRepository.findFirstByOrderByIdAsc();
         LocalTime horaInicio = (varios != null && varios.getHoraInicio() != null)

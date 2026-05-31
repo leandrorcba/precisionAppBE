@@ -55,6 +55,94 @@ public class FolderService {
         }
     }
 
+    public void crearCarpetaPresupuesto(String nombreCliente, Integer idPresupuesto) {
+        if (nombreCliente == null || nombreCliente.trim().isEmpty() || idPresupuesto == null) {
+            return;
+        }
+
+        Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
+        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+            log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema.");
+            return;
+        }
+
+        String rootPath = varios.getDirectorioRaizCarpetas().trim();
+        String sanitizedClientName = sanitizeFolderName(nombreCliente);
+        String budgetFolderName = String.valueOf(idPresupuesto);
+
+        try {
+            File rootDir = new File(rootPath);
+            if (!rootDir.exists()) {
+                rootDir.mkdirs();
+            }
+
+            File clientDir = new File(rootDir, sanitizedClientName);
+            if (!clientDir.exists()) {
+                clientDir.mkdir();
+            }
+
+            File budgetDir = new File(clientDir, budgetFolderName);
+            if (!budgetDir.exists()) {
+                boolean created = budgetDir.mkdir();
+                if (created) {
+                    log.info("Carpeta del presupuesto creada: {}", budgetDir.getAbsolutePath());
+                } else {
+                    log.error("No se pudo crear la carpeta del presupuesto: {}", budgetDir.getAbsolutePath());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error al crear la carpeta fisica del presupuesto {} para el cliente {}", idPresupuesto, nombreCliente, e);
+        }
+    }
+
+    public void crearCarpetaTrabajo(String nombreCliente, Integer idPresupuesto, Integer idTrabajo) {
+        if (nombreCliente == null || nombreCliente.trim().isEmpty() || idPresupuesto == null || idTrabajo == null) {
+            return;
+        }
+
+        Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
+        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+            log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema.");
+            return;
+        }
+
+        String rootPath = varios.getDirectorioRaizCarpetas().trim();
+        String sanitizedClientName = sanitizeFolderName(nombreCliente);
+        String budgetFolderName = String.valueOf(idPresupuesto);
+        String trabajoFolderName = String.valueOf(idTrabajo);
+
+        try {
+            File rootDir = new File(rootPath);
+            if (!rootDir.exists()) {
+                rootDir.mkdirs();
+            }
+
+            File clientDir = new File(rootDir, sanitizedClientName);
+            if (!clientDir.exists()) {
+                clientDir.mkdir();
+            }
+
+            File budgetDir = new File(clientDir, budgetFolderName);
+            if (!budgetDir.exists()) {
+                budgetDir.mkdir();
+            }
+
+            File trabajoDir = new File(budgetDir, trabajoFolderName);
+            if (!trabajoDir.exists()) {
+                boolean created = trabajoDir.mkdir();
+                if (created) {
+                    log.info("Carpeta del trabajo creada: {}", trabajoDir.getAbsolutePath());
+                } else {
+                    log.error("No se pudo crear la carpeta del trabajo: {}", trabajoDir.getAbsolutePath());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error al crear la carpeta fisica del trabajo {} para el presupuesto {} del cliente {}", 
+                    idTrabajo, idPresupuesto, nombreCliente, e);
+        }
+    }
+
+
     public static String sanitizeFolderName(String name) {
         if (name == null) {
             return "";
