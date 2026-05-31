@@ -57,4 +57,7 @@ public class Varios {
     @Column(name = "directorio_raiz_carpetas", length = 255)
     private String directorioRaizCarpetas;
 
+    @Column(name = "permitir_trabajos_fds", nullable = false)
+    private Boolean permitirTrabajosFds = false;
+
 }

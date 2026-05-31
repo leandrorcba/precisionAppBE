@@ -24,6 +24,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import ar.com.lbr.precisionappbe.model.Varios;
+import ar.com.lbr.precisionappbe.repositories.VariosRepository;
+
 @Service
 public class EventsService {
 
@@ -33,15 +36,18 @@ public class EventsService {
     private final MaquinasRepository maquinasRepository;
     private final TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
     private final TrabajosService trabajosService;
+    private final VariosRepository variosRepository;
 
     public EventsService(EventsRepository eventsRepository,
                          MaquinasRepository maquinasRepository,
                          TrabajoPresupuestadoRepository trabajoPresupuestadoRepository,
-                         @org.springframework.context.annotation.Lazy TrabajosService trabajosService) {
+                         @org.springframework.context.annotation.Lazy TrabajosService trabajosService,
+                         VariosRepository variosRepository) {
         this.eventsRepository = eventsRepository;
         this.maquinasRepository = maquinasRepository;
         this.trabajoPresupuestadoRepository = trabajoPresupuestadoRepository;
         this.trabajosService = trabajosService;
+        this.variosRepository = variosRepository;
     }
 
     private EstadoTrabajo mapStatusToEstado(String status) {
@@ -203,7 +209,15 @@ public class EventsService {
         Maquina maquina = maquinasRepository.findById(idMaquina)
                 .orElseThrow(() -> new EntityNotFoundException("Maquina not found: " + idMaquina));
 
-        Instant slotStart = findFirstAvailableSlot(idMaquina, durationMinutes, horaInicio, horaCierre);
+        Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
+        Boolean permitirFds = (varios != null && varios.getPermitirTrabajosFds() != null) ? varios.getPermitirTrabajosFds() : false;
+        LocalTime horaInicioFds = (varios != null && varios.getHoraInicioFds() != null) ? varios.getHoraInicioFds() : LocalTime.of(9, 0);
+        LocalTime horaCierreFds = (varios != null && varios.getHoraCierreFds() != null) ? varios.getHoraCierreFds() : LocalTime.of(13, 0);
+
+        LocalTime hInicio = (horaInicio != null) ? horaInicio : ((varios != null && varios.getHoraInicio() != null) ? varios.getHoraInicio() : LocalTime.of(8, 0));
+        LocalTime hCierre = (horaCierre != null) ? horaCierre : ((varios != null && varios.getHoraCierre() != null) ? varios.getHoraCierre() : LocalTime.of(18, 0));
+
+        Instant slotStart = findFirstAvailableSlot(idMaquina, durationMinutes, hInicio, hCierre, permitirFds, horaInicioFds, horaCierreFds);
         Instant slotEnd = slotStart.plus(durationMinutes, ChronoUnit.MINUTES);
 
         String name = eventName != null && eventName.length() > 127 ? eventName.substring(0, 127) : eventName;
@@ -222,12 +236,13 @@ public class EventsService {
     }
 
     public Instant findFirstAvailableSlot(Integer idMaquina, int durationMinutes,
-                                          LocalTime horaInicio, LocalTime horaCierre) {
+                                          LocalTime horaInicio, LocalTime horaCierre,
+                                          Boolean permitirTrabajosFds, LocalTime horaInicioFds, LocalTime horaCierreFds) {
         Instant now = Instant.now();
         List<Event> events = eventsRepository
                 .findByIdMaquinaIdAndStartDateGreaterThanEqualOrderByStartDate(idMaquina, now);
 
-        ZonedDateTime candidate = nextWorkingSlotStart(now.atZone(ZONE), horaInicio, horaCierre);
+        ZonedDateTime candidate = nextWorkingSlotStart(now.atZone(ZONE), horaInicio, horaCierre, permitirTrabajosFds, horaInicioFds, horaCierreFds);
 
         for (Event event : events) {
             ZonedDateTime eventStart = event.getStartDate().atZone(ZONE);
@@ -238,33 +253,42 @@ public class EventsService {
             }
 
             ZonedDateTime afterEvent = event.getEndDate().atZone(ZONE);
-            candidate = nextWorkingSlotStart(afterEvent, horaInicio, horaCierre);
+            candidate = nextWorkingSlotStart(afterEvent, horaInicio, horaCierre, permitirTrabajosFds, horaInicioFds, horaCierreFds);
         }
 
         return candidate.toInstant();
     }
 
-    private ZonedDateTime nextWorkingSlotStart(ZonedDateTime from, LocalTime horaInicio, LocalTime horaCierre) {
+    private ZonedDateTime nextWorkingSlotStart(ZonedDateTime from, LocalTime horaInicio, LocalTime horaCierre,
+                                               Boolean permitirTrabajosFds, LocalTime horaInicioFds, LocalTime horaCierreFds) {
         ZonedDateTime result = from;
 
         for (int i = 0; i < 14; i++) {
-            if (result.toLocalTime().compareTo(horaCierre) >= 0) {
-                result = result.toLocalDate().plusDays(1).atTime(horaInicio).atZone(ZONE);
-                continue;
-            }
-
             DayOfWeek dow = result.getDayOfWeek();
-            if (dow == DayOfWeek.SATURDAY) {
-                result = result.toLocalDate().plusDays(2).atTime(horaInicio).atZone(ZONE);
-                continue;
-            }
-            if (dow == DayOfWeek.SUNDAY) {
-                result = result.toLocalDate().plusDays(1).atTime(horaInicio).atZone(ZONE);
+            boolean isWeekend = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
+
+            LocalTime currentInicio = (isWeekend && Boolean.TRUE.equals(permitirTrabajosFds)) ? horaInicioFds : horaInicio;
+            LocalTime currentCierre = (isWeekend && Boolean.TRUE.equals(permitirTrabajosFds)) ? horaCierreFds : horaCierre;
+
+            if (currentInicio == null) currentInicio = LocalTime.of(8, 0);
+            if (currentCierre == null) currentCierre = LocalTime.of(18, 0);
+
+            if (result.toLocalTime().compareTo(currentCierre) >= 0) {
+                result = result.toLocalDate().plusDays(1).atTime(currentInicio).atZone(ZONE);
                 continue;
             }
 
-            if (result.toLocalTime().isBefore(horaInicio)) {
-                result = result.toLocalDate().atTime(horaInicio).atZone(ZONE);
+            if (isWeekend && !Boolean.TRUE.equals(permitirTrabajosFds)) {
+                if (dow == DayOfWeek.SATURDAY) {
+                    result = result.toLocalDate().plusDays(2).atTime(horaInicio).atZone(ZONE);
+                } else {
+                    result = result.toLocalDate().plusDays(1).atTime(horaInicio).atZone(ZONE);
+                }
+                continue;
+            }
+
+            if (result.toLocalTime().isBefore(currentInicio)) {
+                result = result.toLocalDate().atTime(currentInicio).atZone(ZONE);
             }
 
             return result;

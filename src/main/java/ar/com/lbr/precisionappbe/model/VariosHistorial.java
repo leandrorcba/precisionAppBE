@@ -69,4 +69,7 @@ public class VariosHistorial {
     @ColumnDefault("5")
     @Column(name = "minutos_por_punto")
     private Integer minutosPorPunto;
+
+    @Column(name = "permitir_trabajos_fds")
+    private Boolean permitirTrabajosFds;
 }
