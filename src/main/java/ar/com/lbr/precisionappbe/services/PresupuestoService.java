@@ -274,11 +274,6 @@ public class PresupuestoService {
         Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + presupuesto.getIdCliente()));
 
-        // Crear carpeta física para cada trabajo aprobado
-        for (TrabajoPresupuestado trabajo : trabajos) {
-            folderService.crearCarpetaTrabajo(cliente.getNombreCliente(), idPresupuesto, trabajo.getId());
-        }
-
         Varios varios = variosRepository.findFirstByOrderByIdAsc();
         LocalTime horaInicio = (varios != null && varios.getHoraInicio() != null)
                 ? varios.getHoraInicio() : LocalTime.of(8, 0);

@@ -38,6 +38,7 @@ public class TrabajosService {
     private final ClienteService clienteService;
     private final PresupuestoCalculadorService presupuestoCalculadorService;
     private final DescuentoRepository descuentoRepository;
+    private final FolderService folderService;
 
     public TrabajosService(TrabajoPresupuestadoRepository trabajosRepository,
                            PresupuestoRepository presupuestoRepository,
@@ -46,7 +47,8 @@ public class TrabajosService {
                            MaquinasRepository maquinasRepository, PresupuestoService presupuestoService,
                            VariosService variosService, ClienteService clienteService,
                            PresupuestoCalculadorService presupuestoCalculadorService,
-                           DescuentoRepository descuentoRepository) {
+                           DescuentoRepository descuentoRepository,
+                           FolderService folderService) {
         this.trabajosRepository = trabajosRepository;
         this.presupuestoRepository = presupuestoRepository;
         this.materialeRepository = materialeRepository;
@@ -57,6 +59,7 @@ public class TrabajosService {
         this.clienteService = clienteService;
         this.presupuestoCalculadorService = presupuestoCalculadorService;
         this.descuentoRepository = descuentoRepository;
+        this.folderService = folderService;
     }
 
     public TrabajoPresupuestadoDTO createTrabajo(TrabajoPresupuestadoDTO dto) {
@@ -106,6 +109,10 @@ public class TrabajosService {
         descuento.setMonto(dto.getDescuento());
 
         descuentoRepository.save(descuento);
+
+        if (cliente != null) {
+            folderService.crearCarpetaTrabajo(cliente.getNombreCliente(), dto.getIdPresupuesto(), saved.getId());
+        }
 
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }

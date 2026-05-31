@@ -142,6 +142,50 @@ public class FolderService {
         }
     }
 
+    public void abrirCarpeta(String nombreCliente, Integer idPresupuesto, Integer idTrabajo) {
+        Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
+        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+            log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema.");
+            return;
+        }
+
+        String rootPath = varios.getDirectorioRaizCarpetas().trim();
+        File targetDir = new File(rootPath);
+
+        if (nombreCliente != null && !nombreCliente.trim().isEmpty()) {
+            targetDir = new File(targetDir, sanitizeFolderName(nombreCliente));
+            if (idPresupuesto != null) {
+                targetDir = new File(targetDir, String.valueOf(idPresupuesto));
+                if (idTrabajo != null) {
+                    targetDir = new File(targetDir, String.valueOf(idTrabajo));
+                }
+            }
+        }
+
+        try {
+            if (!targetDir.exists()) {
+                targetDir.mkdirs(); // crear si no existe
+            }
+
+            if (targetDir.exists() && targetDir.isDirectory()) {
+                log.info("Abriendo carpeta física: {}", targetDir.getAbsolutePath());
+                String os = System.getProperty("os.name").toLowerCase();
+                if (os.contains("win")) {
+                    Runtime.getRuntime().exec("explorer.exe \"" + targetDir.getAbsolutePath() + "\"");
+                } else if (os.contains("mac")) {
+                    Runtime.getRuntime().exec("open \"" + targetDir.getAbsolutePath() + "\"");
+                } else {
+                    Runtime.getRuntime().exec("xdg-open \"" + targetDir.getAbsolutePath() + "\"");
+                }
+            } else {
+                log.error("La ruta no es un directorio válido: {}", targetDir.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            log.error("Error al abrir la carpeta física: {}", targetDir.getAbsolutePath(), e);
+        }
+    }
+
+
 
     public static String sanitizeFolderName(String name) {
         if (name == null) {

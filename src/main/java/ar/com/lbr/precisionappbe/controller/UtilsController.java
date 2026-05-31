@@ -14,9 +14,11 @@ import ar.com.lbr.precisionappbe.util.ResponseBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ar.com.lbr.precisionappbe.services.FolderService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -26,11 +28,13 @@ import java.util.List;
 @RequestMapping("/api/utils")
 public class UtilsController {
 
-    UtilsService utilsService;
+    private final UtilsService utilsService;
+    private final FolderService folderService;
 
     @Autowired
-    public UtilsController(UtilsService utilsService) {
+    public UtilsController(UtilsService utilsService, FolderService folderService) {
         this.utilsService = utilsService;
+        this.folderService = folderService;
     }
 
     @GetMapping("/tipo-cliente")
@@ -133,5 +137,15 @@ public class UtilsController {
         result.put("directories", directories);
 
         return ResponseBuilder.ok("Directorios obtenidos con éxito", result, (long) directories.size());
+    }
+
+    @PostMapping("/open-folder")
+    public ResponseEntity<ApiResponse<Void>> openFolder(
+            @RequestParam(required = false) String nombreCliente,
+            @RequestParam(required = false) Integer idPresupuesto,
+            @RequestParam(required = false) Integer idTrabajo) {
+        
+        folderService.abrirCarpeta(nombreCliente, idPresupuesto, idTrabajo);
+        return ResponseBuilder.ok("Carpeta abierta con éxito", null, 0L);
     }
 }
