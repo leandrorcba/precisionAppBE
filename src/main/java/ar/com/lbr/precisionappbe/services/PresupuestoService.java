@@ -47,6 +47,7 @@ public class PresupuestoService {
     MaterialRepository materialRepository;
     VariosRepository variosRepository;
     EventsService eventsService;
+    FolderService folderService;
 
     public PresupuestoService(PresupuestoRepository presupuestoRepository,
                               TipoClienteRepository tipoClienteRepository,
@@ -57,7 +58,8 @@ public class PresupuestoService {
                               ClienteRepository clienteRepository,
                               MaterialRepository materialRepository,
                               VariosRepository variosRepository,
-                              EventsService eventsService
+                              EventsService eventsService,
+                              FolderService folderService
     ) {
         this.presupuestoRepository = presupuestoRepository;
         this.tipoClienteRepository = tipoClienteRepository;
@@ -69,9 +71,15 @@ public class PresupuestoService {
         this.materialRepository = materialRepository;
         this.variosRepository = variosRepository;
         this.eventsService = eventsService;
+        this.folderService = folderService;
     }
 
     public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Pageable pageable) {
+
+        Cliente cliente = clienteRepository.findById(idCliente).orElse(null);
+        if (cliente != null) {
+            folderService.crearCarpetaCliente(cliente.getNombreCliente());
+        }
 
         Page<Presupuesto> presupuesto = presupuestoRepository.findByIdClienteOrderByIdDesc(idCliente, pageable);
         List<PresupuestoDTO> presupuestoDTOS = getPresupuestoDTOS(presupuesto);

@@ -26,6 +26,7 @@ public class VariosDTO {
 
     private LocalTime horaInicioFds;
     private LocalTime horaCierreFds;
+    private String directorioRaizCarpetas;
 
     public VariosDTO(Varios entity) {
         this.precioMinuto = entity.getPrecioMinuto();
@@ -38,6 +39,7 @@ public class VariosDTO {
         this.horaCierreFds = entity.getHoraCierreFds();
         this.descuentoPorPunto = entity.getDescuentoPorPunto();
         this.minutosPorPunto = entity.getMinutosPorPunto();
+        this.directorioRaizCarpetas = entity.getDirectorioRaizCarpetas();
     }
 
     public static VariosDTO toDTO(Varios entity) {

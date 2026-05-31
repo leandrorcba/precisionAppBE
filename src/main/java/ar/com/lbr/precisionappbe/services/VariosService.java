@@ -37,6 +37,7 @@ public class VariosService {
         varios.setHoraCierreFds(dto.getHoraCierreFds());
         varios.setMinutosPorPunto(dto.getMinutosPorPunto());
         varios.setDescuentoPorPunto(dto.getDescuentoPorPunto());
+        varios.setDirectorioRaizCarpetas(dto.getDirectorioRaizCarpetas());
 
         Varios updatedVarios = variosRepository.save(varios);
 

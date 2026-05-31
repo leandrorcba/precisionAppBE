@@ -54,4 +54,7 @@ public class Varios {
     @Column(name = "minutos_por_punto")
     private Integer minutosPorPunto;
 
+    @Column(name = "directorio_raiz_carpetas", length = 255)
+    private String directorioRaizCarpetas;
+
 }

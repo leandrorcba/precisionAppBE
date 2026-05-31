@@ -26,13 +26,16 @@ public class ClienteService {
     UtilsService utilsService;
     ClientesMapper clientesMapper;
     PuntoRepository puntoRepository;
+    FolderService folderService;
 
     public ClienteService(ClienteRepository clienteRepository, ClientesMapper clientesMapper,
-                          UtilsService utilsService, PuntoRepository puntoRepository) {
+                          UtilsService utilsService, PuntoRepository puntoRepository,
+                          FolderService folderService) {
         this.clienteRepository = clienteRepository;
         this.clientesMapper = clientesMapper;
         this.utilsService = utilsService;
         this.puntoRepository = puntoRepository;
+        this.folderService = folderService;
     }
 
     public ClienteResponse buscarClientes(String nombreCliente, Boolean mora, Integer idTipoCliente,
@@ -84,6 +87,8 @@ public class ClienteService {
 
         dto.setIdCliente(cliente.getId());
 
+        folderService.crearCarpetaCliente(cliente.getNombreCliente());
+
         Punto punto = new Punto();
         punto.setIdCliente(cliente.getId());
         punto.setPuntosAcumulados(0);
@@ -125,6 +130,8 @@ public class ClienteService {
         Cliente cliente = clienteRepository.save(clienteEntity);
 
         dto.setIdCliente(cliente.getId());
+
+        folderService.crearCarpetaCliente(cliente.getNombreCliente());
 
         return dto;
     }
