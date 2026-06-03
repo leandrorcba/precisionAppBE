@@ -72,4 +72,7 @@ public class VariosHistorial {
 
     @Column(name = "permitir_trabajos_fds")
     private Boolean permitirTrabajosFds;
+
+    @Column(name = "descuento_estudiante", precision = 10, scale = 2)
+    private BigDecimal descuentoEstudiante;
 }

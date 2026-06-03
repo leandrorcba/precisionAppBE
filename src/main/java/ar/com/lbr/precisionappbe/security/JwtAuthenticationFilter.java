@@ -35,17 +35,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String username;
 
+        String path = request.getRequestURI();
+        System.err.println("--- JWT FILTER START for " + path + " ---");
+        System.err.println("Authorization Header: " + (authHeader != null ? "Present, length=" + authHeader.length() : "NULL"));
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.err.println("Authorization header missing or does not start with Bearer");
+            System.err.println("--- JWT FILTER END (No token) ---");
             filterChain.doFilter(request, response);
             return;
         }
 
         jwt = authHeader.substring(7);
         try {
+            System.err.println("Raw Token: " + jwt);
             username = jwtService.extractUsername(jwt);
+            System.err.println("Extracted Username from Token: " + username);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                System.err.println("Loaded UserDetails for " + username + ": " + userDetails.getUsername() + ", enabled=" + userDetails.isEnabled() + ", roles=" + userDetails.getAuthorities());
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -55,13 +64,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.err.println("Authentication Token successfully set in SecurityContextHolder!");
+                } else {
+                    System.err.println("isTokenValid returned FALSE for user " + username);
                 }
+            } else {
+                System.err.println("Skipped validation. Username is null or Authentication is already set in SecurityContext");
             }
         } catch (Exception e) {
-            // Ignore token extraction/validation errors (they will correctly result in 403
-            // Forbidden later)
+            System.err.println("JWT Verification EXCEPTION: " + e.getMessage());
+            e.printStackTrace();
         }
 
+        System.err.println("--- JWT FILTER END ---");
         filterChain.doFilter(request, response);
     }
 }

@@ -17,6 +17,16 @@ public interface EventsRepository extends JpaRepository<Event, Integer> {
                         @Param("startDate") Instant startDate,
                         @Param("endDate") Instant endDate);
 
-        List<Event> findByIdMaquinaIdAndStartDateGreaterThanEqualOrderByStartDate(
+        List<Event> findByIdMaquinaIdAndEndDateGreaterThanOrderByStartDate(
                         Integer idMaquinaId, Instant from);
+
+        @Query("SELECT COUNT(e) > 0 FROM Event e WHERE " +
+                        "e.idMaquina.id = :idMaquina AND " +
+                        "e.startDate < :end AND " +
+                        "e.endDate > :start AND " +
+                        "(:excludeId IS NULL OR e.id != :excludeId)")
+        boolean existsOverlappingEvent(@Param("idMaquina") Integer idMaquina,
+                                       @Param("start") Instant start,
+                                       @Param("end") Instant end,
+                                       @Param("excludeId") Integer excludeId);
 }

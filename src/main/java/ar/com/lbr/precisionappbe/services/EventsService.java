@@ -24,10 +24,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
 import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 
 @Service
+@Transactional
 public class EventsService {
 
     private static final ZoneId ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
@@ -172,12 +174,6 @@ public class EventsService {
         if (dto.getEventName() != null) {
             event.setEventName(dto.getEventName());
         }
-        if (dto.getStartDate() != null) {
-            event.setStartDate(dto.getStartDate().toInstant());
-        }
-        if (dto.getEndDate() != null) {
-            event.setEndDate(dto.getEndDate().toInstant());
-        }
         if (dto.getDetails() != null) {
             event.setDetails(dto.getDetails());
         }
@@ -193,11 +189,73 @@ public class EventsService {
         }
         if (dto.getNotas() != null) {
             event.setNotas(dto.getNotas());
+            if (event.getIdTrabajo() != null) {
+                trabajoPresupuestadoRepository.findById(event.getIdTrabajo()).ifPresent(trabajo -> {
+                    trabajo.setNotas(dto.getNotas());
+                    trabajoPresupuestadoRepository.save(trabajo);
+                });
+            }
         }
-        if (dto.getCalendarId() != null) {
+
+        boolean machineChanged = dto.getCalendarId() != null && (event.getIdMaquina() == null || !dto.getCalendarId().equals(event.getIdMaquina().getId()));
+
+        if (machineChanged) {
             Maquina maquina = maquinasRepository.findById(dto.getCalendarId())
                     .orElseThrow(() -> new EntityNotFoundException("Maquina not found: " + dto.getCalendarId()));
             event.setIdMaquina(maquina);
+
+            int durationMinutes = event.getDuracion() != null ? event.getDuracion() : 15;
+
+            Varios varios = variosRepository.findFirstByOrderByIdAsc();
+            LocalTime horaInicio = (varios != null && varios.getHoraInicio() != null) ? varios.getHoraInicio() : LocalTime.of(8, 0);
+            LocalTime horaCierre = (varios != null && varios.getHoraCierre() != null) ? varios.getHoraCierre() : LocalTime.of(18, 0);
+            Boolean permitirFds = (varios != null && varios.getPermitirTrabajosFds() != null) ? varios.getPermitirTrabajosFds() : false;
+            LocalTime horaInicioFds = (varios != null && varios.getHoraInicioFds() != null) ? varios.getHoraInicioFds() : LocalTime.of(9, 0);
+            LocalTime horaCierreFds = (varios != null && varios.getHoraCierreFds() != null) ? varios.getHoraCierreFds() : LocalTime.of(13, 0);
+
+            Instant now = Instant.now();
+            Instant targetStart = dto.getStartDate() != null ? dto.getStartDate().toInstant() : null;
+            Instant targetEnd = dto.getEndDate() != null ? dto.getEndDate().toInstant() : null;
+
+            boolean useTarget = false;
+            if (targetStart != null && targetStart.isAfter(now)) {
+                if (targetEnd == null) {
+                    targetEnd = targetStart.plus(durationMinutes, ChronoUnit.MINUTES);
+                }
+                boolean overlaps = eventsRepository.existsOverlappingEvent(dto.getCalendarId(), targetStart, targetEnd, event.getId());
+                if (!overlaps) {
+                    event.setStartDate(targetStart);
+                    event.setEndDate(targetEnd);
+                    useTarget = true;
+                }
+            }
+
+            if (!useTarget) {
+                Instant slotStart = findFirstAvailableSlot(dto.getCalendarId(), durationMinutes, horaInicio, horaCierre, permitirFds, horaInicioFds, horaCierreFds);
+                Instant slotEnd = slotStart.plus(durationMinutes, ChronoUnit.MINUTES);
+
+                event.setStartDate(slotStart);
+                event.setEndDate(slotEnd);
+            }
+
+            if (event.getIdTrabajo() != null) {
+                trabajoPresupuestadoRepository.findById(event.getIdTrabajo()).ifPresent(trabajo -> {
+                    trabajo.setIdMaquina(dto.getCalendarId());
+                    trabajoPresupuestadoRepository.save(trabajo);
+                });
+            }
+        } else {
+            if (dto.getStartDate() != null) {
+                event.setStartDate(dto.getStartDate().toInstant());
+            }
+            if (dto.getEndDate() != null) {
+                event.setEndDate(dto.getEndDate().toInstant());
+            }
+            if (dto.getCalendarId() != null) {
+                Maquina maquina = maquinasRepository.findById(dto.getCalendarId())
+                        .orElseThrow(() -> new EntityNotFoundException("Maquina not found: " + dto.getCalendarId()));
+                event.setIdMaquina(maquina);
+            }
         }
 
         return toDTO(eventsRepository.save(event));
@@ -222,6 +280,13 @@ public class EventsService {
 
         String name = eventName != null && eventName.length() > 127 ? eventName.substring(0, 127) : eventName;
 
+        String notes = null;
+        if (idTrabajo != null) {
+            notes = trabajoPresupuestadoRepository.findById(idTrabajo)
+                    .map(TrabajoPresupuestado::getNotas)
+                    .orElse(null);
+        }
+
         Event event = new Event();
         event.setIdMaquina(maquina);
         event.setStartDate(slotStart);
@@ -231,6 +296,7 @@ public class EventsService {
         event.setIdTrabajo(idTrabajo);
         event.setDuracion(durationMinutes);
         event.setStatus("PENDIENTE");
+        event.setNotas(notes);
 
         return toDTO(eventsRepository.save(event));
     }
@@ -240,7 +306,7 @@ public class EventsService {
                                           Boolean permitirTrabajosFds, LocalTime horaInicioFds, LocalTime horaCierreFds) {
         Instant now = Instant.now();
         List<Event> events = eventsRepository
-                .findByIdMaquinaIdAndStartDateGreaterThanEqualOrderByStartDate(idMaquina, now);
+                .findByIdMaquinaIdAndEndDateGreaterThanOrderByStartDate(idMaquina, now);
 
         ZonedDateTime candidate = nextWorkingSlotStart(now.atZone(ZONE), horaInicio, horaCierre, permitirTrabajosFds, horaInicioFds, horaCierreFds);
 

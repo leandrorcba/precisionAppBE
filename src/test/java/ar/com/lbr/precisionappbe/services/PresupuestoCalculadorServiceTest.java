@@ -92,7 +92,7 @@ class PresupuestoCalculadorServiceTest {
 
         // THEN
         assertEquals(BigDecimal.ZERO, resultado.getDescuento());
-        assertEquals(new BigDecimal("3300.00"), resultado.getPrecioTrabajo());
+        assertEquals(new BigDecimal("3000.00"), resultado.getPrecioTrabajo());
     }
 
     @Test
@@ -129,8 +129,8 @@ class PresupuestoCalculadorServiceTest {
         TrabajoPresupuestadoDTO resultado = calculadorService.calcularYValidarTrabajo(trabajo, clienteNormal);
 
         // THEN
-        // Precio Minuto: 330 | Corte: 3300 | Descuento: 100 | Total: 3200
-        assertEquals(new BigDecimal("3200.00"), resultado.getPrecioTrabajo());
+        // Precio Minuto: 300 | Corte: 3000 | Descuento: 100 | Total: 2900
+        assertEquals(new BigDecimal("2900.00"), resultado.getPrecioTrabajo());
         assertEquals(new BigDecimal("100.00"), resultado.getDescuento());
 
         // Verificamos que se interactuó con la estrategia
@@ -167,7 +167,7 @@ class PresupuestoCalculadorServiceTest {
 
         // THEN
         assertEquals(BigDecimal.ZERO, resultado.getDescuento());
-        assertEquals(new BigDecimal("22000.00"), resultado.getPrecioTrabajo());
+        assertEquals(new BigDecimal("20000.00"), resultado.getPrecioTrabajo());
     }
 
     @Test
@@ -241,11 +241,11 @@ class PresupuestoCalculadorServiceTest {
         TrabajoPresupuestadoDTO resultado = calculadorService.calcularYValidarTrabajo(trabajo, clienteNormal);
 
         // THEN
-        // Precio Corte: 330 * 10 = 3300.00
+        // Precio Corte: 300 * 10 = 3000.00
         // Precio Material: 1500.50
-        // Total: 3300.00 + 1500.50 = 4800.50
+        // Total: 3000.00 + 1500.50 = 4500.50
         assertEquals(new BigDecimal("1500.50"), resultado.getPrecioMaterial());
-        assertEquals(new BigDecimal("4800.50"), resultado.getPrecioTrabajo());
+        assertEquals(new BigDecimal("4500.50"), resultado.getPrecioTrabajo());
 
         // Verificamos que se llamó al servicio de materiales con los datos exactos
         verify(materialesService).calcularPrecio(128, 2, 1);
@@ -311,6 +311,39 @@ class PresupuestoCalculadorServiceTest {
         // THEN
         assertEquals(BigDecimal.ZERO, resultado.getPrecioMaterial());
         // Verificamos que NO se llamó al servicio de materiales (ahorro de recursos)
+        verifyNoInteractions(materialesService);
+    }
+
+    @Test
+    void calcularTrabajo_ManualConTraeMaterialFalse_DebeForzarPrecioCeroYNoLlamarAlServicio() {
+        // GIVEN
+        ClienteDTO clienteNormal = new ClienteDTO();
+        clienteNormal.setIdTipoCliente(3);
+
+        // GIVEN
+        TrabajoPresupuestadoDTO trabajo = new TrabajoPresupuestadoDTO();
+        trabajo.setTraeMaterial(false); // El cliente NO trae el material
+        trabajo.setGrabado(true); // Pero es grabado (trabajo manual)
+        trabajo.setIdMateriales(128);
+        trabajo.setIdSuperficie(2);
+        trabajo.setUnidades(1);
+        trabajo.setTiempoDeCorte(5);
+        trabajo.setPrecioCorte(new BigDecimal("1000.00"));
+        trabajo.setCortesEspeciales(false);
+        trabajo.setCarteles(false);
+
+        when(variosService.getVarios()).thenReturn(configGlobal);
+        when(tipoClienteService.getTipoClienteById(3)).thenReturn(tipoNormal);
+
+        // Simulamos que ninguna estrategia aplica
+        when(estrategias.stream()).thenReturn(Stream.empty());
+
+        // WHEN
+        TrabajoPresupuestadoDTO resultado = calculadorService.calcularYValidarTrabajo(trabajo, clienteNormal);
+
+        // THEN: El precio de material debe ser cero
+        assertEquals(BigDecimal.ZERO, resultado.getPrecioMaterial());
+        // Verificamos que NO se llamó al servicio de materiales
         verifyNoInteractions(materialesService);
     }
 }

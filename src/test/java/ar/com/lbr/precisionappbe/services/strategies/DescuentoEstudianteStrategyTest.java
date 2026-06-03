@@ -28,8 +28,8 @@ class DescuentoEstudianteStrategyTest {
         // WHEN
         BigDecimal descuento = strategy.calcularDescuento(tiempoCorte, precioBase, config);
 
-        // THEN: 2 puntos * 300 = 600
-        assertEquals(0, new BigDecimal("600.0").compareTo(descuento));
+        // THEN: El descuento por puntos debe ser cero ya que se eliminó esa lógica
+        assertEquals(0, BigDecimal.ZERO.compareTo(descuento));
     }
 
     @Test

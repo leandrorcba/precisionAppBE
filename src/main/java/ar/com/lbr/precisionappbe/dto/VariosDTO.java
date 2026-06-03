@@ -28,6 +28,7 @@ public class VariosDTO {
     private LocalTime horaCierreFds;
     private String directorioRaizCarpetas;
     private Boolean permitirTrabajosFds;
+    private BigDecimal descuentoEstudiante;
 
     public VariosDTO(Varios entity) {
         this.precioMinuto = entity.getPrecioMinuto();
@@ -42,6 +43,7 @@ public class VariosDTO {
         this.minutosPorPunto = entity.getMinutosPorPunto();
         this.directorioRaizCarpetas = entity.getDirectorioRaizCarpetas();
         this.permitirTrabajosFds = entity.getPermitirTrabajosFds();
+        this.descuentoEstudiante = entity.getDescuentoEstudiante();
     }
 
     public static VariosDTO toDTO(Varios entity) {

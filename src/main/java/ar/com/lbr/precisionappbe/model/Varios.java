@@ -60,4 +60,7 @@ public class Varios {
     @Column(name = "permitir_trabajos_fds", nullable = false)
     private Boolean permitirTrabajosFds = false;
 
+    @Column(name = "descuento_estudiante", precision = 10, scale = 2)
+    private BigDecimal descuentoEstudiante;
+
 }

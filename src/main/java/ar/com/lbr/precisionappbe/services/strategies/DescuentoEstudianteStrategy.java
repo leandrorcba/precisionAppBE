@@ -14,7 +14,6 @@ public class DescuentoEstudianteStrategy implements DescuentoStrategy {
 
     @Override
     public BigDecimal calcularDescuento(int tiempo, BigDecimal precioBase, VariosDTO config) {
-        int puntos = tiempo / config.getMinutosPorPunto();
-        return new BigDecimal(puntos).multiply(BigDecimal.valueOf(config.getDescuentoPorPunto()));
+        return BigDecimal.ZERO;
     }
 }

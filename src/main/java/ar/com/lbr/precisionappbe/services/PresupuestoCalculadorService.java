@@ -54,7 +54,6 @@ public class PresupuestoCalculadorService {
             // Buscamos la estrategia que corresponda (Strategy Pattern)
             BigDecimal descuento = calcularDescuento(trabajo, tipoCliente, config, precioBase);
 
-            trabajo.setMinutosDescontados(trabajo.getTiempoDeCorte() / config.getMinutosPorPunto());
             trabajo.setDescuento(descuento);
             trabajo.setPrecioCorte(precioBase.subtract(descuento));
         }
@@ -75,7 +74,7 @@ public class PresupuestoCalculadorService {
 
     // Métodos privados para limpiar el flujo principal (SRP)
     private BigDecimal obtenerPrecioMaterial(TrabajoPresupuestadoDTO t) {
-        if (Boolean.TRUE.equals(t.getTraeMaterial())) {
+        if (Boolean.TRUE.equals(t.getTraeMaterial()) || esTrabajoManual(t)) {
             return BigDecimal.ZERO;
         }
         return materialesService.calcularPrecio(t.getIdMateriales(), t.getIdSuperficie(), t.getUnidades()).getPrecio();
@@ -101,25 +100,22 @@ public class PresupuestoCalculadorService {
     private BigDecimal calcularPrecioMinuto(ClienteDTO cliente, VariosDTO config) {
         BigDecimal precioBase;
 
-        BigDecimal porcentajeAjuste = BigDecimal.valueOf(config.getAjuste()).divide(new BigDecimal("100"));
+        String tipoCliente = tipoClienteService.getTipoClienteById(cliente.getIdTipoCliente()).getNombreTipo();
 
-        // 1. Verificar si es Empresa
-        if ("EMPRESA".equalsIgnoreCase(tipoClienteService.getTipoClienteById(cliente.getIdTipoCliente()).getNombreTipo())) {
-            // Prioridad 1: Precio específico del cliente
-            // Prioridad 2: Si es nulo, precio_minuto_empresa de la tabla Varios
-            BigDecimal precioMinuto = (cliente.getPrecioMinutoEmpresa() != null)
+        if ("EMPRESA".equalsIgnoreCase(tipoCliente)) {
+            // Empresa: client price or parameters company price
+            precioBase = (cliente.getPrecioMinutoEmpresa() != null && cliente.getPrecioMinutoEmpresa().compareTo(BigDecimal.ZERO) != 0)
                     ? cliente.getPrecioMinutoEmpresa()
                     : config.getPrecioMinutoEmpresa();
-
-            BigDecimal montoAjuste = precioMinuto.multiply(porcentajeAjuste);
-            precioBase = precioMinuto.add(montoAjuste);
-        } else {
-            // 2. Cliente Normal o Estudiante
-            // Fórmula: precioMinuto + (precioMinuto * ajuste / 100)
+        } else if ("ESTUDIANTE".equalsIgnoreCase(tipoCliente)) {
+            // Estudiante: precioMinutoParametros * (1 - descuentoEstudiante / 100)
             BigDecimal precioMinutoVarios = config.getPrecioMinuto();
-
-            BigDecimal montoAjuste = precioMinutoVarios.multiply(porcentajeAjuste);
-            precioBase = precioMinutoVarios.add(montoAjuste);
+            BigDecimal descPercent = config.getDescuentoEstudiante() != null ? config.getDescuentoEstudiante() : BigDecimal.ZERO;
+            BigDecimal factor = BigDecimal.ONE.subtract(descPercent.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP));
+            precioBase = precioMinutoVarios.multiply(factor);
+        } else {
+            // Normal: base price
+            precioBase = config.getPrecioMinuto();
         }
 
         // Retornar con 2 decimales para precisión financiera
