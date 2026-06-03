@@ -14,7 +14,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.LocalTime;
 
 @Getter
@@ -60,7 +60,7 @@ public class VariosHistorial {
     private LocalTime horaCierreFds;
 
     @Column(name = "fecha_cambio", nullable = false, insertable = false, updatable = false)
-    private LocalDateTime fechaCambio;
+    private Instant fechaCambio;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_user")

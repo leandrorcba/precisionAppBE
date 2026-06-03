@@ -19,7 +19,7 @@ import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -148,7 +148,7 @@ public class TrabajosService {
             Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
                     .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
             presupuesto.setRealizado(true);
-            presupuesto.setFechaRealizado(LocalDateTime.now());
+            presupuesto.setFechaRealizado(Instant.now());
             presupuestoRepository.save(presupuesto);
         }
     }

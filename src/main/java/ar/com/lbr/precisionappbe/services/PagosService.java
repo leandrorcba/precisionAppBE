@@ -263,7 +263,7 @@ public class PagosService {
         if (difference.compareTo(BigDecimal.valueOf(0.1)) <= 0) {
             presupuesto.setCobrado(true);
             if (presupuesto.getFechaCobrado() == null) {
-                presupuesto.setFechaCobrado(java.time.LocalDateTime.now());
+                presupuesto.setFechaCobrado(java.time.Instant.now());
             }
         } else {
             presupuesto.setCobrado(false);

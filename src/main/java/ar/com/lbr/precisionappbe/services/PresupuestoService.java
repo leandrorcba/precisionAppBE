@@ -28,7 +28,7 @@ import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -227,7 +227,7 @@ public class PresupuestoService {
 
     public PresupuestoDTO createPresupuesto(PresupuestoDTO dto) {
 
-        dto.setFechaHoraPresupuesto(LocalDateTime.now());
+        dto.setFechaHoraPresupuesto(Instant.now());
         Presupuesto presupuestoEntity = presupuestoMapper.toEntity(dto, true);
 
         Presupuesto presupuesto = presupuestoRepository.save(presupuestoEntity);

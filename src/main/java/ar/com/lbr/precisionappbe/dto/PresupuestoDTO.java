@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -26,11 +26,11 @@ public class PresupuestoDTO {
     private Boolean realizado;
     private Boolean cobrado;
     private Boolean entregado;
-    private LocalDateTime fechaHoraPresupuesto;
-    private LocalDateTime fechaRealizado;
-    private LocalDateTime fechaAprobado;
-    private LocalDateTime fechaCobrado;
-    private LocalDateTime fechaEntregado;
+    private Instant fechaHoraPresupuesto;
+    private Instant fechaRealizado;
+    private Instant fechaAprobado;
+    private Instant fechaCobrado;
+    private Instant fechaEntregado;
     private BigDecimal montoSenia;
     private BigDecimal descuento;
     private List<PagoDTO> pagos;

@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -25,7 +25,7 @@ public class Presupuesto {
 
     @NotNull
     @Column(name = "fecha_hora_presupuesto", nullable = false)
-    private LocalDateTime fechaHoraPresupuesto;
+    private Instant fechaHoraPresupuesto;
 
     @NotNull
     @Column(name = "id_cliente", nullable = false)
@@ -63,9 +63,9 @@ public class Presupuesto {
     private Integer puntosCanjeados;
 
     @Column(name = "fecha_cobrado")
-    private LocalDateTime fechaCobrado;
+    private Instant fechaCobrado;
 
     @Column(name = "fecha_realizado")
-    private LocalDateTime fechaRealizado;
+    private Instant fechaRealizado;
 
 }

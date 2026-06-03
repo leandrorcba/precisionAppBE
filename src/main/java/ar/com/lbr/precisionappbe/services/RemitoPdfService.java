@@ -32,6 +32,7 @@ import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,6 +43,7 @@ public class RemitoPdfService {
     private static final String EMPRESA_DIRECCION = "Independencia 1255 - Nva. Cba - 0351-156630999";
     private static final String LOCALIDAD_DEFAULT = "Córdoba";
     private static final DateTimeFormatter FECHA_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final ZoneId ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
     private static final Color HEADER_BG = new Color(220, 220, 220);
     private static final int MARGIN = 36;
 
@@ -126,7 +128,7 @@ public class RemitoPdfService {
         titleCell.setBackgroundColor(HEADER_BG);
         inner.addCell(titleCell);
         inner.addCell(centeredCell(new Phrase("Fecha", labelFont)));
-        inner.addCell(centeredCell(new Phrase(presupuesto.getFechaHoraPresupuesto().format(FECHA_FMT), valueFont)));
+        inner.addCell(centeredCell(new Phrase(presupuesto.getFechaHoraPresupuesto().atZone(ZONE).format(FECHA_FMT), valueFont)));
         inner.addCell(centeredCell(new Phrase("Nro: " + presupuesto.getId(), labelFont)));
 
         PdfPCell wrapper = new PdfPCell(inner);
