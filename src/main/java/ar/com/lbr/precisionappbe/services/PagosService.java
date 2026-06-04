@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -79,6 +80,56 @@ public class PagosService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    public List<PagoDTO> getAllPagos() {
+        return getAllPagos(null, null, null, null);
+    }
+
+    public List<PagoDTO> getAllPagos(Instant desde, Instant hasta, String tipo, String medio) {
+        List<PagoDTO> pagosPresupuesto = pagoPresupuestoRepository.findAll()
+                .stream().map(this::toDTO).collect(Collectors.toList());
+        List<PagoDTO> pagosVenta = pagoVentaRepository.findAll()
+                .stream().map(this::toDTO).collect(Collectors.toList());
+
+        List<PagoDTO> allPagos = new ArrayList<>();
+        allPagos.addAll(pagosPresupuesto);
+        allPagos.addAll(pagosVenta);
+
+        List<PagoDTO> filteredPagos = allPagos.stream()
+                .filter(p -> {
+                    if (desde != null && p.getFechaHora() != null && p.getFechaHora().isBefore(desde)) {
+                        return false;
+                    }
+                    if (hasta != null && p.getFechaHora() != null && p.getFechaHora().isAfter(hasta)) {
+                        return false;
+                    }
+                    if (tipo != null && !tipo.isBlank() && !"todos".equalsIgnoreCase(tipo)) {
+                        if (p.getTipoPago() == null || !tipo.equalsIgnoreCase(p.getTipoPago().getTipo())) {
+                            return false;
+                        }
+                    }
+                    if (medio != null && !medio.isBlank() && !"todos".equalsIgnoreCase(medio)) {
+                        if (p.getMedioPago() == null) {
+                            return false;
+                        }
+                        String mVal = p.getMedioPago().getDescripcion() != null ? p.getMedioPago().getDescripcion() : p.getMedioPago().getTipo();
+                        if (mVal == null || !medio.equalsIgnoreCase(mVal)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        filteredPagos.sort((p1, p2) -> {
+            if (p1.getFechaHora() == null && p2.getFechaHora() == null) return 0;
+            if (p1.getFechaHora() == null) return 1;
+            if (p2.getFechaHora() == null) return -1;
+            return p2.getFechaHora().compareTo(p1.getFechaHora());
+        });
+
+        return filteredPagos;
+    }
+
     public PagoDTO getPagoById(Integer id) {
         return pagoPresupuestoRepository.findByIdAndEnabledTrue(id)
                 .map(this::toDTO)
@@ -122,7 +173,8 @@ public class PagosService {
 
         if (tipoPago.getTipo().equalsIgnoreCase("PRESUPUESTO")) {
             boolean allPreviousCash = existing.stream()
-                    .allMatch(p -> p.getIdMedioPago().getTipo().equalsIgnoreCase("EFECTIVO"));
+                    .allMatch(p -> p.getIdTipoPago().getTipo().equalsIgnoreCase("SENIA")
+                            || p.getIdMedioPago().getTipo().equalsIgnoreCase("EFECTIVO"));
 
             if (allPreviousCash) {
                 MedioPago medioPago = resolveMedioPago(dto);
@@ -348,9 +400,11 @@ public class PagosService {
         dto.setMedioPago(buildMedioPagoDTO(p.getIdMedioPago()));
         if (p.getIdTarjeta() != null) {
             dto.setIdTarjeta(p.getIdTarjeta().getId());
+            dto.setTarjetaNombre(p.getIdTarjeta().getNombre());
         }
         if (p.getIdCuentaBancaria() != null) {
             dto.setIdCuentaBancaria(p.getIdCuentaBancaria().getId());
+            dto.setCuentaBancariaNombre(p.getIdCuentaBancaria().getBanco() + " (" + p.getIdCuentaBancaria().getNumeroCuenta() + ")");
         }
         return dto;
     }
@@ -364,13 +418,16 @@ public class PagosService {
         dto.setCuotas(p.getCuotas());
         dto.setAutorizacion(p.getAutorizacion());
         dto.setNotas(p.getNotas());
+        dto.setEnabled(true);
         dto.setTipoPago(buildTipoPagoDTO(p.getIdTipoPago()));
         dto.setMedioPago(buildMedioPagoDTO(p.getIdMedioPago()));
         if (p.getIdTarjeta() != null) {
             dto.setIdTarjeta(p.getIdTarjeta().getId());
+            dto.setTarjetaNombre(p.getIdTarjeta().getNombre());
         }
         if (p.getIdCuentaBancaria() != null) {
             dto.setIdCuentaBancaria(p.getIdCuentaBancaria().getId());
+            dto.setCuentaBancariaNombre(p.getIdCuentaBancaria().getBanco() + " (" + p.getIdCuentaBancaria().getNumeroCuenta() + ")");
         }
         return dto;
     }

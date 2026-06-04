@@ -68,6 +68,14 @@ public class Cierre {
     @Column(name = "monto_compra_materiales", nullable = false, precision = 12, scale = 2)
     private BigDecimal montoCompraMateriales;
 
+    @ColumnDefault("0.00")
+    @Column(name = "gastos", nullable = false, precision = 12, scale = 2)
+    private BigDecimal gastos;
+
+    @ColumnDefault("0")
+    @Column(name = "cerrado", nullable = false)
+    private Boolean cerrado = false;
+
     @Column(name = "mes_cierre", length = 45)
     private String mesCierre;
 

@@ -16,7 +16,7 @@ WHERE `tipoCliente` IS NOT NULL
 ORDER BY `tipoCliente`;
 
 -- Importa clientes mapeando todos los campos
-INSERT INTO `clientes` (
+/*INSERT INTO `clientes` (
   `id_cliente`,
   `dni_cliente`,
   `email_cliente`,
@@ -40,6 +40,6 @@ SELECT
   COALESCE(STR_TO_DATE(c.`fechaCreacion`, '%d/%m/%Y %H:%i:%s'), CURRENT_TIMESTAMP),
   0
 FROM `precision_schema`.`clientes` c
-LEFT JOIN `tipo_cliente` tc ON tc.`nombre_tipo` = c.`tipoCliente`;
+LEFT JOIN `tipo_cliente` tc ON tc.`nombre_tipo` = c.`tipoCliente`;*/
 
 SET FOREIGN_KEY_CHECKS = 1;

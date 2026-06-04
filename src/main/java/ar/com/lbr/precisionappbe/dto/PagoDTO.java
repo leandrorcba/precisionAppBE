@@ -25,6 +25,8 @@ public class PagoDTO {
     private Integer idMedioPago;
     private Integer idTarjeta;
     private Integer idCuentaBancaria;
+    private String tarjetaNombre;
+    private String cuentaBancariaNombre;
     private Short cuotas;
     private String autorizacion;
     private String notas;

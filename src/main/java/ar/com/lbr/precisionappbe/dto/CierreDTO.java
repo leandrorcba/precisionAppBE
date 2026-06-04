@@ -28,8 +28,11 @@ public class CierreDTO {
     private BigDecimal senia;
     private BigDecimal ventas;
     private BigDecimal montoCompraMateriales;
+    private BigDecimal gastos;
+    private Boolean cerrado;
     private String mesCierre;
     private Integer idUsuario;
+    private BigDecimal montoTotal;
 
     public CierreDTO(Cierre c) {
         this.id = c.getId();
@@ -45,7 +48,12 @@ public class CierreDTO {
         this.senia = c.getSenia();
         this.ventas = c.getVentas();
         this.montoCompraMateriales = c.getMontoCompraMateriales();
+        this.gastos = c.getGastos();
+        this.cerrado = c.getCerrado();
         this.mesCierre = c.getMesCierre();
+        BigDecimal init = c.getMontoInicial() != null ? c.getMontoInicial() : BigDecimal.ZERO;
+        BigDecimal arq = c.getArqueo() != null ? c.getArqueo() : BigDecimal.ZERO;
+        this.montoTotal = init.add(arq);
     }
 
     public static CierreDTO toDTO(Cierre c) {

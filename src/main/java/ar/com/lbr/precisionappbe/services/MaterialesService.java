@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,19 +62,25 @@ public class MaterialesService {
                         ? materialeRepository.findByDisabledTrue(pageable)
                         : materialeRepository.findByDisabledFalse(pageable));
         }
-        return result.map(MaterialDTO::toDTO);
+        Page<MaterialDTO> dtos = result.map(MaterialDTO::toDTO);
+        populatePrices(dtos.getContent());
+        return dtos;
     }
 
     public List<MaterialDTO> getSoloMateriales() {
-        return materialeRepository.findByIsMaterialTrueAndDisabledFalseOrderByMaterialesAsc().stream()
+        List<MaterialDTO> dtos = materialeRepository.findByIsMaterialTrueAndDisabledFalseOrderByMaterialesAsc().stream()
                 .map(MaterialDTO::toDTO)
                 .collect(Collectors.toList());
+        populatePrices(dtos);
+        return dtos;
     }
 
     public List<MaterialDTO> getSoloGrabado() {
-        return materialeRepository.findByIsGrabadoTrueAndDisabledFalseOrderByMaterialesAsc().stream()
+        List<MaterialDTO> dtos = materialeRepository.findByIsGrabadoTrueAndDisabledFalseOrderByMaterialesAsc().stream()
                 .map(MaterialDTO::toDTO)
                 .collect(Collectors.toList());
+        populatePrices(dtos);
+        return dtos;
     }
 
     public MaterialDTO createMaterial(MaterialDTO dto) {
@@ -86,7 +93,11 @@ public class MaterialesService {
         material.setDisabled(dto.getDisabled() != null ? dto.getDisabled() : false);
 
         Material saved = materialeRepository.save(material);
-        return MaterialDTO.toDTO(saved);
+        saveOrUpdatePrices(saved, dto);
+
+        MaterialDTO result = MaterialDTO.toDTO(saved);
+        populatePrices(List.of(result));
+        return result;
     }
 
     public MaterialDTO updateMaterial(Integer id, MaterialDTO dto) {
@@ -101,7 +112,11 @@ public class MaterialesService {
         material.setDisabled(dto.getDisabled() != null ? dto.getDisabled() : false);
 
         Material updated = materialeRepository.save(material);
-        return MaterialDTO.toDTO(updated);
+        saveOrUpdatePrices(updated, dto);
+
+        MaterialDTO result = MaterialDTO.toDTO(updated);
+        populatePrices(List.of(result));
+        return result;
     }
 
     public void deleteMaterial(Integer id) {
@@ -115,7 +130,94 @@ public class MaterialesService {
         Material material = materialeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
         material.setDisabled(false);
-        return MaterialDTO.toDTO(materialeRepository.save(material));
+        MaterialDTO result = MaterialDTO.toDTO(materialeRepository.save(material));
+        populatePrices(List.of(result));
+        return result;
+    }
+
+    private void populatePrices(List<MaterialDTO> dtos) {
+        if (dtos.isEmpty()) return;
+        List<Integer> ids = dtos.stream().map(MaterialDTO::getId).collect(Collectors.toList());
+        List<PrecioMateriale> prices = precioMaterialRepository.findByIdMaterialesIn(ids);
+        Map<Integer, List<PrecioMateriale>> pricesByMaterial = prices.stream()
+                .collect(Collectors.groupingBy(PrecioMateriale::getIdMateriales));
+
+        for (MaterialDTO dto : dtos) {
+            List<PrecioMateriale> materialPrices = pricesByMaterial.get(dto.getId());
+            if (materialPrices != null) {
+                for (PrecioMateriale pm : materialPrices) {
+                    if (pm.getIdSuperficie() == null) {
+                        dto.setPrecioPorUnidad(pm.getPrecioMaterial());
+                        dto.setUnidades(pm.getUnidades());
+                    } else {
+                        if (pm.getIdSuperficie() == 4) {
+                            dto.setPrecioSup1(pm.getPrecioMaterial());
+                        } else if (pm.getIdSuperficie() == 3) {
+                            dto.setPrecioSup3_4(pm.getPrecioMaterial());
+                        } else if (pm.getIdSuperficie() == 2) {
+                            dto.setPrecioSup1_2(pm.getPrecioMaterial());
+                        } else if (pm.getIdSuperficie() == 1) {
+                            dto.setPrecioSup1_4(pm.getPrecioMaterial());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void saveOrUpdatePrices(Material material, MaterialDTO dto) {
+        if (Boolean.TRUE.equals(material.getIsMaterial())) {
+            // Material de corte: eliminar precio sin superficie (unidad)
+            List<PrecioMateriale> existing = precioMaterialRepository.findByIdMaterialesIn(List.of(material.getId()));
+            List<PrecioMateriale> toDelete = existing.stream()
+                    .filter(pm -> pm.getIdSuperficie() == null)
+                    .collect(Collectors.toList());
+            if (!toDelete.isEmpty()) {
+                precioMaterialRepository.deleteAll(toDelete);
+            }
+
+            // Guardar/actualizar precios por superficie
+            saveOrUpdateSurfacePrice(material.getId(), 4, dto.getPrecioSup1());
+            saveOrUpdateSurfacePrice(material.getId(), 3, dto.getPrecioSup3_4());
+            saveOrUpdateSurfacePrice(material.getId(), 2, dto.getPrecioSup1_2());
+            saveOrUpdateSurfacePrice(material.getId(), 1, dto.getPrecioSup1_4());
+        } else {
+            // Material no de corte: eliminar precios por superficie
+            List<PrecioMateriale> existing = precioMaterialRepository.findByIdMaterialesIn(List.of(material.getId()));
+            List<PrecioMateriale> toDelete = existing.stream()
+                    .filter(pm -> pm.getIdSuperficie() != null)
+                    .collect(Collectors.toList());
+            if (!toDelete.isEmpty()) {
+                precioMaterialRepository.deleteAll(toDelete);
+            }
+
+            // Guardar/actualizar precio por unidad (unidades por defecto = 1)
+            Short units = dto.getUnidades() != null ? dto.getUnidades() : (short) 1;
+            BigDecimal price = dto.getPrecioPorUnidad() != null ? dto.getPrecioPorUnidad() : BigDecimal.ZERO;
+
+            PrecioMateriale pm = existing.stream()
+                    .filter(p -> p.getIdSuperficie() == null)
+                    .findFirst()
+                    .orElse(new PrecioMateriale());
+            pm.setIdMateriales(material.getId());
+            pm.setIdSuperficie(null);
+            pm.setUnidades(units);
+            pm.setPrecioMaterial(price);
+            precioMaterialRepository.save(pm);
+        }
+    }
+
+    private void saveOrUpdateSurfacePrice(Integer idMaterial, Integer idSuperficie, BigDecimal price) {
+        BigDecimal finalPrice = price != null ? price : BigDecimal.ZERO;
+        PrecioMateriale pm = precioMaterialRepository.findByIdMaterialesAndIdSuperficie(idMaterial, idSuperficie);
+        if (pm == null) {
+            pm = new PrecioMateriale();
+            pm.setIdMateriales(idMaterial);
+            pm.setIdSuperficie(idSuperficie);
+            pm.setUnidades(null);
+        }
+        pm.setPrecioMaterial(finalPrice);
+        precioMaterialRepository.save(pm);
     }
 
 

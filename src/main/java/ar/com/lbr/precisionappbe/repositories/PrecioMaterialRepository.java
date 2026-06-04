@@ -11,6 +11,8 @@ public interface PrecioMaterialRepository extends JpaRepository<PrecioMateriale,
 
     PrecioMateriale findFirstByIdMateriales(Integer idMateriales);
 
+    List<PrecioMateriale> findByIdMaterialesIn(List<Integer> idMateriales);
+
     @Query("SELECT pm, m.materiales FROM PrecioMateriale pm JOIN Material m ON pm.idMateriales = m.id"
             + " where m.disabled is false ORDER BY m.materiales ASC")
     List<Object[]> findAllWithNombreMaterial();

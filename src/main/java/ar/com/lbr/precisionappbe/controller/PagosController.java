@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.util.List;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/pagos")
@@ -26,6 +28,16 @@ public class PagosController {
 
     public PagosController(PagosService pagosService) {
         this.pagosService = pagosService;
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<PagoDTO>>> getAllPagos(
+            @RequestParam(required = false) Instant desde,
+            @RequestParam(required = false) Instant hasta,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String medio) {
+        List<PagoDTO> pagos = pagosService.getAllPagos(desde, hasta, tipo, medio);
+        return ResponseBuilder.ok("Pagos obtenidos con éxito", pagos, (long) pagos.size());
     }
 
     @GetMapping("/presupuesto/{idPresupuesto}")

@@ -98,10 +98,6 @@ public class TrabajosService {
 
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
 
-        if (cliente != null) {
-            folderService.crearCarpetaTrabajo(cliente.getNombreCliente(), dto.getIdPresupuesto(), saved.getId());
-        }
-
         presupuestoService.actualizarPdfFisico(dto.getIdPresupuesto());
 
         return TrabajoPresupuestadoDTO.toDTO(saved);

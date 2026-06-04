@@ -21,6 +21,14 @@ public class MaterialDTO {
     private BigDecimal stock;
     private BigDecimal stockMinimo;
 
+    // Campos de precio unificados
+    private BigDecimal precioPorUnidad;
+    private Short unidades;
+    private BigDecimal precioSup1;   // ID 4
+    private BigDecimal precioSup3_4; // ID 3
+    private BigDecimal precioSup1_2; // ID 2
+    private BigDecimal precioSup1_4; // ID 1
+
     public MaterialDTO(Material m) {
         this.id = m.getId();
         this.materiales = m.getMateriales();
