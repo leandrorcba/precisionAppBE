@@ -60,8 +60,29 @@ public class CostosFijosController {
     }
 
     @GetMapping("/tipos")
-    public ResponseEntity<ApiResponse<List<TipoCostoFijoDTO>>> getTipos() {
-        List<TipoCostoFijoDTO> tipos = costosFijosService.getTipos();
+    public ResponseEntity<ApiResponse<List<TipoCostoFijoDTO>>> getTipos(
+            @RequestParam(required = false) Boolean soloActivos) {
+        List<TipoCostoFijoDTO> tipos = costosFijosService.getTipos(soloActivos);
         return ResponseBuilder.ok("Tipos obtenidos con éxito", tipos, (long) tipos.size());
+    }
+
+    @PostMapping("/tipos")
+    public ResponseEntity<ApiResponse<TipoCostoFijoDTO>> createTipo(@RequestBody TipoCostoFijoDTO dto) {
+        TipoCostoFijoDTO created = costosFijosService.createTipo(dto);
+        return ResponseBuilder.ok("Tipo de Costo Fijo creado con éxito", created, 0L);
+    }
+
+    @PutMapping("/tipos/{id}")
+    public ResponseEntity<ApiResponse<TipoCostoFijoDTO>> updateTipo(
+            @PathVariable Integer id,
+            @RequestBody TipoCostoFijoDTO dto) {
+        TipoCostoFijoDTO updated = costosFijosService.updateTipo(id, dto);
+        return ResponseBuilder.ok("Tipo de Costo Fijo actualizado con éxito", updated, 0L);
+    }
+
+    @DeleteMapping("/tipos/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteTipo(@PathVariable Integer id) {
+        costosFijosService.deleteTipo(id);
+        return ResponseBuilder.ok("Tipo de Costo Fijo inactivado con éxito", null, 0L);
     }
 }

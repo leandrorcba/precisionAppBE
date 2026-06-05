@@ -123,9 +123,75 @@ public class CostosFijosService {
     }
 
     public List<TipoCostoFijoDTO> getTipos() {
-        return tipoCostoFijoRepository.findByActivoTrue().stream()
+        return getTipos(true);
+    }
+
+    public List<TipoCostoFijoDTO> getTipos(Boolean soloActivos) {
+        List<TipoCostoFijo> list;
+        if (soloActivos == null || soloActivos) {
+            list = tipoCostoFijoRepository.findByActivoTrue();
+        } else {
+            list = tipoCostoFijoRepository.findAll();
+        }
+        return list.stream()
                 .map(TipoCostoFijoDTO::toDTO)
                 .toList();
+    }
+
+    @Transactional
+    public TipoCostoFijoDTO createTipo(TipoCostoFijoDTO dto) {
+        if (dto.getCodigo() == null || dto.getCodigo().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El código es requerido");
+        }
+        if (dto.getNombre() == null || dto.getNombre().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre es requerido");
+        }
+
+        String sanitizedCodigo = dto.getCodigo().toUpperCase().trim();
+        if (tipoCostoFijoRepository.findAll().stream().anyMatch(t -> t.getCodigo().equals(sanitizedCodigo))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya existe un concepto con el código: " + sanitizedCodigo);
+        }
+
+        TipoCostoFijo tipo = new TipoCostoFijo();
+        tipo.setCodigo(sanitizedCodigo);
+        tipo.setNombre(dto.getNombre().trim());
+        tipo.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+
+        tipo = tipoCostoFijoRepository.save(tipo);
+        return TipoCostoFijoDTO.toDTO(tipo);
+    }
+
+    @Transactional
+    public TipoCostoFijoDTO updateTipo(Integer id, TipoCostoFijoDTO dto) {
+        TipoCostoFijo tipo = tipoCostoFijoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tipo de Costo Fijo no encontrado: " + id));
+
+        if (dto.getCodigo() == null || dto.getCodigo().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El código es requerido");
+        }
+        if (dto.getNombre() == null || dto.getNombre().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre es requerido");
+        }
+
+        String sanitizedCodigo = dto.getCodigo().toUpperCase().trim();
+        if (tipoCostoFijoRepository.findAll().stream().anyMatch(t -> t.getCodigo().equals(sanitizedCodigo) && !t.getId().equals(id))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya existe un concepto con el código: " + sanitizedCodigo);
+        }
+
+        tipo.setCodigo(sanitizedCodigo);
+        tipo.setNombre(dto.getNombre().trim());
+        tipo.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+
+        tipo = tipoCostoFijoRepository.save(tipo);
+        return TipoCostoFijoDTO.toDTO(tipo);
+    }
+
+    @Transactional
+    public void deleteTipo(Integer id) {
+        TipoCostoFijo tipo = tipoCostoFijoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tipo de Costo Fijo no encontrado: " + id));
+        tipo.setActivo(false);
+        tipoCostoFijoRepository.save(tipo);
     }
 
     private CostoFijo findOrThrow(Integer id) {

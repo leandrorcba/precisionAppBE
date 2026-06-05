@@ -2,6 +2,8 @@ package ar.com.lbr.precisionappbe.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -14,6 +16,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Table(name = "tipo_costo_fijo")
 public class TipoCostoFijo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_tipo_costo_fijo", nullable = false)
     private Integer id;
 
