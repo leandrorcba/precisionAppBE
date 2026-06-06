@@ -31,6 +31,7 @@ public class ClientesMapper {
         cliente.setMora(dto.getMora());
         cliente.setPrecioMinutoEmpresa(dto.getPrecioMinutoEmpresa());
         cliente.setIdTipoCliente(tipoCliente.getId()); // entidad ya buscada
+        cliente.setDisabled(false);
         return cliente;
     }
 

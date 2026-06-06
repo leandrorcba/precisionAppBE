@@ -59,9 +59,24 @@ VALUES ('ELECTRICIDAD', 'Electricidad'),
        ('EMPLEADO', 'Empleado'),
        ('TARJETA', 'Tarjeta')
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
-
-ALTER TABLE `precision_schema`.`costosfijos`
-    ADD COLUMN periodo DATE NULL;
+DROP PROCEDURE IF EXISTS AddColumnIfNotExist;
+DELIMITER //
+CREATE PROCEDURE AddColumnIfNotExist()
+BEGIN
+    DECLARE col_exists INT DEFAULT 0;
+    SELECT COUNT(*) INTO col_exists 
+    FROM information_schema.columns 
+    WHERE table_schema = 'precision_schema' 
+      AND table_name = 'costosfijos' 
+      AND column_name = 'periodo';
+      
+    IF col_exists = 0 THEN
+        ALTER TABLE `precision_schema`.`costosfijos` ADD COLUMN `periodo` DATE NULL;
+    END IF;
+END //
+DELIMITER ;
+CALL AddColumnIfNotExist();
+DROP PROCEDURE AddColumnIfNotExist;
 
 -- Convierte "Noviembre-2015" -> 2015-11-01
 UPDATE `precision_schema`.`costosfijos`

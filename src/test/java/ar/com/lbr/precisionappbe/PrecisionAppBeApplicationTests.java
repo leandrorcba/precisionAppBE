@@ -44,6 +44,27 @@ class PrecisionAppBeApplicationTests {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EventsRepository eventsRepository;
+
+    @Autowired
+    private TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
+
+    @Autowired
+    private PagoVentaRepository pagoVentaRepository;
+
+    @Autowired
+    private VentaRepository ventaRepository;
+
+    @Autowired
+    private ExtraccionRepository extraccionRepository;
+
+    @Autowired
+    private CompraMaterialeRepository compraMaterialeRepository;
+
+    @Autowired
+    private GastoRepository gastoRepository;
+
     private static final ZoneId ZONE_ARGENTINA = ZoneId.of("America/Argentina/Buenos_Aires");
 
     @Test
@@ -51,8 +72,15 @@ class PrecisionAppBeApplicationTests {
     void testCierreCalculaPagosPresupuestoCorrectamente() {
         System.out.println("========== INICIANDO TEST DE INTEGRACION DE CIERRE DE CAJA ==========");
 
-        // 1. Limpiar cierres, pagos y presupuestos previos
+        // 1. Limpiar cierres, pagos, trabajos, eventos, presupuestos y otros egresos/ingresos previos
+        eventsRepository.deleteAll();
+        trabajoPresupuestadoRepository.deleteAll();
         pagoPresupuestoRepository.deleteAll();
+        pagoVentaRepository.deleteAll();
+        ventaRepository.deleteAll();
+        extraccionRepository.deleteAll();
+        compraMaterialeRepository.deleteAll();
+        gastoRepository.deleteAll();
         cierreRepository.deleteAll();
         presupuestoRepository.deleteAll();
 
@@ -203,7 +231,7 @@ class PrecisionAppBeApplicationTests {
 
         assertEquals(new BigDecimal("1500.50"), dto.getMontoPresupuestos());
         assertEquals(new BigDecimal("500.00"), dto.getSenia());
-        assertEquals(new BigDecimal("3000.50"), dto.getArqueo());
+        assertEquals(new BigDecimal("2000.50"), dto.getArqueo());
         
         System.out.println("========== TEST FINALIZADO CON EXITO ==========");
     }
