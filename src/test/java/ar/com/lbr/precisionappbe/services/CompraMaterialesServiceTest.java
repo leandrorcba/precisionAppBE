@@ -35,11 +35,14 @@ class CompraMaterialesServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private CompraMaterialesService service;
 
     @BeforeEach
     void setUp() {
-        service = new CompraMaterialesService(compraMaterialeRepository, userRepository);
+        service = new CompraMaterialesService(compraMaterialeRepository, userRepository, auditLogService);
     }
 
     @Test

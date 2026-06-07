@@ -23,6 +23,7 @@ import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
@@ -37,18 +38,19 @@ import java.util.stream.Collectors;
 @Service
 public class PresupuestoService {
 
-    PresupuestoRepository presupuestoRepository;
-    TipoClienteRepository tipoClienteRepository;
-    PresupuestoMapper presupuestoMapper;
-    PagoPresupuestoRepository pagoPresupuestoRepository;
-    DescuentoRepository descuentoRepository;
-    TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
-    ClienteRepository clienteRepository;
-    MaterialRepository materialRepository;
-    VariosRepository variosRepository;
-    EventsService eventsService;
-    FolderService folderService;
-    RemitoPdfService remitoPdfService;
+    private final PresupuestoRepository presupuestoRepository;
+    private final TipoClienteRepository tipoClienteRepository;
+    private final PresupuestoMapper presupuestoMapper;
+    private final PagoPresupuestoRepository pagoPresupuestoRepository;
+    private final DescuentoRepository descuentoRepository;
+    private final TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
+    private final ClienteRepository clienteRepository;
+    private final MaterialRepository materialRepository;
+    private final VariosRepository variosRepository;
+    private final EventsService eventsService;
+    private final FolderService folderService;
+    private final RemitoPdfService remitoPdfService;
+    private final AuditLogService auditLogService;
 
     public PresupuestoService(PresupuestoRepository presupuestoRepository,
                               TipoClienteRepository tipoClienteRepository,
@@ -61,7 +63,8 @@ public class PresupuestoService {
                               VariosRepository variosRepository,
                               EventsService eventsService,
                               FolderService folderService,
-                              RemitoPdfService remitoPdfService
+                              RemitoPdfService remitoPdfService,
+                              AuditLogService auditLogService
     ) {
         this.presupuestoRepository = presupuestoRepository;
         this.tipoClienteRepository = tipoClienteRepository;
@@ -75,6 +78,7 @@ public class PresupuestoService {
         this.eventsService = eventsService;
         this.folderService = folderService;
         this.remitoPdfService = remitoPdfService;
+        this.auditLogService = auditLogService;
     }
 
     public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Pageable pageable) {
@@ -241,6 +245,9 @@ public class PresupuestoService {
         dto.setIdCliente(presupuesto.getId());
         actualizarPdfFisico(presupuesto.getId());
 
+        auditLogService.log("CREAR", "PRESUPUESTOS", presupuesto.getId().toString(),
+                "Presupuesto #" + presupuesto.getId() + " creado para Cliente: " + (cliente != null ? cliente.getNombreCliente() : presupuesto.getIdCliente()));
+
         return dto;
     }
 
@@ -252,6 +259,9 @@ public class PresupuestoService {
 
         dto.setIdCliente(presupuesto.getId());
         actualizarPdfFisico(presupuesto.getId());
+
+        auditLogService.log("MODIFICAR", "PRESUPUESTOS", presupuesto.getId().toString(),
+                "Presupuesto #" + presupuesto.getId() + " actualizado");
 
         return dto;
     }
@@ -304,6 +314,9 @@ public class PresupuestoService {
         }
 
         actualizarPdfFisico(idPresupuesto);
+
+        auditLogService.log("APROBAR", "PRESUPUESTOS", idPresupuesto.toString(),
+                "Presupuesto #" + idPresupuesto + " aprobado para Cliente: " + cliente.getNombreCliente() + " (Monto: $" + precioSinDescuento + ")");
 
         return PresupuestoDTO.toDTO(presupuesto);
     }

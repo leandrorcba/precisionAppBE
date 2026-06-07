@@ -39,6 +39,9 @@ public class JwtService {
                 .findFirst()
                 .map(a -> a.getAuthority().replace("ROLE_", ""))
                 .orElse(""));
+        if (userDetails instanceof ar.com.lbr.precisionappbe.model.User user) {
+            extraClaims.put("allowedMenus", user.getAllowedMenus());
+        }
         return buildToken(extraClaims, userDetails, accessTokenExpiration);
     }
 

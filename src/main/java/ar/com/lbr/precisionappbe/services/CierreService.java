@@ -3,12 +3,27 @@ package ar.com.lbr.precisionappbe.services;
 import ar.com.lbr.precisionappbe.dto.CierreDTO;
 import ar.com.lbr.precisionappbe.dto.MovimientoReporteDTO;
 import ar.com.lbr.precisionappbe.dto.ReporteDiarioDTO;
-import ar.com.lbr.precisionappbe.model.*;
-import ar.com.lbr.precisionappbe.repositories.*;
+import ar.com.lbr.precisionappbe.model.Cierre;
+import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
+import ar.com.lbr.precisionappbe.model.PagoVenta;
+import ar.com.lbr.precisionappbe.model.Extraccione;
+import ar.com.lbr.precisionappbe.model.CompraMateriale;
+import ar.com.lbr.precisionappbe.model.Gasto;
+import ar.com.lbr.precisionappbe.model.User;
+import ar.com.lbr.precisionappbe.model.Descuento;
+import ar.com.lbr.precisionappbe.repositories.CierreRepository;
+import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
+import ar.com.lbr.precisionappbe.repositories.PagoVentaRepository;
+import ar.com.lbr.precisionappbe.repositories.ExtraccionRepository;
+import ar.com.lbr.precisionappbe.repositories.CompraMaterialeRepository;
+import ar.com.lbr.precisionappbe.repositories.GastoRepository;
+import ar.com.lbr.precisionappbe.repositories.UserRepository;
+import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.dto.response.CierreResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -30,6 +45,7 @@ public class CierreService {
     private final GastoRepository gastoRepository;
     private final UserRepository userRepository;
     private final DescuentoRepository descuentoRepository;
+    private final AuditLogService auditLogService;
 
     private static final ZoneId ZONE_ARGENTINA = ZoneId.of("America/Argentina/Buenos_Aires");
 
@@ -40,7 +56,8 @@ public class CierreService {
                          CompraMaterialeRepository compraMaterialeRepository,
                          GastoRepository gastoRepository,
                          UserRepository userRepository,
-                         DescuentoRepository descuentoRepository) {
+                         DescuentoRepository descuentoRepository,
+                         AuditLogService auditLogService) {
         this.cierreRepository = cierreRepository;
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.pagoVentaRepository = pagoVentaRepository;
@@ -49,6 +66,7 @@ public class CierreService {
         this.gastoRepository = gastoRepository;
         this.userRepository = userRepository;
         this.descuentoRepository = descuentoRepository;
+        this.auditLogService = auditLogService;
     }
 
     public CierreResponse getAllCierres(Pageable pageable) {
@@ -130,6 +148,11 @@ public class CierreService {
         calculateAndFillCierre(cierre);
 
         Cierre saved = cierreRepository.save(cierre);
+
+        auditLogService.log("CREAR", "CIERRES", saved.getId().toString(),
+                "Cierre de caja inicializado para el período " + saved.getMesCierre()
+                + " con Monto Inicial: $" + saved.getMontoInicial());
+
         return CierreDTO.toDTO(saved);
     }
 
@@ -151,6 +174,11 @@ public class CierreService {
         calculateAndFillCierre(cierre);
 
         Cierre saved = cierreRepository.save(cierre);
+
+        auditLogService.log("MODIFICAR", "CIERRES", saved.getId().toString(),
+                "Cierre de caja #" + saved.getId() + " actualizado (Monto Inicial: $" + saved.getMontoInicial()
+                + ", Monto Final/Arqueo: $" + saved.getMontoFinal() + ")");
+
         return CierreDTO.toDTO(saved);
     }
 
@@ -162,6 +190,12 @@ public class CierreService {
         cierre.setCerrado(true);
 
         Cierre saved = cierreRepository.save(cierre);
+
+        auditLogService.log("CERRAR", "CIERRES", saved.getId().toString(),
+                "Cierre de caja #" + saved.getId() + " cerrado y bloqueado con Arqueo: $" + saved.getMontoFinal()
+                + " (Teórico Aplicación: $" + saved.getArqueo().add(saved.getMontoInicial())
+                + ", Diferencia: $" + saved.getDiferencia() + ")");
+
         return CierreDTO.toDTO(saved);
     }
 

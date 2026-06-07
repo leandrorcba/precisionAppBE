@@ -17,6 +17,7 @@ import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.SuperficieRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import org.springframework.stereotype.Service;
+import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -39,6 +40,7 @@ public class TrabajosService {
     private final PresupuestoCalculadorService presupuestoCalculadorService;
     private final DescuentoRepository descuentoRepository;
     private final FolderService folderService;
+    private final AuditLogService auditLogService;
 
     public TrabajosService(TrabajoPresupuestadoRepository trabajosRepository,
                            PresupuestoRepository presupuestoRepository,
@@ -48,7 +50,8 @@ public class TrabajosService {
                            VariosService variosService, ClienteService clienteService,
                            PresupuestoCalculadorService presupuestoCalculadorService,
                            DescuentoRepository descuentoRepository,
-                           FolderService folderService) {
+                           FolderService folderService,
+                           AuditLogService auditLogService) {
         this.trabajosRepository = trabajosRepository;
         this.presupuestoRepository = presupuestoRepository;
         this.materialeRepository = materialeRepository;
@@ -60,6 +63,7 @@ public class TrabajosService {
         this.presupuestoCalculadorService = presupuestoCalculadorService;
         this.descuentoRepository = descuentoRepository;
         this.folderService = folderService;
+        this.auditLogService = auditLogService;
     }
 
     public TrabajoPresupuestadoDTO createTrabajo(TrabajoPresupuestadoDTO dto) {
@@ -100,6 +104,9 @@ public class TrabajosService {
 
         presupuestoService.actualizarPdfFisico(dto.getIdPresupuesto());
 
+        auditLogService.log("CREAR", "TRABAJOS", saved.getId().toString(),
+                "Trabajo #" + saved.getId() + " (" + (saved.getArchivoCad() != null ? saved.getArchivoCad() : "Sin archivo") + ") creado en Presupuesto #" + saved.getIdPresupuesto() + " por $" + saved.getPrecioTrabajo());
+
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
@@ -109,6 +116,10 @@ public class TrabajosService {
         entity.setSeleccionado(newValue);
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
         presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
+
+        auditLogService.log("MODIFICAR", "TRABAJOS", idTrabajo.toString(),
+                "Trabajo #" + idTrabajo + " cambió selección a: " + (newValue ? "ACTIVO" : "INACTIVO"));
+
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
@@ -126,6 +137,9 @@ public class TrabajosService {
         }
 
         presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
+
+        auditLogService.log("MODIFICAR", "TRABAJOS", idTrabajo.toString(),
+                "Trabajo #" + idTrabajo + " cambió de estado a: " + nuevoEstado);
 
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }

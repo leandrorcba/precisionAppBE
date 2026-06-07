@@ -23,6 +23,7 @@ import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -45,6 +46,7 @@ public class PagosService {
     private final VariosRepository variosRepository;
     private final DescuentoRepository descuentoRepository;
     private final PresupuestoService presupuestoService;
+    private final AuditLogService auditLogService;
 
     public PagosService(PagoPresupuestoRepository pagoPresupuestoRepository,
                         PagoVentaRepository pagoVentaRepository,
@@ -54,7 +56,8 @@ public class PagosService {
                         PresupuestoRepository presupuestoRepository,
                         VariosRepository variosRepository,
                         DescuentoRepository descuentoRepository,
-                        PresupuestoService presupuestoService) {
+                        PresupuestoService presupuestoService,
+                        AuditLogService auditLogService) {
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.pagoVentaRepository = pagoVentaRepository;
         this.tipoPagoRepository = tipoPagoRepository;
@@ -64,6 +67,7 @@ public class PagosService {
         this.variosRepository = variosRepository;
         this.descuentoRepository = descuentoRepository;
         this.presupuestoService = presupuestoService;
+        this.auditLogService = auditLogService;
     }
 
     // ---------------------------------------------------------------
@@ -206,6 +210,11 @@ public class PagosService {
 
         PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
         updatePresupuestoCobradoStatus(dto.getIdPresupuesto());
+
+        auditLogService.log("CREAR", "PAGOS", saved.getId().toString(),
+                "Pago registrado para Presupuesto #" + saved.getIdPresupuesto() + " por $" + saved.getMonto()
+                + " (Tipo: " + tipoPago.getTipo() + " / Medio: " + saved.getIdMedioPago().getTipo() + ")");
+
         return toDTO(saved);
     }
 
@@ -216,7 +225,13 @@ public class PagosService {
         mapCommonFields(dto, tipoPago, pago);
         pago.setIdVenta(venta);
         pago.setFechaHora(Instant.now());
-        return toDTO(pagoVentaRepository.save(pago));
+        PagoVenta saved = pagoVentaRepository.save(pago);
+
+        auditLogService.log("CREAR", "PAGOS", saved.getId().toString(),
+                "Pago registrado para Venta #" + venta.getId() + " por $" + saved.getMonto()
+                + " (Medio: " + saved.getIdMedioPago().getTipo() + ")");
+
+        return toDTO(saved);
     }
 
     // ---------------------------------------------------------------
@@ -251,6 +266,10 @@ public class PagosService {
 
         PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
         updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
+
+        auditLogService.log("MODIFICAR", "PAGOS", saved.getId().toString(),
+                "Pago #" + saved.getId() + " del Presupuesto #" + saved.getIdPresupuesto() + " actualizado. Activo: " + saved.getEnabled());
+
         return toDTO(saved);
     }
 
@@ -258,7 +277,12 @@ public class PagosService {
         PagoVenta pago = pagoVentaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado: " + id));
         mapCommonFields(dto, tipoPago, pago);
-        return toDTO(pagoVentaRepository.save(pago));
+        PagoVenta saved = pagoVentaRepository.save(pago);
+
+        auditLogService.log("MODIFICAR", "PAGOS", saved.getId().toString(),
+                "Pago #" + saved.getId() + " de la Venta #" + saved.getIdVenta().getId() + " modificado");
+
+        return toDTO(saved);
     }
 
     // ---------------------------------------------------------------
@@ -279,10 +303,16 @@ public class PagosService {
                 }
             }
             updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
+
+            auditLogService.log("ELIMINAR", "PAGOS", id.toString(),
+                    "Pago #" + id + " del Presupuesto #" + pago.getIdPresupuesto() + " deshabilitado");
         } else {
             PagoVenta pago = pagoVentaRepository.findById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado: " + id));
             pagoVentaRepository.delete(pago);
+
+            auditLogService.log("ELIMINAR", "PAGOS", id.toString(),
+                    "Pago #" + id + " de la Venta #" + pago.getIdVenta().getId() + " eliminado");
         }
     }
 

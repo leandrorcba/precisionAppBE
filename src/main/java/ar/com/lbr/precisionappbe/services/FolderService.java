@@ -137,7 +137,7 @@ public class FolderService {
                 }
             }
         } catch (Exception e) {
-            log.error("Error al crear la carpeta fisica del trabajo {} para el presupuesto {} del cliente {}", 
+            log.error("Error al crear la carpeta fisica del trabajo {} para el presupuesto {} del cliente {}",
                     idTrabajo, idPresupuesto, nombreCliente, e);
         }
     }
@@ -163,26 +163,41 @@ public class FolderService {
         }
 
         try {
-            if (!targetDir.exists()) {
-                targetDir.mkdirs(); // crear si no existe
+            String canonicalRoot = new File(rootPath).getCanonicalPath();
+            String canonicalTarget = targetDir.getCanonicalPath();
+            if (!canonicalTarget.equals(canonicalRoot) && !canonicalTarget.startsWith(canonicalRoot + File.separator)) {
+                log.error("Acceso denegado: ruta fuera del directorio raiz: {}", canonicalTarget);
+                return;
+            }
+
+            if (!targetDir.exists() && !targetDir.mkdirs()) {
+                log.warn("No se pudo crear el directorio: {}", canonicalTarget);
             }
 
             if (targetDir.exists() && targetDir.isDirectory()) {
-                log.info("Abriendo carpeta física: {}", targetDir.getAbsolutePath());
+                log.info("Abriendo carpeta física: {}", canonicalTarget);
                 String os = System.getProperty("os.name").toLowerCase();
                 if (os.contains("win")) {
-                    Runtime.getRuntime().exec("explorer.exe \"" + targetDir.getAbsolutePath() + "\"");
+                    Runtime.getRuntime().exec(new String[]{"explorer.exe", canonicalTarget});
                 } else if (os.contains("mac")) {
-                    Runtime.getRuntime().exec("open \"" + targetDir.getAbsolutePath() + "\"");
+                    Runtime.getRuntime().exec(new String[]{"open", canonicalTarget});
                 } else {
-                    Runtime.getRuntime().exec("xdg-open \"" + targetDir.getAbsolutePath() + "\"");
+                    Runtime.getRuntime().exec(new String[]{"xdg-open", canonicalTarget});
                 }
             } else {
-                log.error("La ruta no es un directorio válido: {}", targetDir.getAbsolutePath());
+                log.error("La ruta no es un directorio válido: {}", canonicalTarget);
             }
         } catch (Exception e) {
             log.error("Error al abrir la carpeta física: {}", targetDir.getAbsolutePath(), e);
         }
+    }
+
+    public String getConfiguredRootPath() {
+        Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
+        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+            return null;
+        }
+        return varios.getDirectorioRaizCarpetas().trim();
     }
 
     public void guardarPdfEnCarpeta(String nombreCliente, Integer idPresupuesto, byte[] pdfBytes) {
@@ -204,7 +219,7 @@ public class FolderService {
             File rootDir = new File(rootPath);
             File clientDir = new File(rootDir, sanitizedClientName);
             File budgetDir = new File(clientDir, budgetFolderName);
-            
+
             if (!budgetDir.exists()) {
                 budgetDir.mkdirs();
             }
@@ -216,7 +231,6 @@ public class FolderService {
             log.error("Error al guardar el PDF del remito en la carpeta para el presupuesto {}", idPresupuesto, e);
         }
     }
-
 
 
     public static String sanitizeFolderName(String name) {

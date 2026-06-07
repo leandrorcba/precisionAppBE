@@ -1,7 +1,9 @@
 package ar.com.lbr.precisionappbe.controller;
 
+import ar.com.lbr.precisionappbe.dto.PasswordChangeRequest;
 import ar.com.lbr.precisionappbe.dto.UserDTO;
 import ar.com.lbr.precisionappbe.services.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,6 +61,12 @@ public class UserController {
             return ResponseEntity.ok(updatedUser);
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}/change-password")
+    public ResponseEntity<Void> changePassword(@PathVariable Integer id, @Valid @RequestBody PasswordChangeRequest request) {
+        userService.changePassword(id, request.getPassword());
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")

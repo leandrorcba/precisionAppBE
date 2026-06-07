@@ -28,9 +28,13 @@ public class DashboardDTO {
     private Long totalClientesNuevos;
     private Long totalMinutosCorte;
     private BigDecimal totalCobradoCorte;
+    private BigDecimal totalPagadoCorte;
     private BigDecimal totalCobradoMaterial;
+    private BigDecimal totalPagadoMaterial;
     private BigDecimal totalMaterialTrabajos;
+    private BigDecimal totalPagadoMaterialTrabajos;
     private BigDecimal totalCobradoServicios;
+    private BigDecimal totalPagadoServicios;
     private BigDecimal totalComprasMateriales;
 
     @Getter

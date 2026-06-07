@@ -13,6 +13,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,20 +23,22 @@ import java.util.stream.Collectors;
 @Service
 public class ClienteService {
 
-    ClienteRepository clienteRepository;
-    UtilsService utilsService;
-    ClientesMapper clientesMapper;
-    PuntoRepository puntoRepository;
-    FolderService folderService;
+    private final ClienteRepository clienteRepository;
+    private final UtilsService utilsService;
+    private final ClientesMapper clientesMapper;
+    private final PuntoRepository puntoRepository;
+    private final FolderService folderService;
+    private final AuditLogService auditLogService;
 
     public ClienteService(ClienteRepository clienteRepository, ClientesMapper clientesMapper,
                           UtilsService utilsService, PuntoRepository puntoRepository,
-                          FolderService folderService) {
+                          FolderService folderService, AuditLogService auditLogService) {
         this.clienteRepository = clienteRepository;
         this.clientesMapper = clientesMapper;
         this.utilsService = utilsService;
         this.puntoRepository = puntoRepository;
         this.folderService = folderService;
+        this.auditLogService = auditLogService;
     }
 
     public ClienteResponse buscarClientes(String nombreCliente, Boolean mora, Integer idTipoCliente,
@@ -95,6 +98,9 @@ public class ClienteService {
         punto.setPuntosAcumuladosHistorico(0);
         puntoRepository.save(punto);
 
+        auditLogService.log("CREAR", "CLIENTES", cliente.getId().toString(),
+                "Cliente '" + cliente.getNombreCliente() + "' creado con tipo: " + tipoCliente.getNombreTipo());
+
         return dto;
     }
 
@@ -103,6 +109,8 @@ public class ClienteService {
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
         cliente.setDisabled(false);
         clienteRepository.save(cliente);
+        auditLogService.log("MODIFICAR", "CLIENTES", id.toString(),
+                "Cliente '" + cliente.getNombreCliente() + "' habilitado");
     }
 
     public void deleteCliente(Integer id) {
@@ -110,6 +118,8 @@ public class ClienteService {
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
         cliente.setDisabled(true);
         clienteRepository.save(cliente);
+        auditLogService.log("DESHABILITAR", "CLIENTES", id.toString(),
+                "Cliente '" + cliente.getNombreCliente() + "' deshabilitado");
     }
 
     public ClienteDTO getClienteById(Integer id) {
@@ -132,6 +142,9 @@ public class ClienteService {
         dto.setIdCliente(cliente.getId());
 
         folderService.crearCarpetaCliente(cliente.getNombreCliente());
+
+        auditLogService.log("MODIFICAR", "CLIENTES", cliente.getId().toString(),
+                "Cliente '" + cliente.getNombreCliente() + "' modificado (Tipo: " + tipoCliente.getNombreTipo() + ")");
 
         return dto;
     }
