@@ -246,7 +246,7 @@ public class PresupuestoService {
         actualizarPdfFisico(presupuesto.getId());
 
         auditLogService.log("CREAR", "PRESUPUESTOS", presupuesto.getId().toString(),
-                "Presupuesto #" + presupuesto.getId() + " creado para Cliente: " + (cliente != null ? cliente.getNombreCliente() : presupuesto.getIdCliente()));
+                "Presupuesto #" + presupuesto.getId() + " creado para Cliente: " + (cliente != null ? cliente.getNombreCliente() : presupuesto.getIdCliente()), presupuesto);
 
         return dto;
     }
@@ -261,7 +261,7 @@ public class PresupuestoService {
         actualizarPdfFisico(presupuesto.getId());
 
         auditLogService.log("MODIFICAR", "PRESUPUESTOS", presupuesto.getId().toString(),
-                "Presupuesto #" + presupuesto.getId() + " actualizado");
+                "Presupuesto #" + presupuesto.getId() + " actualizado", presupuesto);
 
         return dto;
     }
@@ -316,7 +316,7 @@ public class PresupuestoService {
         actualizarPdfFisico(idPresupuesto);
 
         auditLogService.log("APROBAR", "PRESUPUESTOS", idPresupuesto.toString(),
-                "Presupuesto #" + idPresupuesto + " aprobado para Cliente: " + cliente.getNombreCliente() + " (Monto: $" + precioSinDescuento + ")");
+                "Presupuesto #" + idPresupuesto + " aprobado para Cliente: " + cliente.getNombreCliente() + " (Monto: $" + precioSinDescuento + ")", items);
 
         return PresupuestoDTO.toDTO(presupuesto);
     }

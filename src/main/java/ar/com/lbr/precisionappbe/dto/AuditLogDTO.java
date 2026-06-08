@@ -19,6 +19,8 @@ public class AuditLogDTO {
     private String accion;
     private String modulo;
     private String registroId;
+    private String uri;
+    private String json;
     private String detalles;
 
     public AuditLogDTO(AuditLog entity) {
@@ -29,6 +31,8 @@ public class AuditLogDTO {
             this.accion = entity.getAccion();
             this.modulo = entity.getModulo();
             this.registroId = entity.getRegistroId();
+            this.uri = entity.getUri();
+            this.json = entity.getJson();
             this.detalles = entity.getDetalles();
         }
     }

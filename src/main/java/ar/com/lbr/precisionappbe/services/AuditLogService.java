@@ -2,6 +2,8 @@ package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.model.AuditLog;
 import ar.com.lbr.precisionappbe.repositories.AuditLogRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -10,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import java.time.Instant;
 import java.util.List;
 
@@ -17,9 +21,19 @@ import java.util.List;
 public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
+    private final ObjectMapper objectMapper;
 
-    public AuditLogService(AuditLogRepository auditLogRepository) {
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private interface HibernateMixIn {}
+
+    public AuditLogService(AuditLogRepository auditLogRepository, @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper) {
         this.auditLogRepository = auditLogRepository;
+        ObjectMapper mapper = objectMapper != null ? objectMapper : new ObjectMapper();
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.configure(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        mapper.addMixIn(Object.class, HibernateMixIn.class);
+        this.objectMapper = mapper;
     }
 
     private String getCurrentUsername() {
@@ -32,6 +46,11 @@ public class AuditLogService {
 
     @Transactional
     public void log(String accion, String modulo, String registroId, String detalles) {
+        log(accion, modulo, registroId, detalles, null);
+    }
+
+    @Transactional
+    public void log(String accion, String modulo, String registroId, String detalles, Object payload) {
         AuditLog log = new AuditLog();
         log.setFechaHora(Instant.now());
         log.setUsuario(getCurrentUsername());
@@ -39,6 +58,27 @@ public class AuditLogService {
         log.setModulo(modulo);
         log.setRegistroId(registroId);
         log.setDetalles(detalles);
+
+        // Capturar URI si estamos en un contexto HTTP
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                log.setUri(request.getRequestURI());
+            }
+        } catch (Exception e) {
+            // Ignorar si no hay contexto web activo (ej. durante el startup de la base de datos)
+        }
+
+        // Serializar payload a JSON
+        if (payload != null) {
+            try {
+                log.setJson(objectMapper.writeValueAsString(payload));
+            } catch (Exception e) {
+                log.setJson("{\"error\": \"No se pudo serializar el payload: " + e.getMessage() + "\"}");
+            }
+        }
+
         auditLogRepository.save(log);
     }
 

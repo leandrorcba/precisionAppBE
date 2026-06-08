@@ -33,7 +33,7 @@ class AuditLogServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AuditLogService(auditLogRepository);
+        service = new AuditLogService(auditLogRepository, new com.fasterxml.jackson.databind.ObjectMapper());
         SecurityContextHolder.setContext(securityContext);
     }
 

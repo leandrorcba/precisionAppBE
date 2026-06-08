@@ -65,6 +65,9 @@ class PrecisionAppBeApplicationTests {
     @Autowired
     private GastoRepository gastoRepository;
 
+    @Autowired
+    private DescuentoRepository descuentoRepository;
+
     private static final ZoneId ZONE_ARGENTINA = ZoneId.of("America/Argentina/Buenos_Aires");
 
     @Test
@@ -73,16 +76,17 @@ class PrecisionAppBeApplicationTests {
         System.out.println("========== INICIANDO TEST DE INTEGRACION DE CIERRE DE CAJA ==========");
 
         // 1. Limpiar cierres, pagos, trabajos, eventos, presupuestos y otros egresos/ingresos previos
-        eventsRepository.deleteAll();
-        trabajoPresupuestadoRepository.deleteAll();
-        pagoPresupuestoRepository.deleteAll();
-        pagoVentaRepository.deleteAll();
-        ventaRepository.deleteAll();
-        extraccionRepository.deleteAll();
-        compraMaterialeRepository.deleteAll();
-        gastoRepository.deleteAll();
-        cierreRepository.deleteAll();
-        presupuestoRepository.deleteAll();
+        eventsRepository.deleteAllInBatch();
+        trabajoPresupuestadoRepository.deleteAllInBatch();
+        pagoPresupuestoRepository.deleteAllInBatch();
+        pagoVentaRepository.deleteAllInBatch();
+        ventaRepository.deleteAllInBatch();
+        extraccionRepository.deleteAllInBatch();
+        compraMaterialeRepository.deleteAllInBatch();
+        gastoRepository.deleteAllInBatch();
+        cierreRepository.deleteAllInBatch();
+        descuentoRepository.deleteAllInBatch();
+        presupuestoRepository.deleteAllInBatch();
 
         // 2. Obtener o crear TipoPago y MedioPago
         TipoPago tipoPresupuesto = tipoPagoRepository.findAll().stream()

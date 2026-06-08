@@ -99,7 +99,7 @@ public class ClienteService {
         puntoRepository.save(punto);
 
         auditLogService.log("CREAR", "CLIENTES", cliente.getId().toString(),
-                "Cliente '" + cliente.getNombreCliente() + "' creado con tipo: " + tipoCliente.getNombreTipo());
+                "Cliente '" + cliente.getNombreCliente() + "' creado con tipo: " + tipoCliente.getNombreTipo(), cliente);
 
         return dto;
     }
@@ -110,7 +110,7 @@ public class ClienteService {
         cliente.setDisabled(false);
         clienteRepository.save(cliente);
         auditLogService.log("MODIFICAR", "CLIENTES", id.toString(),
-                "Cliente '" + cliente.getNombreCliente() + "' habilitado");
+                "Cliente '" + cliente.getNombreCliente() + "' habilitado", cliente);
     }
 
     public void deleteCliente(Integer id) {
@@ -119,7 +119,7 @@ public class ClienteService {
         cliente.setDisabled(true);
         clienteRepository.save(cliente);
         auditLogService.log("DESHABILITAR", "CLIENTES", id.toString(),
-                "Cliente '" + cliente.getNombreCliente() + "' deshabilitado");
+                "Cliente '" + cliente.getNombreCliente() + "' deshabilitado", cliente);
     }
 
     public ClienteDTO getClienteById(Integer id) {
@@ -144,7 +144,7 @@ public class ClienteService {
         folderService.crearCarpetaCliente(cliente.getNombreCliente());
 
         auditLogService.log("MODIFICAR", "CLIENTES", cliente.getId().toString(),
-                "Cliente '" + cliente.getNombreCliente() + "' modificado (Tipo: " + tipoCliente.getNombreTipo() + ")");
+                "Cliente '" + cliente.getNombreCliente() + "' modificado (Tipo: " + tipoCliente.getNombreTipo() + ")", cliente);
 
         return dto;
     }

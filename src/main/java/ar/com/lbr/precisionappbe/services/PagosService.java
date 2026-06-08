@@ -211,11 +211,12 @@ public class PagosService {
         PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
         updatePresupuestoCobradoStatus(dto.getIdPresupuesto());
 
+        PagoDTO resultDto = toDTO(saved);
         auditLogService.log("CREAR", "PAGOS", saved.getId().toString(),
                 "Pago registrado para Presupuesto #" + saved.getIdPresupuesto() + " por $" + saved.getMonto()
-                + " (Tipo: " + tipoPago.getTipo() + " / Medio: " + saved.getIdMedioPago().getTipo() + ")");
+                + " (Tipo: " + tipoPago.getTipo() + " / Medio: " + saved.getIdMedioPago().getTipo() + ")", resultDto);
 
-        return toDTO(saved);
+        return resultDto;
     }
 
     private PagoDTO createPagoVenta(PagoDTO dto, TipoPago tipoPago) {
@@ -227,11 +228,12 @@ public class PagosService {
         pago.setFechaHora(Instant.now());
         PagoVenta saved = pagoVentaRepository.save(pago);
 
+        PagoDTO resultDto = toDTO(saved);
         auditLogService.log("CREAR", "PAGOS", saved.getId().toString(),
                 "Pago registrado para Venta #" + venta.getId() + " por $" + saved.getMonto()
-                + " (Medio: " + saved.getIdMedioPago().getTipo() + ")");
+                + " (Medio: " + saved.getIdMedioPago().getTipo() + ")", resultDto);
 
-        return toDTO(saved);
+        return resultDto;
     }
 
     // ---------------------------------------------------------------
@@ -267,10 +269,11 @@ public class PagosService {
         PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
         updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
 
+        PagoDTO resultDto = toDTO(saved);
         auditLogService.log("MODIFICAR", "PAGOS", saved.getId().toString(),
-                "Pago #" + saved.getId() + " del Presupuesto #" + saved.getIdPresupuesto() + " actualizado. Activo: " + saved.getEnabled());
+                "Pago #" + saved.getId() + " del Presupuesto #" + saved.getIdPresupuesto() + " actualizado. Activo: " + saved.getEnabled(), resultDto);
 
-        return toDTO(saved);
+        return resultDto;
     }
 
     private PagoDTO updatePagoVenta(Integer id, PagoDTO dto, TipoPago tipoPago) {
@@ -279,10 +282,11 @@ public class PagosService {
         mapCommonFields(dto, tipoPago, pago);
         PagoVenta saved = pagoVentaRepository.save(pago);
 
+        PagoDTO resultDto = toDTO(saved);
         auditLogService.log("MODIFICAR", "PAGOS", saved.getId().toString(),
-                "Pago #" + saved.getId() + " de la Venta #" + saved.getIdVenta().getId() + " modificado");
+                "Pago #" + saved.getId() + " de la Venta #" + saved.getIdVenta().getId() + " modificado", resultDto);
 
-        return toDTO(saved);
+        return resultDto;
     }
 
     // ---------------------------------------------------------------
@@ -305,14 +309,14 @@ public class PagosService {
             updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
 
             auditLogService.log("ELIMINAR", "PAGOS", id.toString(),
-                    "Pago #" + id + " del Presupuesto #" + pago.getIdPresupuesto() + " deshabilitado");
+                    "Pago #" + id + " del Presupuesto #" + pago.getIdPresupuesto() + " deshabilitado", toDTO(pago));
         } else {
             PagoVenta pago = pagoVentaRepository.findById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado: " + id));
             pagoVentaRepository.delete(pago);
 
             auditLogService.log("ELIMINAR", "PAGOS", id.toString(),
-                    "Pago #" + id + " de la Venta #" + pago.getIdVenta().getId() + " eliminado");
+                    "Pago #" + id + " de la Venta #" + pago.getIdVenta().getId() + " eliminado", toDTO(pago));
         }
     }
 

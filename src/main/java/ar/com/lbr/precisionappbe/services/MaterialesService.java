@@ -23,10 +23,12 @@ public class MaterialesService {
 
     private final MaterialeRepository materialeRepository;
     private final PrecioMaterialRepository precioMaterialRepository;
+    private final AuditLogService auditLogService;
 
-    public MaterialesService(MaterialeRepository materialeRepository, PrecioMaterialRepository precioMaterialRepository) {
+    public MaterialesService(MaterialeRepository materialeRepository, PrecioMaterialRepository precioMaterialRepository, AuditLogService auditLogService) {
         this.materialeRepository = materialeRepository;
         this.precioMaterialRepository = precioMaterialRepository;
+        this.auditLogService = auditLogService;
     }
 
     public Page<MaterialDTO> getAllMateriales(String materiales, String tipo, Boolean enabled, int page, int size) {
@@ -97,6 +99,10 @@ public class MaterialesService {
 
         MaterialDTO result = MaterialDTO.toDTO(saved);
         populatePrices(List.of(result));
+
+        auditLogService.log("CREAR", "MATERIALES", saved.getId().toString(),
+                "Material '" + saved.getMateriales() + "' creado", result);
+
         return result;
     }
 
@@ -116,6 +122,10 @@ public class MaterialesService {
 
         MaterialDTO result = MaterialDTO.toDTO(updated);
         populatePrices(List.of(result));
+
+        auditLogService.log("MODIFICAR", "MATERIALES", updated.getId().toString(),
+                "Material '" + updated.getMateriales() + "' modificado", result);
+
         return result;
     }
 
@@ -124,6 +134,9 @@ public class MaterialesService {
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
         material.setDisabled(true);
         materialeRepository.save(material);
+
+        auditLogService.log("DESHABILITAR", "MATERIALES", id.toString(),
+                "Material '" + material.getMateriales() + "' deshabilitado", material);
     }
 
     public MaterialDTO rehabilitarMaterial(Integer id) {
@@ -132,6 +145,10 @@ public class MaterialesService {
         material.setDisabled(false);
         MaterialDTO result = MaterialDTO.toDTO(materialeRepository.save(material));
         populatePrices(List.of(result));
+
+        auditLogService.log("MODIFICAR", "MATERIALES", material.getId().toString(),
+                "Material '" + material.getMateriales() + "' habilitado", result);
+
         return result;
     }
 
@@ -234,7 +251,12 @@ public class MaterialesService {
         PrecioMateriale saved = precioMaterialRepository.save(precioMateriale);
         Material material = materialeRepository.findById(saved.getIdMateriales()).orElse(null);
         String nombreMaterial = material != null ? material.getMateriales() : null;
-        return PrecioMaterialesDTO.toDTO(saved, nombreMaterial);
+        PrecioMaterialesDTO result = PrecioMaterialesDTO.toDTO(saved, nombreMaterial);
+
+        auditLogService.log("MODIFICAR", "MATERIALES", saved.getIdMateriales().toString(),
+                "Precio del material '" + (nombreMaterial != null ? nombreMaterial : saved.getIdMateriales()) + "' actualizado a $" + saved.getPrecioMaterial(), result);
+
+        return result;
     }
 
     public PrecioMaterialDTO calcularPrecio(Integer idMaterial, Integer idSuperficie, Integer cantidad) {

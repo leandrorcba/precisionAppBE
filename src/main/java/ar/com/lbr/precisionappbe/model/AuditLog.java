@@ -46,6 +46,13 @@ public class AuditLog {
     @Column(name = "registro_id", length = 50)
     private String registroId;
 
+    @Size(max = 255)
+    @Column(name = "uri", length = 255)
+    private String uri;
+
+    @Column(name = "json", columnDefinition = "LONGTEXT")
+    private String json;
+
     @NotNull
     @Column(name = "detalles", nullable = false, columnDefinition = "TEXT")
     private String detalles;
