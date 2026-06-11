@@ -14,9 +14,11 @@ import java.util.stream.Collectors;
 public class GastoService {
 
     private final GastoRepository gastoRepository;
+    private final AuditLogService auditLogService;
 
-    public GastoService(GastoRepository gastoRepository) {
+    public GastoService(GastoRepository gastoRepository, AuditLogService auditLogService) {
         this.gastoRepository = gastoRepository;
+        this.auditLogService = auditLogService;
     }
 
     public List<GastoDTO> getAllGastos() {
@@ -34,12 +36,23 @@ public class GastoService {
         gasto.setFechaGasto(dto.getFechaGasto() != null ? dto.getFechaGasto() : Instant.now());
 
         Gasto saved = gastoRepository.save(gasto);
-        return GastoDTO.toDTO(saved);
+        GastoDTO result = GastoDTO.toDTO(saved);
+
+        auditLogService.log("CREAR", "GASTOS", saved.getId().toString(),
+                "Gasto registrado por $" + saved.getMontoGasto() + " - Responsable: " + saved.getResponsableGasto()
+                + " (Motivo: " + saved.getMotivoGasto() + ")", result);
+
+        return result;
     }
 
     public void deleteGasto(Integer id) {
         Gasto gasto = gastoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Gasto no encontrado con ID: " + id));
+
+        auditLogService.log("ELIMINAR", "GASTOS", id.toString(),
+                "Gasto eliminado de $" + gasto.getMontoGasto() + " - Responsable: " + gasto.getResponsableGasto()
+                + " (Motivo: " + gasto.getMotivoGasto() + ")", GastoDTO.toDTO(gasto));
+
         gastoRepository.delete(gasto);
     }
 }
