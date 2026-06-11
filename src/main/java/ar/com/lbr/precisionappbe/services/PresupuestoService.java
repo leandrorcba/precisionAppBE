@@ -23,6 +23,7 @@ import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
@@ -81,14 +82,14 @@ public class PresupuestoService {
         this.auditLogService = auditLogService;
     }
 
-    public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Pageable pageable) {
+    public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Boolean habilitado, Pageable pageable) {
 
         Cliente cliente = clienteRepository.findById(idCliente).orElse(null);
         if (cliente != null) {
             folderService.crearCarpetaCliente(cliente.getNombreCliente());
         }
 
-        Page<Presupuesto> presupuesto = presupuestoRepository.findByIdClienteOrderByIdDesc(idCliente, pageable);
+        Page<Presupuesto> presupuesto = presupuestoRepository.findByIdClienteAndHabilitadoOrderByIdDesc(idCliente, habilitado, pageable);
         List<PresupuestoDTO> presupuestoDTOS = getPresupuestoDTOS(presupuesto);
 
         return new PresupuestoResponse(presupuestoDTOS, presupuesto.getTotalElements());
@@ -340,6 +341,60 @@ public class PresupuestoService {
         Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + presupuesto.getIdCliente()));
         return cliente;
+    }
+
+    @Transactional
+    public void cancelarPresupuesto(Integer idPresupuesto) {
+        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
+
+        // Check if any job is realizado or entregado
+        List<TrabajoPresupuestado> trabajos = trabajoPresupuestadoRepository.findByIdPresupuesto(idPresupuesto);
+        boolean tieneTrabajoRealizado = trabajos.stream()
+                .anyMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()) || EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
+
+        // Check if budget is cobrado or has enabled payments
+        boolean tienePagos = Boolean.TRUE.equals(presupuesto.getCobrado()) || 
+                !pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(idPresupuesto).isEmpty();
+
+        if (tieneTrabajoRealizado || tienePagos) {
+            throw new IllegalArgumentException("No se puede cancelar el presupuesto porque tiene trabajos realizados o cobros registrados.");
+        }
+
+        // 1. Mark all jobs as seleccionado = 0
+        trabajos.forEach(t -> t.setSeleccionado(false));
+        trabajoPresupuestadoRepository.saveAll(trabajos);
+
+        // 2. Delete calendar events
+        eventsService.deleteEventsByPresupuesto(idPresupuesto);
+
+        // 3. Mark budget as habilitado = false and aprobado = false
+        presupuesto.setHabilitado(false);
+        presupuesto.setAprobado(false);
+        presupuestoRepository.save(presupuesto);
+
+        // Actualizar PDF físico del remito para reflejar el estado cancelado
+        actualizarPdfFisico(idPresupuesto);
+
+        // Audit log
+        auditLogService.log("DESHABILITAR", "PRESUPUESTOS", idPresupuesto.toString(),
+                "Presupuesto #" + idPresupuesto + " cancelado/inhabilitado. Trabajos deseleccionados y eventos eliminados.");
+    }
+
+    @Transactional
+    public void rehabilitarPresupuesto(Integer idPresupuesto) {
+        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
+
+        presupuesto.setHabilitado(true);
+        presupuestoRepository.save(presupuesto);
+
+        // Actualizar PDF físico del remito para reflejar el estado rehabilitado
+        actualizarPdfFisico(idPresupuesto);
+
+        // Audit log
+        auditLogService.log("MODIFICAR", "PRESUPUESTOS", idPresupuesto.toString(),
+                "Presupuesto #" + idPresupuesto + " rehabilitado/habilitado.");
     }
 
     public void actualizarPdfFisico(Integer idPresupuesto) {

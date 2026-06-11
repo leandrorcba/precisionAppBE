@@ -26,6 +26,7 @@ public class PresupuestoDTO {
     private Boolean realizado;
     private Boolean cobrado;
     private Boolean entregado;
+    private Boolean habilitado;
     private Instant fechaHoraPresupuesto;
     private Instant fechaRealizado;
     private Instant fechaAprobado;
@@ -48,10 +49,11 @@ public class PresupuestoDTO {
         this.precioMinuto = presupuesto.getPrecioMinuto();
          this.aprobado = presupuesto.getAprobado();
          this.realizado = presupuesto.getRealizado();
-         this.cobrado = presupuesto.getCobrado();
-         this.entregado = presupuesto.getEntregado();
-         this.fechaHoraPresupuesto = presupuesto.getFechaHoraPresupuesto();
-         this.fechaRealizado = presupuesto.getFechaRealizado();
+          this.cobrado = presupuesto.getCobrado();
+          this.entregado = presupuesto.getEntregado();
+          this.fechaHoraPresupuesto = presupuesto.getFechaHoraPresupuesto();
+          this.fechaRealizado = presupuesto.getFechaRealizado();
+          this.habilitado = presupuesto.getHabilitado();
     }
 
     public static PresupuestoDTO toDTO(Presupuesto presupuesto) {
@@ -73,10 +75,11 @@ public class PresupuestoDTO {
         dto.setPrecioMinuto(presupuesto.getPrecioMinuto());
          dto.setAprobado(presupuesto.getAprobado());
          dto.setRealizado(presupuesto.getRealizado());
-         dto.setCobrado(presupuesto.getCobrado());
-         dto.setEntregado(presupuesto.getEntregado());
-        dto.setFechaHoraPresupuesto(presupuesto.getFechaHoraPresupuesto());
-        dto.setFechaRealizado(presupuesto.getFechaRealizado());
+          dto.setCobrado(presupuesto.getCobrado());
+          dto.setEntregado(presupuesto.getEntregado());
+         dto.setFechaHoraPresupuesto(presupuesto.getFechaHoraPresupuesto());
+         dto.setFechaRealizado(presupuesto.getFechaRealizado());
+         dto.setHabilitado(presupuesto.getHabilitado());
         // dto.setFechaAprobado(presupuesto.getFechaAprobado());
 
         return dto;

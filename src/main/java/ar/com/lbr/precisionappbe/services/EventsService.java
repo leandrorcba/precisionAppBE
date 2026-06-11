@@ -369,4 +369,11 @@ public class EventsService {
         }
         eventsRepository.deleteById(id);
     }
+
+    public void deleteEventsByPresupuesto(Integer idPresupuesto) {
+        List<Event> events = eventsRepository.findByIdPresupuesto(idPresupuesto);
+        if (events != null && !events.isEmpty()) {
+            eventsRepository.deleteAll(events);
+        }
+    }
 }
