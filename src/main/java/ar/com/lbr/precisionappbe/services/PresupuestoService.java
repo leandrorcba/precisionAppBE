@@ -7,6 +7,7 @@ import ar.com.lbr.precisionappbe.dto.PresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.response.PresupuestoResponse;
 import ar.com.lbr.precisionappbe.model.Cliente;
 import ar.com.lbr.precisionappbe.model.Descuento;
+import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
@@ -24,10 +25,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ar.com.lbr.precisionappbe.services.AuditLogService;
-
-import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
-import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -247,7 +244,9 @@ public class PresupuestoService {
         actualizarPdfFisico(presupuesto.getId());
 
         auditLogService.log("CREAR", "PRESUPUESTOS", presupuesto.getId().toString(),
-                "Presupuesto #" + presupuesto.getId() + " creado para Cliente: " + (cliente != null ? cliente.getNombreCliente() : presupuesto.getIdCliente()), presupuesto);
+                "Presupuesto #" + presupuesto.getId()
+                        + " creado para Cliente: "
+                        + (cliente != null ? cliente.getNombreCliente() : presupuesto.getIdCliente()), presupuesto);
 
         return dto;
     }
@@ -317,7 +316,8 @@ public class PresupuestoService {
         actualizarPdfFisico(idPresupuesto);
 
         auditLogService.log("APROBAR", "PRESUPUESTOS", idPresupuesto.toString(),
-                "Presupuesto #" + idPresupuesto + " aprobado para Cliente: " + cliente.getNombreCliente() + " (Monto: $" + precioSinDescuento + ")", items);
+                "Presupuesto #" + idPresupuesto + " aprobado para Cliente: "
+                        + cliente.getNombreCliente() + " (Monto: $" + precioSinDescuento + ")", items);
 
         return PresupuestoDTO.toDTO(presupuesto);
     }
@@ -354,11 +354,11 @@ public class PresupuestoService {
                 .anyMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()) || EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
 
         // Check if budget is cobrado or has enabled payments
-        boolean tienePagos = Boolean.TRUE.equals(presupuesto.getCobrado()) || 
-                !pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(idPresupuesto).isEmpty();
+        boolean tienePagos = tienePagos(idPresupuesto);
 
         if (tieneTrabajoRealizado || tienePagos) {
-            throw new IllegalArgumentException("No se puede cancelar el presupuesto porque tiene trabajos realizados o cobros registrados.");
+            throw new IllegalArgumentException("No se puede cancelar el presupuesto porque tiene " +
+                    "trabajos realizados o cobros registrados.");
         }
 
         // 1. Mark all jobs as seleccionado = 0
@@ -397,12 +397,25 @@ public class PresupuestoService {
                 "Presupuesto #" + idPresupuesto + " rehabilitado/habilitado.");
     }
 
+    public boolean tienePagos(Integer idPresupuesto) {
+        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto).orElse(null);
+        if (presupuesto == null) {
+            return false;
+        }
+        return Boolean.TRUE.equals(presupuesto.getCobrado()) ||
+                !pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(idPresupuesto).isEmpty();
+    }
+
     public void actualizarPdfFisico(Integer idPresupuesto) {
         try {
             Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto).orElse(null);
-            if (presupuesto == null) return;
+            if (presupuesto == null) {
+                return;
+            }
             Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente()).orElse(null);
-            if (cliente == null) return;
+            if (cliente == null) {
+                return;
+            }
 
             byte[] pdfBytes = remitoPdfService.generateRemito(idPresupuesto);
             folderService.guardarPdfEnCarpeta(cliente.getNombreCliente(), idPresupuesto, pdfBytes);

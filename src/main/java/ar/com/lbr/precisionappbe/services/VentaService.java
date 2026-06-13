@@ -8,6 +8,7 @@ import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoVentaRepository;
 import ar.com.lbr.precisionappbe.repositories.VentaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import java.math.BigDecimal;
@@ -135,10 +136,22 @@ public class VentaService {
         return savedDto;
     }
 
+    @Transactional
     public void deleteVenta(Integer id) {
         Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
-        
+
+        // Delete associated payments first
+        List<PagoVenta> pagos = pagoVentaRepository.findByIdVenta_Id(id);
+        if (pagos != null && !pagos.isEmpty()) {
+            pagoVentaRepository.deleteAll(pagos);
+            for (PagoVenta p : pagos) {
+                auditLogService.log("ELIMINAR", "PAGOS", p.getId().toString(),
+                        "Pago #" + p.getId() + " de la Venta #" + id
+                        + " deshabilitado por eliminación de la venta");
+            }
+        }
+
         auditLogService.log("ELIMINAR", "VENTAS", id.toString(),
                 "Venta directa de material #" + id + " eliminada (Monto: $" + venta.getPrecioVenta()
                 + ", Material: " + (venta.getIdMateriales() != null ? venta.getIdMateriales().getMateriales() : "Desconocido") + ")");

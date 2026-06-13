@@ -25,7 +25,8 @@ public class MaterialesService {
     private final PrecioMaterialRepository precioMaterialRepository;
     private final AuditLogService auditLogService;
 
-    public MaterialesService(MaterialeRepository materialeRepository, PrecioMaterialRepository precioMaterialRepository, AuditLogService auditLogService) {
+    public MaterialesService(MaterialeRepository materialeRepository,
+                             PrecioMaterialRepository precioMaterialRepository, AuditLogService auditLogService) {
         this.materialeRepository = materialeRepository;
         this.precioMaterialRepository = precioMaterialRepository;
         this.auditLogService = auditLogService;
@@ -42,27 +43,27 @@ public class MaterialesService {
         if (esCorte) {
             result = hasFilter
                     ? (disabled
-                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledTrue(materiales, pageable)
-                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledFalse(materiales, pageable))
+                    ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledTrue(materiales, pageable)
+                    : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledFalse(materiales, pageable))
                     : (disabled
-                        ? materialeRepository.findByIsMaterialTrueAndDisabledTrue(pageable)
-                        : materialeRepository.findByIsMaterialTrueAndDisabledFalse(pageable));
+                    ? materialeRepository.findByIsMaterialTrueAndDisabledTrue(pageable)
+                    : materialeRepository.findByIsMaterialTrueAndDisabledFalse(pageable));
         } else if (esGrabado) {
             result = hasFilter
                     ? (disabled
-                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledTrue(materiales, pageable)
-                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledFalse(materiales, pageable))
+                    ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledTrue(materiales, pageable)
+                    : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledFalse(materiales, pageable))
                     : (disabled
-                        ? materialeRepository.findByIsGrabadoTrueAndDisabledTrue(pageable)
-                        : materialeRepository.findByIsGrabadoTrueAndDisabledFalse(pageable));
+                    ? materialeRepository.findByIsGrabadoTrueAndDisabledTrue(pageable)
+                    : materialeRepository.findByIsGrabadoTrueAndDisabledFalse(pageable));
         } else {
             result = hasFilter
                     ? (disabled
-                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledTrue(materiales, pageable)
-                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledFalse(materiales, pageable))
+                    ? materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledTrue(materiales, pageable)
+                    : materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledFalse(materiales, pageable))
                     : (disabled
-                        ? materialeRepository.findByDisabledTrue(pageable)
-                        : materialeRepository.findByDisabledFalse(pageable));
+                    ? materialeRepository.findByDisabledTrue(pageable)
+                    : materialeRepository.findByDisabledFalse(pageable));
         }
         Page<MaterialDTO> dtos = result.map(MaterialDTO::toDTO);
         populatePrices(dtos.getContent());
@@ -153,7 +154,9 @@ public class MaterialesService {
     }
 
     private void populatePrices(List<MaterialDTO> dtos) {
-        if (dtos.isEmpty()) return;
+        if (dtos.isEmpty()) {
+            return;
+        }
         List<Integer> ids = dtos.stream().map(MaterialDTO::getId).collect(Collectors.toList());
         List<PrecioMateriale> prices = precioMaterialRepository.findByIdMaterialesIn(ids);
         Map<Integer, List<PrecioMateriale>> pricesByMaterial = prices.stream()
@@ -254,7 +257,9 @@ public class MaterialesService {
         PrecioMaterialesDTO result = PrecioMaterialesDTO.toDTO(saved, nombreMaterial);
 
         auditLogService.log("MODIFICAR", "MATERIALES", saved.getIdMateriales().toString(),
-                "Precio del material '" + (nombreMaterial != null ? nombreMaterial : saved.getIdMateriales()) + "' actualizado a $" + saved.getPrecioMaterial(), result);
+                "Precio del material '" +
+                        (nombreMaterial != null ? nombreMaterial : saved.getIdMateriales()) + "' actualizado a $"
+                        + saved.getPrecioMaterial(), result);
 
         return result;
     }

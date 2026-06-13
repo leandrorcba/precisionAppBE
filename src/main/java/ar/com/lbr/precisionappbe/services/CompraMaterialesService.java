@@ -7,7 +7,6 @@ import ar.com.lbr.precisionappbe.repositories.CompraMaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.UserRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -59,9 +58,15 @@ public class CompraMaterialesService {
 
         return compras.stream()
                 .sorted((a, b) -> {
-                    if (a.getFechaHoraCompra() == null && b.getFechaHoraCompra() == null) return 0;
-                    if (a.getFechaHoraCompra() == null) return 1;
-                    if (b.getFechaHoraCompra() == null) return -1;
+                    if (a.getFechaHoraCompra() == null && b.getFechaHoraCompra() == null) {
+                        return 0;
+                    }
+                    if (a.getFechaHoraCompra() == null) {
+                        return 1;
+                    }
+                    if (b.getFechaHoraCompra() == null) {
+                        return -1;
+                    }
                     return b.getFechaHoraCompra().compareTo(a.getFechaHoraCompra());
                 })
                 .map(c -> {
@@ -105,7 +110,7 @@ public class CompraMaterialesService {
 
         auditLogService.log("CREAR", "COMPRAS", saved.getId().toString(),
                 "Compra de material '" + saved.getMaterial() + "' registrada por un total de $" + saved.getMontoTotal()
-                + " (Cantidad: " + saved.getCantidad() + ", Unitario: $" + saved.getMontoUnitario() + ")");
+                        + " (Cantidad: " + saved.getCantidad() + ", Unitario: $" + saved.getMontoUnitario() + ")");
 
         return savedDto;
     }

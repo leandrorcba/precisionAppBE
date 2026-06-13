@@ -22,6 +22,8 @@ public interface EventsRepository extends JpaRepository<Event, Integer> {
 
         List<Event> findByIdPresupuesto(Integer idPresupuesto);
 
+        List<Event> findByIdTrabajo(Integer idTrabajo);
+
         @Query("SELECT COUNT(e) > 0 FROM Event e WHERE " +
                         "e.idMaquina.id = :idMaquina AND " +
                         "e.startDate < :end AND " +

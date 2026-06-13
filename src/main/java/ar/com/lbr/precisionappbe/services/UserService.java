@@ -89,9 +89,9 @@ public class UserService {
                 .allowedMenus(userDTO.getAllowedMenus())
                 .enabled(true)
                 .build();
-        
+
         User savedUser = userRepository.save(user);
-        auditLogService.log("CREAR", "PARAMETROS", savedUser.getId().toString(), 
+        auditLogService.log("CREAR", "PARAMETROS", savedUser.getId().toString(),
                 "Se creó el usuario '" + savedUser.getUsername() + "' con rol: " + savedUser.getRole());
         return mapToDTO(savedUser);
     }
@@ -122,8 +122,10 @@ public class UserService {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permisos para modificar al Super Administrador");
                 }
                 // Admin no puede modificar menús de otros administradores
-                if (targetUser.getRole() == Role.ADMIN && userDTO.getAllowedMenus() != null && !userDTO.getAllowedMenus().equals(targetUser.getAllowedMenus())) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un Administrador no puede cambiar los menús de otro Administrador");
+                if (targetUser.getRole() == Role.ADMIN && userDTO.getAllowedMenus() != null &&
+                        !userDTO.getAllowedMenus().equals(targetUser.getAllowedMenus())) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Un Administrador no puede cambiar los menús de otro Administrador");
                 }
             } else {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permisos para modificar usuarios");
@@ -143,7 +145,7 @@ public class UserService {
         }
 
         User updatedUser = userRepository.save(targetUser);
-        auditLogService.log("MODIFICAR", "PARAMETROS", updatedUser.getId().toString(), 
+        auditLogService.log("MODIFICAR", "PARAMETROS", updatedUser.getId().toString(),
                 "Se modificó el usuario '" + updatedUser.getUsername() + "' (Rol: " + updatedUser.getRole() + ")");
         return mapToDTO(updatedUser);
     }
@@ -161,20 +163,21 @@ public class UserService {
         if (currentUser.getRole() == Role.SUPER_ADMIN) {
             targetUser.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(targetUser);
-            auditLogService.log("MODIFICAR", "PARAMETROS", targetUser.getId().toString(), 
-                "Super Administrador cambió la contraseña del usuario: " + targetUser.getUsername());
+            auditLogService.log("MODIFICAR", "PARAMETROS", targetUser.getId().toString(),
+                    "Super Administrador cambió la contraseña del usuario: " + targetUser.getUsername());
             return;
         }
 
         // Administradores los de los usuarios o de los otros administradores siempre y cuando este logueado
         if (currentUser.getRole() == Role.ADMIN) {
             if (targetUser.getRole() == Role.SUPER_ADMIN) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un Administrador no puede cambiar la contraseña del Super Administrador");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Un Administrador no puede cambiar la contraseña del Super Administrador");
             }
             targetUser.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(targetUser);
-            auditLogService.log("MODIFICAR", "PARAMETROS", targetUser.getId().toString(), 
-                "Administrador cambió la contraseña del usuario: " + targetUser.getUsername());
+            auditLogService.log("MODIFICAR", "PARAMETROS", targetUser.getId().toString(),
+                    "Administrador cambió la contraseña del usuario: " + targetUser.getUsername());
             return;
         }
 
@@ -197,7 +200,7 @@ public class UserService {
         }
 
         userRepository.deleteById(id);
-        auditLogService.log("ELIMINAR", "PARAMETROS", id.toString(), 
+        auditLogService.log("ELIMINAR", "PARAMETROS", id.toString(),
                 "Se eliminó el usuario: " + targetUser.getUsername());
     }
 

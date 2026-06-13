@@ -4,6 +4,7 @@ import ar.com.lbr.precisionappbe.model.AuditLog;
 import ar.com.lbr.precisionappbe.repositories.AuditLogRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -24,9 +26,11 @@ public class AuditLogService {
     private final ObjectMapper objectMapper;
 
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private interface HibernateMixIn {}
+    private interface HibernateMixIn {
+    }
 
-    public AuditLogService(AuditLogRepository auditLogRepository, @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper) {
+    public AuditLogService(AuditLogRepository auditLogRepository,
+                           @Autowired(required = false) ObjectMapper objectMapper) {
         this.auditLogRepository = auditLogRepository;
         ObjectMapper mapper = objectMapper != null ? objectMapper : new ObjectMapper();
         mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
@@ -83,7 +87,8 @@ public class AuditLogService {
     }
 
     @Transactional(readOnly = true)
-    public Page<AuditLog> getLogsFiltered(Instant desde, Instant hasta, String modulo, String usuario, String accion, String query, Pageable pageable) {
+    public Page<AuditLog> getLogsFiltered(Instant desde, Instant hasta, String modulo, String usuario,
+                                          String accion, String query, Pageable pageable) {
         Specification<AuditLog> spec = Specification.where((root, q, cb) -> cb.conjunction());
 
         if (desde != null) {
@@ -104,8 +109,8 @@ public class AuditLogService {
         if (query != null && !query.trim().isEmpty()) {
             String searchPattern = "%" + query.trim().toLowerCase() + "%";
             spec = spec.and((root, q, cb) -> cb.or(
-                cb.like(cb.lower(root.get("detalles")), searchPattern),
-                cb.like(cb.lower(root.get("registroId")), searchPattern)
+                    cb.like(cb.lower(root.get("detalles")), searchPattern),
+                    cb.like(cb.lower(root.get("registroId")), searchPattern)
             ));
         }
 

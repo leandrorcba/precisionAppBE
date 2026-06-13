@@ -7,7 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
@@ -128,13 +133,13 @@ public class DashboardService {
         String sql = "SELECT MONTH(fecha_creacion) as mes, COUNT(id_cliente) as cant " +
                 "FROM clientes " +
                 "WHERE YEAR(fecha_creacion) = :year AND disabled = 0 ";
-        
+
         if ("ACTIVO".equalsIgnoreCase(origen)) {
             sql += "AND id_cliente > 20895 ";
         } else if ("HISTORICO".equalsIgnoreCase(origen)) {
             sql += "AND id_cliente <= 20895 ";
         }
-        
+
         sql += "GROUP BY MONTH(fecha_creacion)";
 
         List<?> results = entityManager.createNativeQuery(sql)
@@ -183,7 +188,8 @@ public class DashboardService {
                     "GROUP BY h.id_maquina, MONTH(h.fecha)";
         } else { // TODOS
             sqlMinutes = "SELECT id_maquina, mes, SUM(tiempo_de_corte) as total_min FROM (" +
-                    "  SELECT t.id_maquina, MONTH(p.fecha_hora_presupuesto) as mes, t.tiempo_de_corte, YEAR(p.fecha_hora_presupuesto) as anio " +
+                    "  SELECT t.id_maquina, MONTH(p.fecha_hora_presupuesto) as mes, t.tiempo_de_corte, " +
+                    "YEAR(p.fecha_hora_presupuesto) as anio " +
                     "  FROM trabajo_presupuestado t " +
                     "  JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "  WHERE p.aprobado = 1 AND t.seleccionado = 1 AND t.id_maquina IS NOT NULL " +
@@ -322,7 +328,8 @@ public class DashboardService {
                     "GROUP BY MONTH(h.fecha)";
         } else { // TODOS
             sql = "SELECT mes, SUM(precio_corte) as total_corte FROM (" +
-                    "  SELECT MONTH(p.fecha_hora_presupuesto) as mes, COALESCE(t.precio_corte, 0.00) as precio_corte, YEAR(p.fecha_hora_presupuesto) as anio " +
+                    "  SELECT MONTH(p.fecha_hora_presupuesto) as mes, COALESCE(t.precio_corte, 0.00) as precio_corte, " +
+                    "YEAR(p.fecha_hora_presupuesto) as anio " +
                     "  FROM trabajo_presupuestado t " +
                     "  JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "  WHERE p.aprobado = 1 AND t.seleccionado = 1 " +
@@ -379,7 +386,8 @@ public class DashboardService {
                     "WHERE YEAR(h.fecha) = :year " +
                     "GROUP BY MONTH(h.fecha)";
         } else { // TODOS
-            sql = "SELECT mes, SUM(vectorizado) as total_vectorizado, SUM(diseno) as total_diseno, SUM(vinilo) as total_vinilo, SUM(posicionador) as total_posicionador FROM (" +
+            sql = "SELECT mes, SUM(vectorizado) as total_vectorizado, SUM(diseno) as total_diseno, " +
+                    "SUM(vinilo) as total_vinilo, SUM(posicionador) as total_posicionador FROM (" +
                     "  SELECT MONTH(p.fecha_hora_presupuesto) as mes, " +
                     "         COALESCE(t.vectorizado, 0.00) as vectorizado, " +
                     "         COALESCE(t.extra, 0.00) as diseno, " +
@@ -433,7 +441,8 @@ public class DashboardService {
 
         List<DashboardDTO.MonthlyServicios> list = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
-            list.add(new DashboardDTO.MonthlyServicios(MONTH_NAMES[i], vecAmounts[i], disAmounts[i], vinAmounts[i], posAmounts[i]));
+            list.add(new DashboardDTO.MonthlyServicios(MONTH_NAMES[i], vecAmounts[i], disAmounts[i],
+                    vinAmounts[i], posAmounts[i]));
         }
         return list;
     }
@@ -516,9 +525,12 @@ public class DashboardService {
         String sql = "SELECT p.id_presupuesto, " +
                 "       SUM(COALESCE(t.precio_corte, 0.00)) as corte, " +
                 "       SUM(COALESCE(t.precio_material, 0.00)) as material, " +
-                "       SUM(COALESCE(t.vectorizado, 0.00) + COALESCE(t.extra, 0.00) + COALESCE(t.vinilo, 0.00) + COALESCE(t.posicionador, 0.00)) as servicios, " +
-                "       (SELECT SUM(COALESCE(pp.monto, 0.00)) FROM pago_presupuesto pp WHERE pp.id_presupuesto = p.id_presupuesto AND pp.enabled = 1) as pagos, " +
-                "       (SELECT SUM(COALESCE(d.monto, 0.00)) FROM descuento d WHERE d.id_presupuesto = p.id_presupuesto AND d.id_tipo_descuento = 1) as descuentos " +
+                "       SUM(COALESCE(t.vectorizado, 0.00) + COALESCE(t.extra, 0.00) + COALESCE(t.vinilo, 0.00) " +
+                "+ COALESCE(t.posicionador, 0.00)) as servicios, " +
+                "       (SELECT SUM(COALESCE(pp.monto, 0.00)) FROM pago_presupuesto pp" +
+                " WHERE pp.id_presupuesto = p.id_presupuesto AND pp.enabled = 1) as pagos, " +
+                "       (SELECT SUM(COALESCE(d.monto, 0.00)) FROM descuento d " +
+                "WHERE d.id_presupuesto = p.id_presupuesto AND d.id_tipo_descuento = 1) as descuentos " +
                 "FROM presupuesto p " +
                 "JOIN trabajo_presupuestado t ON t.id_presupuesto = p.id_presupuesto " +
                 "WHERE YEAR(p.fecha_hora_presupuesto) = :year AND p.aprobado = 1 AND t.seleccionado = 1 " +

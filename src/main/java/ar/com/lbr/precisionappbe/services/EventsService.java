@@ -6,11 +6,14 @@ import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.Event;
 import ar.com.lbr.precisionappbe.model.Maquina;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.repositories.EventsRepository;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
+import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.Instant;
@@ -23,10 +26,6 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.springframework.transaction.annotation.Transactional;
-import ar.com.lbr.precisionappbe.model.Varios;
-import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 
 @Service
 @Transactional
@@ -197,7 +196,8 @@ public class EventsService {
             }
         }
 
-        boolean machineChanged = dto.getCalendarId() != null && (event.getIdMaquina() == null || !dto.getCalendarId().equals(event.getIdMaquina().getId()));
+        boolean machineChanged = dto.getCalendarId() != null &&
+                (event.getIdMaquina() == null || !dto.getCalendarId().equals(event.getIdMaquina().getId()));
 
         if (machineChanged) {
             Maquina maquina = maquinasRepository.findById(dto.getCalendarId())
@@ -210,8 +210,10 @@ public class EventsService {
             LocalTime horaInicio = (varios != null && varios.getHoraInicio() != null) ? varios.getHoraInicio() : LocalTime.of(8, 0);
             LocalTime horaCierre = (varios != null && varios.getHoraCierre() != null) ? varios.getHoraCierre() : LocalTime.of(18, 0);
             Boolean permitirFds = (varios != null && varios.getPermitirTrabajosFds() != null) ? varios.getPermitirTrabajosFds() : false;
-            LocalTime horaInicioFds = (varios != null && varios.getHoraInicioFds() != null) ? varios.getHoraInicioFds() : LocalTime.of(9, 0);
-            LocalTime horaCierreFds = (varios != null && varios.getHoraCierreFds() != null) ? varios.getHoraCierreFds() : LocalTime.of(13, 0);
+            LocalTime horaInicioFds = (varios != null && varios.getHoraInicioFds() != null) ?
+                    varios.getHoraInicioFds() : LocalTime.of(9, 0);
+            LocalTime horaCierreFds = (varios != null && varios.getHoraCierreFds() != null) ?
+                    varios.getHoraCierreFds() : LocalTime.of(13, 0);
 
             Instant now = Instant.now();
             Instant targetStart = dto.getStartDate() != null ? dto.getStartDate().toInstant() : null;
@@ -231,7 +233,8 @@ public class EventsService {
             }
 
             if (!useTarget) {
-                Instant slotStart = findFirstAvailableSlot(dto.getCalendarId(), durationMinutes, horaInicio, horaCierre, permitirFds, horaInicioFds, horaCierreFds);
+                Instant slotStart = findFirstAvailableSlot(dto.getCalendarId(), durationMinutes, horaInicio,
+                        horaCierre, permitirFds, horaInicioFds, horaCierreFds);
                 Instant slotEnd = slotStart.plus(durationMinutes, ChronoUnit.MINUTES);
 
                 event.setStartDate(slotStart);
@@ -272,8 +275,10 @@ public class EventsService {
         LocalTime horaInicioFds = (varios != null && varios.getHoraInicioFds() != null) ? varios.getHoraInicioFds() : LocalTime.of(9, 0);
         LocalTime horaCierreFds = (varios != null && varios.getHoraCierreFds() != null) ? varios.getHoraCierreFds() : LocalTime.of(13, 0);
 
-        LocalTime hInicio = (horaInicio != null) ? horaInicio : ((varios != null && varios.getHoraInicio() != null) ? varios.getHoraInicio() : LocalTime.of(8, 0));
-        LocalTime hCierre = (horaCierre != null) ? horaCierre : ((varios != null && varios.getHoraCierre() != null) ? varios.getHoraCierre() : LocalTime.of(18, 0));
+        LocalTime hInicio = (horaInicio != null) ? horaInicio : ((varios != null && varios.getHoraInicio() != null) ?
+                varios.getHoraInicio() : LocalTime.of(8, 0));
+        LocalTime hCierre = (horaCierre != null) ? horaCierre : ((varios != null && varios.getHoraCierre() != null) ?
+                varios.getHoraCierre() : LocalTime.of(18, 0));
 
         Instant slotStart = findFirstAvailableSlot(idMaquina, durationMinutes, hInicio, hCierre, permitirFds, horaInicioFds, horaCierreFds);
         Instant slotEnd = slotStart.plus(durationMinutes, ChronoUnit.MINUTES);
@@ -308,7 +313,8 @@ public class EventsService {
         List<Event> events = eventsRepository
                 .findByIdMaquinaIdAndEndDateGreaterThanOrderByStartDate(idMaquina, now);
 
-        ZonedDateTime candidate = nextWorkingSlotStart(now.atZone(ZONE), horaInicio, horaCierre, permitirTrabajosFds, horaInicioFds, horaCierreFds);
+        ZonedDateTime candidate = nextWorkingSlotStart(now.atZone(ZONE), horaInicio, horaCierre, permitirTrabajosFds,
+                horaInicioFds, horaCierreFds);
 
         for (Event event : events) {
             ZonedDateTime eventStart = event.getStartDate().atZone(ZONE);
@@ -336,8 +342,12 @@ public class EventsService {
             LocalTime currentInicio = (isWeekend && Boolean.TRUE.equals(permitirTrabajosFds)) ? horaInicioFds : horaInicio;
             LocalTime currentCierre = (isWeekend && Boolean.TRUE.equals(permitirTrabajosFds)) ? horaCierreFds : horaCierre;
 
-            if (currentInicio == null) currentInicio = LocalTime.of(8, 0);
-            if (currentCierre == null) currentCierre = LocalTime.of(18, 0);
+            if (currentInicio == null) {
+                currentInicio = LocalTime.of(8, 0);
+            }
+            if (currentCierre == null) {
+                currentCierre = LocalTime.of(18, 0);
+            }
 
             if (result.toLocalTime().compareTo(currentCierre) >= 0) {
                 result = result.toLocalDate().plusDays(1).atTime(currentInicio).atZone(ZONE);
