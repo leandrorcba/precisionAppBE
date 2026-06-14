@@ -4,7 +4,6 @@ import ar.com.lbr.precisionappbe.dto.VentaDTO;
 import ar.com.lbr.precisionappbe.services.VentaService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,12 +52,8 @@ public class VentasController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<VentaDTO>> updateVenta(@PathVariable Integer id,
             @RequestBody VentaDTO dto) {
-        try {
-            VentaDTO updated = ventaService.updateVenta(id, dto);
-            return ResponseBuilder.ok("Venta actualizada con éxito", updated, 1L);
-        } catch (IllegalArgumentException e) {
-            return ResponseBuilder.error(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+        VentaDTO updated = ventaService.updateVenta(id, dto);
+        return ResponseBuilder.ok("Venta actualizada con éxito", updated, 1L);
     }
 
     @DeleteMapping("/{id}")

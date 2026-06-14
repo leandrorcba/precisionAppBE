@@ -69,34 +69,6 @@ public class CierreService {
         this.auditLogService = auditLogService;
     }
 
-    public CierreResponse getAllCierres(Pageable pageable) {
-        Page<Cierre> cierresPage = cierreRepository.findAll(pageable);
-        List<CierreDTO> cierreDTOs = cierresPage.getContent().stream()
-                .map(c -> {
-                    if (!Boolean.TRUE.equals(c.getCerrado())) {
-                        calculateAndFillCierre(c);
-                        cierreRepository.save(c);
-                    }
-                    return CierreDTO.toDTO(c);
-                })
-                .collect(Collectors.toList());
-        return new CierreResponse(cierreDTOs, cierresPage.getTotalElements());
-    }
-
-    public CierreResponse getAllCierresByMesCierre(String mesCierre, Pageable pageable) {
-        Page<Cierre> cierresPage = cierreRepository.findByMesCierre(mesCierre, pageable);
-        List<CierreDTO> cierreDTOs = cierresPage.getContent().stream()
-                .map(c -> {
-                    if (!Boolean.TRUE.equals(c.getCerrado())) {
-                        calculateAndFillCierre(c);
-                        cierreRepository.save(c);
-                    }
-                    return CierreDTO.toDTO(c);
-                })
-                .collect(Collectors.toList());
-        return new CierreResponse(cierreDTOs, cierresPage.getTotalElements());
-    }
-
     public CierreResponse getCierresFiltered(String mesCierre, String fechaCierre, Pageable pageable) {
         Page<Cierre> cierresPage;
         if (fechaCierre != null && !fechaCierre.trim().isEmpty()) {

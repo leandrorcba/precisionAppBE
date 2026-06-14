@@ -196,7 +196,7 @@ class EventsServiceTest {
         varios.setHoraCierre(LocalTime.of(18, 0));
 
         when(maquinasRepository.findById(1)).thenReturn(Optional.of(maquina));
-        when(variosRepository.findAll()).thenReturn(List.of(varios));
+        when(variosRepository.findFirstByOrderByIdAsc()).thenReturn(varios);
         when(eventsRepository.findByIdMaquinaIdAndEndDateGreaterThanOrderByStartDate(eq(1), any(Instant.class)))
                 .thenReturn(Collections.emptyList());
 

@@ -44,13 +44,8 @@ public class TrabajosController {
     public ResponseEntity<ApiResponse<TrabajoPresupuestadoDTO>> updateSeleccionado(
             @PathVariable Integer idTrabajo,
             @RequestParam("new_value") Boolean newValue) {
-        try {
-            TrabajoPresupuestadoDTO updated = trabajosService.updateSeleccionado(idTrabajo, newValue);
-            return ResponseBuilder.ok("Seleccionado actualizado con éxito", updated, 0L);
-        } catch (IllegalArgumentException e) {
-            return org.springframework.http.ResponseEntity.badRequest()
-                    .body(new ar.com.lbr.precisionappbe.util.ApiResponse<>(false, e.getMessage(), null, 0L));
-        }
+        TrabajoPresupuestadoDTO updated = trabajosService.updateSeleccionado(idTrabajo, newValue);
+        return ResponseBuilder.ok("Seleccionado actualizado con éxito", updated, 0L);
     }
 
     @PatchMapping("/{idTrabajo}/estado")

@@ -299,8 +299,9 @@ public class PagosService {
     // ---------------------------------------------------------------
 
     public void deletePago(Integer id) {
-        if (pagoPresupuestoRepository.findByIdAndEnabledTrue(id).isPresent()) {
-            PagoPresupuesto pago = pagoPresupuestoRepository.findByIdAndEnabledTrue(id).get();
+        java.util.Optional<PagoPresupuesto> maybePago = pagoPresupuestoRepository.findByIdAndEnabledTrue(id);
+        if (maybePago.isPresent()) {
+            PagoPresupuesto pago = maybePago.get();
             pago.setEnabled(false);
             pagoPresupuestoRepository.save(pago);
 

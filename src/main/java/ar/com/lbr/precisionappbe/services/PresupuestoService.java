@@ -373,26 +373,4 @@ public class PresupuestoService {
         }
     }
 
-    /*
-     * mapPagos(List<Pago> pagos) {
-     * pagos.stream().map(p -> {
-     * PagoDTO pagoDTO = new PagoDTO();
-     * pagoDTO.setId(p.getId());
-     * pagoDTO.setMonto(p.getMonto());
-     * pagoDTO.setFechaHora(p.getFechaHora());
-     *
-     * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
-     * tipoPagoDTO.setId(p.getTipoPago().getId());
-     * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
-     * pagoDTO.setTipoPago(tipoPagoDTO);
-     *
-     * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
-     * medioPagoDTO.setId(p.getMedioPago().getId());
-     * medioPagoDTO.setTipo(p.getMedioPago().getTipo());
-     * medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
-     * pagoDTO.setMedioPago(medioPagoDTO);
-     *
-     * return pagoDTO;
-     * }
-     */
 }

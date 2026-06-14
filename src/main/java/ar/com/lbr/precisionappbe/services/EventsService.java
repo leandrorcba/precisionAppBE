@@ -270,7 +270,7 @@ public class EventsService {
         Maquina maquina = maquinasRepository.findById(idMaquina)
                 .orElseThrow(() -> new EntityNotFoundException("Maquina not found: " + idMaquina));
 
-        Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
+        Varios varios = variosRepository.findFirstByOrderByIdAsc();
         Boolean permitirFds = (varios != null && varios.getPermitirTrabajosFds() != null) ? varios.getPermitirTrabajosFds() : false;
         LocalTime horaInicioFds = (varios != null && varios.getHoraInicioFds() != null) ? varios.getHoraInicioFds() : LocalTime.of(9, 0);
         LocalTime horaCierreFds = (varios != null && varios.getHoraCierreFds() != null) ? varios.getHoraCierreFds() : LocalTime.of(13, 0);
