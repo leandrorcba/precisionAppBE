@@ -16,7 +16,9 @@
       "Bash(./gradlew compileJava --daemon)",
       "Bash(./gradlew compileJava --rerun-tasks --daemon)",
       "Bash(./gradlew checkstyleMain --daemon)",
-      "Bash(./gradlew checkstyleMain --rerun-tasks --daemon)"
+      "Bash(./gradlew checkstyleMain --rerun-tasks --daemon)",
+      "Bash(grep -v \"import\\\\|//\")",
+      "Bash(./gradlew spotbugsMain --no-daemon)"
     ]
   }
 }

@@ -8,7 +8,7 @@ import ar.com.lbr.precisionappbe.model.Cliente;
 import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.Material;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
-import ar.com.lbr.precisionappbe.model.TipoCliente;
+
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
@@ -39,7 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PresupuestoServiceTest {
@@ -156,7 +157,8 @@ class PresupuestoServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(pr.getAprobado()).isTrue();
-        verify(eventsService).createEventForTrabajo(eq(1), eq(10), eq(20), any(String.class), eq(15), eq(LocalTime.of(9, 0)), eq(LocalTime.of(17, 0)));
+        verify(eventsService).createEventForTrabajo(
+                eq(1), eq(10), eq(20), any(String.class), eq(15), eq(LocalTime.of(9, 0)), eq(LocalTime.of(17, 0)));
     }
 
     @Test

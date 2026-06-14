@@ -4,6 +4,7 @@ import ar.com.lbr.precisionappbe.model.AuditLog;
 import ar.com.lbr.precisionappbe.repositories.AuditLogRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 
 @Service
+@Slf4j
 public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
@@ -55,35 +57,33 @@ public class AuditLogService {
 
     @Transactional
     public void log(String accion, String modulo, String registroId, String detalles, Object payload) {
-        AuditLog log = new AuditLog();
-        log.setFechaHora(Instant.now());
-        log.setUsuario(getCurrentUsername());
-        log.setAccion(accion);
-        log.setModulo(modulo);
-        log.setRegistroId(registroId);
-        log.setDetalles(detalles);
+        AuditLog entry = new AuditLog();
+        entry.setFechaHora(Instant.now());
+        entry.setUsuario(getCurrentUsername());
+        entry.setAccion(accion);
+        entry.setModulo(modulo);
+        entry.setRegistroId(registroId);
+        entry.setDetalles(detalles);
 
-        // Capturar URI si estamos en un contexto HTTP
         try {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
                 HttpServletRequest request = attributes.getRequest();
-                log.setUri(request.getRequestURI());
+                entry.setUri(request.getRequestURI());
             }
         } catch (Exception e) {
-            // Ignorar si no hay contexto web activo (ej. durante el startup de la base de datos)
+            log.debug("No web context available for audit URI capture: {}", e.getMessage());
         }
 
-        // Serializar payload a JSON
         if (payload != null) {
             try {
-                log.setJson(objectMapper.writeValueAsString(payload));
+                entry.setJson(objectMapper.writeValueAsString(payload));
             } catch (Exception e) {
-                log.setJson("{\"error\": \"No se pudo serializar el payload: " + e.getMessage() + "\"}");
+                entry.setJson("{\"error\": \"No se pudo serializar el payload: " + e.getMessage() + "\"}");
             }
         }
 
-        auditLogRepository.save(log);
+        auditLogRepository.save(entry);
     }
 
     @Transactional(readOnly = true)

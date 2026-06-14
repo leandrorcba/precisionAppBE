@@ -2,7 +2,7 @@ package ar.com.lbr.precisionappbe.services;
 
 import ar.com.lbr.precisionappbe.Mapper.ClientesMapper;
 import ar.com.lbr.precisionappbe.dto.ClienteDTO;
-import ar.com.lbr.precisionappbe.dto.PuntoDTO;
+
 import ar.com.lbr.precisionappbe.dto.response.ClienteResponse;
 import ar.com.lbr.precisionappbe.model.Cliente;
 import ar.com.lbr.precisionappbe.model.Punto;
@@ -20,7 +20,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 

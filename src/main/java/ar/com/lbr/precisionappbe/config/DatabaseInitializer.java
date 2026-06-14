@@ -5,6 +5,7 @@ import ar.com.lbr.precisionappbe.model.User;
 import ar.com.lbr.precisionappbe.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -17,13 +18,16 @@ public class DatabaseInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.super-admin.password}")
+    private String superAdminPassword;
+
     @Override
     public void run(String... args) {
         if (userRepository.findByUsername("leandror").isEmpty()) {
             log.info("Creando usuario Super Administrador por primera vez...");
             User superAdmin = User.builder()
                     .username("leandror")
-                    .password(passwordEncoder.encode("Escaramujo;01"))
+                    .password(passwordEncoder.encode(superAdminPassword))
                     .role(Role.SUPER_ADMIN)
                     .enabled(true)
                     .build();
