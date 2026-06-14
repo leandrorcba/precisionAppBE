@@ -138,23 +138,21 @@ class VentaServiceTest {
     }
 
     @Test
-    void getAllVentas_noFilters_callsFindAllAndMapsPagos() {
-        // Arrange
+    void getAllVentas_noFilters_usesDefaultDateRange() {
         Venta v1 = new Venta();
         v1.setId(40);
         v1.setFechaHoraVenta(Instant.now());
 
-        when(ventaRepository.findAll()).thenReturn(Collections.singletonList(v1));
+        when(ventaRepository.findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class)))
+                .thenReturn(Collections.singletonList(v1));
         when(pagoVentaRepository.findByIdVenta_IdIn(Collections.singletonList(40)))
                 .thenReturn(Collections.emptyList());
 
-        // Act
         List<VentaDTO> result = service.getAllVentas(null, null, false);
 
-        // Assert
         assertThat(result).hasSize(1);
-        verify(ventaRepository).findAll();
-        verify(ventaRepository, never()).findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class));
+        verify(ventaRepository).findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class));
+        verify(ventaRepository, never()).findAll();
     }
 
     @Test

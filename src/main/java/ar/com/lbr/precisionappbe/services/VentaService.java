@@ -56,7 +56,9 @@ public class VentaService {
             Instant end = fechaFrom.atTime(LocalTime.MAX).atZone(ZONE).toInstant();
             ventas = ventaRepository.findByFechaHoraVentaBetween(start, end);
         } else {
-            ventas = ventaRepository.findAll();
+            Instant start = LocalDate.now().minusDays(30).atStartOfDay(ZONE).toInstant();
+            Instant end = LocalDate.now().atTime(LocalTime.MAX).atZone(ZONE).toInstant();
+            ventas = ventaRepository.findByFechaHoraVentaBetween(start, end);
         }
 
         List<Integer> idsVentas = ventas.stream().map(Venta::getId).collect(Collectors.toList());

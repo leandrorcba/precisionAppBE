@@ -8,6 +8,8 @@ import java.util.List;
 public interface DescuentoRepository extends JpaRepository<Descuento, Integer> {
   List<Descuento> findByIdPresupuesto(Integer idPresupuesto);
 
+  List<Descuento> findByIdPresupuestoIn(List<Integer> ids);
+
   //List<Pago> findByIdOrigenPagoAndTipoPago_Tipo(Integer idOrigenPago, String tipoPago_Tipo);
 
   /*@Query("""

@@ -88,9 +88,16 @@ public class PagosService {
     }
 
     public List<PagoDTO> getAllPagos(Instant desde, Instant hasta, String tipo, String medio) {
-        List<PagoDTO> pagosPresupuesto = pagoPresupuestoRepository.findAll()
+        Instant effectiveDe = desde != null ? desde
+                : java.time.LocalDate.now().minusDays(30)
+                        .atStartOfDay(java.time.ZoneId.of("America/Argentina/Buenos_Aires")).toInstant();
+        Instant effectiveHasta = hasta != null ? hasta : Instant.now();
+
+        List<PagoDTO> pagosPresupuesto = pagoPresupuestoRepository
+                .findByFechaHoraBetweenAndEnabledTrue(effectiveDe, effectiveHasta)
                 .stream().map(this::toDTO).collect(Collectors.toList());
-        List<PagoDTO> pagosVenta = pagoVentaRepository.findAll()
+        List<PagoDTO> pagosVenta = pagoVentaRepository
+                .findByFechaHoraBetween(effectiveDe, effectiveHasta)
                 .stream().map(this::toDTO).collect(Collectors.toList());
 
         List<PagoDTO> allPagos = new ArrayList<>();
@@ -99,12 +106,6 @@ public class PagosService {
 
         List<PagoDTO> filteredPagos = allPagos.stream()
                 .filter(p -> {
-                    if (desde != null && p.getFechaHora() != null && p.getFechaHora().isBefore(desde)) {
-                        return false;
-                    }
-                    if (hasta != null && p.getFechaHora() != null && p.getFechaHora().isAfter(hasta)) {
-                        return false;
-                    }
                     if (tipo != null && !tipo.isBlank() && !"todos".equalsIgnoreCase(tipo)) {
                         if (p.getTipoPago() == null || !tipo.equalsIgnoreCase(p.getTipoPago().getTipo())) {
                             return false;
@@ -125,11 +126,8 @@ public class PagosService {
                 .collect(Collectors.toList());
 
         filteredPagos.sort((p1, p2) -> {
-            if (p1.getFechaHora() == null && p2.getFechaHora() == null) {
-                return 0;
-            }
             if (p1.getFechaHora() == null) {
-                return 1;
+                return p2.getFechaHora() == null ? 0 : 1;
             }
             if (p2.getFechaHora() == null) {
                 return -1;

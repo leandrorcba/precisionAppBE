@@ -19,6 +19,7 @@ import ar.com.lbr.precisionappbe.repositories.GastoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoVentaRepository;
 import ar.com.lbr.precisionappbe.repositories.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class CierreService {
 
     private final CierreRepository cierreRepository;
@@ -125,11 +127,7 @@ public class CierreService {
         Instant startOfDay = todayLocal.atStartOfDay(ZONE_ARGENTINA).toInstant();
         Instant endOfDay = todayLocal.plusDays(1).atStartOfDay(ZONE_ARGENTINA).toInstant();
 
-        List<Cierre> existing = cierreRepository.findAll().stream()
-                .filter(c -> c.getFechaCierre() != null && c.getFechaCierre().isAfter(startOfDay) && c.getFechaCierre().isBefore(endOfDay))
-                .collect(Collectors.toList());
-
-        if (!existing.isEmpty()) {
+        if (cierreRepository.existsByFechaCierreBetween(startOfDay, endOfDay)) {
             throw new IllegalArgumentException("Ya existe un cierre registrado para el día de hoy.");
         }
 
@@ -211,9 +209,9 @@ public class CierreService {
         List<PagoPresupuesto> pagosPresupuesto = pagoPresupuestoRepository.findByFechaHoraBetweenAndEnabledTrue(startOfDay, endOfDay);
         List<PagoVenta> pagosVenta = pagoVentaRepository.findByFechaHoraBetween(startOfDay, endOfDay);
 
-        System.out.println("DEBUG CIERRE: Calculando cierre ID: " + cierre.getId() + " para fecha: " + fechaCierre);
-        System.out.println("DEBUG CIERRE: Rango UTC de busqueda: desde " + startOfDay + " hasta " + endOfDay);
-        System.out.println("DEBUG CIERRE: Cantidad de pagos presupuesto encontrados en el rango: " + pagosPresupuesto.size());
+        log.debug("Calculando cierre ID: {} para fecha: {}", cierre.getId(), fechaCierre);
+        log.debug("Rango UTC de busqueda: desde {} hasta {}", startOfDay, endOfDay);
+        log.debug("Cantidad de pagos presupuesto encontrados en el rango: {}", pagosPresupuesto.size());
 
         BigDecimal totalPresupuestosEfectivo = BigDecimal.ZERO;
         BigDecimal totalSeniaEfectivo = BigDecimal.ZERO;
@@ -221,8 +219,8 @@ public class CierreService {
         for (PagoPresupuesto p : pagosPresupuesto) {
             String medioTipo = p.getIdMedioPago() != null ? p.getIdMedioPago().getTipo() : "NULL";
             String tipoPagoTipo = p.getIdTipoPago() != null ? p.getIdTipoPago().getTipo() : "NULL";
-            System.out.println("  -> Pago Presupuesto ID: " + p.getId() + ", Monto: " +
-                    p.getMonto() + ", Medio: " + medioTipo + ", Tipo: " + tipoPagoTipo + ", Enabled: " + p.getEnabled());
+            log.debug("Pago Presupuesto ID: {}, Monto: {}, Medio: {}, Tipo: {}, Enabled: {}",
+                    p.getId(), p.getMonto(), medioTipo, tipoPagoTipo, p.getEnabled());
 
             boolean esEfectivo = false;
             if (p.getIdMedioPago() != null) {
@@ -245,14 +243,14 @@ public class CierreService {
             }
         }
 
-        System.out.println("DEBUG CIERRE: Sumarizado -> totalPresupuestosEfectivo: "
-                + totalPresupuestosEfectivo + ", totalSeniaEfectivo: " + totalSeniaEfectivo);
-        System.out.println("DEBUG CIERRE: Cantidad de pagos venta encontrados en el rango: " + pagosVenta.size());
+        log.debug("Sumarizado -> totalPresupuestosEfectivo: {}, totalSeniaEfectivo: {}",
+                totalPresupuestosEfectivo, totalSeniaEfectivo);
+        log.debug("Cantidad de pagos venta encontrados en el rango: {}", pagosVenta.size());
 
         BigDecimal totalVentasEfectivo = BigDecimal.ZERO;
         for (PagoVenta p : pagosVenta) {
             String medioTipo = p.getIdMedioPago() != null ? p.getIdMedioPago().getTipo() : "NULL";
-            System.out.println("  -> Pago Venta ID: " + p.getId() + ", Monto: " + p.getMonto() + ", Medio: " + medioTipo);
+            log.debug("Pago Venta ID: {}, Monto: {}, Medio: {}", p.getId(), p.getMonto(), medioTipo);
 
             boolean esEfectivo = false;
             if (p.getIdMedioPago() != null) {
@@ -265,7 +263,7 @@ public class CierreService {
                 totalVentasEfectivo = totalVentasEfectivo.add(p.getMonto() != null ? p.getMonto() : BigDecimal.ZERO);
             }
         }
-        System.out.println("DEBUG CIERRE: Sumarizado -> totalVentasEfectivo: " + totalVentasEfectivo);
+        log.debug("Sumarizado -> totalVentasEfectivo: {}", totalVentasEfectivo);
 
         // 2. Egresos (Extracciones, Compra de Materiales, Gastos Generales)
         List<Extraccione> extracciones = extraccionRepository.findByFechaExtraccionBetween(startOfDay, endOfDay);

@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface TrabajoPresupuestadoRepository extends JpaRepository<TrabajoPresupuestado, Integer> {
     List<TrabajoPresupuestado> findByIdPresupuesto(Integer idPresupuesto);
+
+    List<TrabajoPresupuestado> findByIdPresupuestoIn(List<Integer> ids);
 }

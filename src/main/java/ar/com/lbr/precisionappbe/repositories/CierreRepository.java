@@ -14,4 +14,7 @@ public interface CierreRepository extends JpaRepository<Cierre, Integer> {
 
     @Query("SELECT c FROM Cierre c WHERE c.fechaCierre >= :desde AND c.fechaCierre < :hasta")
     Page<Cierre> findByFechaCierreBetween(@Param("desde") Instant desde, @Param("hasta") Instant hasta, Pageable pageable);
+
+    @Query("SELECT COUNT(c) > 0 FROM Cierre c WHERE c.fechaCierre >= :desde AND c.fechaCierre < :hasta")
+    boolean existsByFechaCierreBetween(@Param("desde") Instant desde, @Param("hasta") Instant hasta);
 }

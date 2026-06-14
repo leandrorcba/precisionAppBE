@@ -21,6 +21,7 @@ import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,11 +30,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class PresupuestoService {
 
     private final PresupuestoRepository presupuestoRepository;
@@ -103,35 +106,51 @@ public class PresupuestoService {
     private List<PresupuestoDTO> getPresupuestoDTOS(Page<Presupuesto> presupuesto) {
         List<PresupuestoDTO> presupuestoDTOS = presupuestoMapper.map(presupuesto.getContent());
 
-        presupuestoDTOS.forEach(dto -> {
-            List<PagoPresupuesto> senias = pagoPresupuestoRepository
-                    .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 1);
-            List<Descuento> descuentos = descuentoRepository.findByIdPresupuesto(dto.getIdPresupuesto()).stream()
-                    .filter(d -> d.getIdTipoDescuento() != null && d.getIdTipoDescuento() == 1)
-                    .collect(Collectors.toList());
-            List<PagoPresupuesto> pagos = pagoPresupuestoRepository
-                    .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 2);
+        if (presupuestoDTOS.isEmpty()) {
+            return presupuestoDTOS;
+        }
 
+        List<Integer> ids = presupuestoDTOS.stream()
+                .map(PresupuestoDTO::getIdPresupuesto)
+                .collect(Collectors.toList());
+
+        // 4 batch queries regardless of page size
+        Map<Integer, List<PagoPresupuesto>> seniasByPresupuesto =
+                pagoPresupuestoRepository.findByIdPresupuestoInAndIdTipoPago_IdAndEnabledTrue(ids, 1)
+                        .stream().collect(Collectors.groupingBy(PagoPresupuesto::getIdPresupuesto));
+
+        Map<Integer, List<PagoPresupuesto>> pagosByPresupuesto =
+                pagoPresupuestoRepository.findByIdPresupuestoInAndIdTipoPago_IdAndEnabledTrue(ids, 2)
+                        .stream().collect(Collectors.groupingBy(PagoPresupuesto::getIdPresupuesto));
+
+        Map<Integer, List<Descuento>> descuentosByPresupuesto =
+                descuentoRepository.findByIdPresupuestoIn(ids)
+                        .stream().filter(d -> d.getIdTipoDescuento() != null && d.getIdTipoDescuento() == 1)
+                        .collect(Collectors.groupingBy(Descuento::getIdPresupuesto));
+
+        Map<Integer, List<TrabajoPresupuestado>> trabajosByPresupuesto =
+                trabajoPresupuestadoRepository.findByIdPresupuestoIn(ids)
+                        .stream().collect(Collectors.groupingBy(TrabajoPresupuestado::getIdPresupuesto));
+
+        presupuestoDTOS.forEach(dto -> {
+            List<PagoPresupuesto> senias = seniasByPresupuesto.getOrDefault(dto.getIdPresupuesto(), new ArrayList<>());
+            List<PagoPresupuesto> pagos = pagosByPresupuesto.getOrDefault(dto.getIdPresupuesto(), new ArrayList<>());
+            List<Descuento> descuentos = descuentosByPresupuesto.getOrDefault(dto.getIdPresupuesto(), new ArrayList<>());
+            List<TrabajoPresupuestado> trabajos = trabajosByPresupuesto.getOrDefault(dto.getIdPresupuesto(), new ArrayList<>());
 
             BigDecimal totalSenia = senias.stream()
-                    .map(PagoPresupuesto::getMonto)
-                    .filter(java.util.Objects::nonNull)
+                    .map(PagoPresupuesto::getMonto).filter(java.util.Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
             BigDecimal totalDescuento = descuentos.stream()
-                    .map(Descuento::getMonto)
-                    .filter(java.util.Objects::nonNull)
+                    .map(Descuento::getMonto).filter(java.util.Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
             BigDecimal totalPagos = pagos.stream()
-                    .map(PagoPresupuesto::getMonto)
-                    .filter(java.util.Objects::nonNull)
+                    .map(PagoPresupuesto::getMonto).filter(java.util.Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             dto.setMontoSenia(totalSenia);
             dto.setDescuento(totalDescuento);
             dto.setPrecioCobrado(totalPagos);
-            dto.setPrecioSinDescuento(dto.getPrecioSinDescuento());
             dto.setDescuentos(descuentos.stream().map(d -> {
                 DescuentoDTO dDto = new DescuentoDTO();
                 dDto.setIdPresupuesto(d.getIdPresupuesto());
@@ -144,84 +163,14 @@ public class PresupuestoService {
                 return dDto;
             }).collect(Collectors.toList()));
 
-            List<TrabajoPresupuestado> seleccionados = trabajoPresupuestadoRepository
-                    .findByIdPresupuesto(dto.getIdPresupuesto()).stream()
+            List<TrabajoPresupuestado> seleccionados = trabajos.stream()
                     .filter(t -> Boolean.TRUE.equals(t.getSeleccionado()))
                     .collect(Collectors.toList());
-            int realizados = (int) seleccionados.stream()
-                    .filter(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()))
-                    .count();
-            int entregados = (int) seleccionados.stream()
-                    .filter(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado()))
-                    .count();
             dto.setTrabajosSeleccionados(seleccionados.size());
-            dto.setTrabajosRealizados(realizados);
-            dto.setTrabajosEntregados(entregados);
-
-            /*
-             * dto.setPagos(pagos.stream().map(p -> {
-             * PagoPresupuesto pagoDTO = new PagoPresupuesto();
-             * pagoDTO.setId(p.getId());
-             * pagoDTO.setMonto(p.getMonto());
-             * pagoDTO.setFechaHora(p.getFechaHora());
-             *
-             * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
-             * tipoPagoDTO.setId(p..getId());
-             * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
-             * pagoDTO.setTipoPago(tipoPagoDTO);
-             *
-             * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
-             * //medioPagoDTO.setId(p.getMedioPago().getId());
-             * //medioPagoDTO.setTipo(p.getMedioPago().getTipo());
-             * // medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
-             * pagoDTO.setMedioPago(medioPagoDTO);
-             *
-             * return pagoDTO;
-             * }).collect(java.util.stream.Collectors.toList()));
-             *
-             * dto.setSenias(senias.stream().map(p -> {
-             * PagoDTO pagoDTO = new PagoDTO();
-             * pagoDTO.setId(p.getId());
-             * pagoDTO.setMonto(p.getMonto());
-             * pagoDTO.setFechaHora(p.getFechaHora());
-             *
-             * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
-             * tipoPagoDTO.setId(p.getTipoPago().getId());
-             * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
-             * pagoDTO.setTipoPago(tipoPagoDTO);
-             *
-             * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
-             * medioPagoDTO.setId(p.getMedioPago().getId());
-             * medioPagoDTO.setTipo(p.getMedioPago().getTipo());
-             * medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
-             * pagoDTO.setMedioPago(medioPagoDTO);
-             *
-             * return pagoDTO;
-             * }).collect(java.util.stream.Collectors.toList()));
-             *
-             * dto.setDescuentos(descuentos.stream().map(p -> {
-             * DescuentoDTO descuentoDTO = new DescuentoDTO();
-             * descuentoDTO.setMonto(p.getMonto());
-             *
-             * TipoDescuentoDTO tipoDescuentoDTO = new TipoDescuentoDTO();
-             * //tipoDescuentoDTO.setTipo(p.getIdTipoDescuento().getNombre());
-             * descuentoDTO.setTipoDescuento(tipoDescuentoDTO);
-             *
-             * return descuentoDTO;
-             * }).collect(java.util.stream.Collectors.toList()));
-             *
-             * BigDecimal descuento = descuentos.stream().map(p ->
-             * p.getMonto()).reduce(BigDecimal.ZERO, BigDecimal::add);
-             * BigDecimal senia = senias.stream().map(p ->
-             * p.getMonto()).reduce(BigDecimal.ZERO, BigDecimal::add);
-             *
-             * dto.setDescuento(descuento);
-             * dto.setMontoSenia(senia);
-             *
-             * dto.setPrecioCobrado(dto.getPrecioSinDescuento().subtract(dto.getDescuento())
-             * .subtract(dto.getMontoSenia()));
-             */
-
+            dto.setTrabajosRealizados((int) seleccionados.stream()
+                    .filter(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado())).count());
+            dto.setTrabajosEntregados((int) seleccionados.stream()
+                    .filter(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado())).count());
         });
         return presupuestoDTOS;
     }
@@ -420,7 +369,7 @@ public class PresupuestoService {
             byte[] pdfBytes = remitoPdfService.generateRemito(idPresupuesto);
             folderService.guardarPdfEnCarpeta(cliente.getNombreCliente(), idPresupuesto, pdfBytes);
         } catch (Exception e) {
-            System.err.println("Error al actualizar PDF físico para presupuesto " + idPresupuesto + ": " + e.getMessage());
+            log.error("Error al actualizar PDF físico para presupuesto {}: {}", idPresupuesto, e.getMessage());
         }
     }
 

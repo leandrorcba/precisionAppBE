@@ -166,7 +166,7 @@ class CierreServiceTest {
 
     @Test
     void createCierre_sinCierreHoy_guardaYDevuelveDTO() {
-        when(cierreRepository.findAll()).thenReturn(Collections.emptyList());
+        when(cierreRepository.existsByFechaCierreBetween(any(Instant.class), any(Instant.class))).thenReturn(false);
 
         User user = new User();
         user.setId(5);
@@ -201,10 +201,7 @@ class CierreServiceTest {
 
     @Test
     void createCierre_yaExisteCierreHoy_lanzaIllegalArgument() {
-        Cierre hoy = new Cierre();
-        hoy.setId(99);
-        hoy.setFechaCierre(Instant.now());
-        when(cierreRepository.findAll()).thenReturn(List.of(hoy));
+        when(cierreRepository.existsByFechaCierreBetween(any(Instant.class), any(Instant.class))).thenReturn(true);
 
         CierreDTO dto = new CierreDTO();
         assertThatThrownBy(() -> service.createCierre(dto, "admin"))
