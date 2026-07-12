@@ -256,6 +256,9 @@ public class PresupuestoService {
             String eventName = String.format("%s - %s - %d - %s",
                     cliente.getNombreCliente(), materialNombre,
                     trabajo.getTiempoDeCorte(), precioStr);
+            if (Boolean.TRUE.equals(trabajo.getTraeMaterial())) {
+                eventName += " (Trae Material)";
+            }
 
             eventsService.createEventForTrabajo(
                     trabajo.getIdMaquina(), idPresupuesto, trabajo.getId(),

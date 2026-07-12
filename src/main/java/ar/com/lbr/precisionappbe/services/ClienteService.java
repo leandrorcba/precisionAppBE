@@ -9,7 +9,11 @@ import ar.com.lbr.precisionappbe.model.Punto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.PuntoRepository;
+import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
+import ar.com.lbr.precisionappbe.model.Presupuesto;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,20 +33,23 @@ public class ClienteService {
     private final PuntoRepository puntoRepository;
     private final FolderService folderService;
     private final AuditLogService auditLogService;
+    private final PresupuestoRepository presupuestoRepository;
 
     public ClienteService(ClienteRepository clienteRepository, ClientesMapper clientesMapper,
                           UtilsService utilsService, PuntoRepository puntoRepository,
-                          FolderService folderService, AuditLogService auditLogService) {
+                          FolderService folderService, AuditLogService auditLogService,
+                          PresupuestoRepository presupuestoRepository) {
         this.clienteRepository = clienteRepository;
         this.clientesMapper = clientesMapper;
         this.utilsService = utilsService;
         this.puntoRepository = puntoRepository;
         this.folderService = folderService;
         this.auditLogService = auditLogService;
+        this.presupuestoRepository = presupuestoRepository;
     }
 
     public ClienteResponse buscarClientes(String nombreCliente, Boolean mora, Integer idTipoCliente,
-                                          Boolean soloDeshabilitados, Pageable pageable) {
+                                          Boolean soloDeshabilitados, Boolean conPresupuestosImpagosEntregados, Pageable pageable) {
         Page<Cliente> clientePage = clienteRepository.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -64,6 +71,19 @@ public class ClienteService {
                 predicates.add(cb.or(cb.isFalse(root.get("disabled")), cb.isNull(root.get("disabled"))));
             }
 
+            if (Boolean.TRUE.equals(conPresupuestosImpagosEntregados)) {
+                Subquery<Long> subquery = query.subquery(Long.class);
+                Root<Presupuesto> presupuestoRoot = subquery.from(Presupuesto.class);
+                subquery.select(cb.count(presupuestoRoot));
+                subquery.where(
+                    cb.equal(presupuestoRoot.get("idCliente"), root.get("id")),
+                    cb.isTrue(presupuestoRoot.get("entregado")),
+                    cb.isFalse(presupuestoRoot.get("cobrado")),
+                    cb.isTrue(presupuestoRoot.get("habilitado"))
+                );
+                predicates.add(cb.greaterThan(subquery, 0L));
+            }
+
             query.orderBy(cb.desc(root.get("id")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -75,7 +95,10 @@ public class ClienteService {
         Map<Integer, PuntoDTO> puntoMap = puntoRepository.findByIdClienteIn(ids).stream()
                 .collect(Collectors.toMap(Punto::getIdCliente, PuntoDTO::toDTO));
 
-        clienteDTOS.forEach(dto -> dto.setPunto(puntoMap.get(dto.getIdCliente())));
+        clienteDTOS.forEach(dto -> {
+            dto.setPunto(puntoMap.get(dto.getIdCliente()));
+            dto.setPresupuestosPendientesEntregados(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(dto.getIdCliente()));
+        });
 
         return new ClienteResponse(clienteDTOS, clientePage.getTotalElements());
     }
@@ -125,7 +148,9 @@ public class ClienteService {
     public ClienteDTO getClienteById(Integer id) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
-        return new ClienteDTO(cliente);
+        ClienteDTO dto = new ClienteDTO(cliente);
+        dto.setPresupuestosPendientesEntregados(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(id));
+        return dto;
     }
 
     public ClienteDTO updateCliente(ClienteDTO dto) {

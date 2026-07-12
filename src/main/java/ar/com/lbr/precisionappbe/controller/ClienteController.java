@@ -56,12 +56,13 @@ public class ClienteController {
             @RequestParam(required = false) String nombreCliente,
             @RequestParam(required = false) Boolean mora,
             @RequestParam(required = false) Integer idTipoCliente,
-            @RequestParam(required = false) Boolean disabled) {
+            @RequestParam(required = false) Boolean disabled,
+            @RequestParam(required = false) Boolean impagos) {
 
         int page = start / limit;
         Pageable pageable = PageRequest.of(page, limit);
 
-        ClienteResponse clienteResponse = clienteService.buscarClientes(nombreCliente, mora, idTipoCliente, disabled, pageable);
+        ClienteResponse clienteResponse = clienteService.buscarClientes(nombreCliente, mora, idTipoCliente, disabled, impagos, pageable);
 
         return ResponseBuilder.ok("Listado obtenido con éxito", clienteResponse.getClientes(),
                 clienteResponse.getTotal());

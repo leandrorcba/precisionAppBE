@@ -15,6 +15,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -166,7 +167,7 @@ class EventsServiceTest {
 
         UpdateEventDTO dto = new UpdateEventDTO();
         dto.setCalendarId(2);
-        dto.setStartDate(OffsetDateTime.parse("2026-06-14T09:00:00-03:00"));
+        dto.setStartDate(OffsetDateTime.parse("2030-06-14T09:00:00-03:00"));
 
         Varios varios = new Varios();
         varios.setHoraInicio(LocalTime.of(8, 0));
@@ -209,6 +210,39 @@ class EventsServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(15);
+    }
+
+    @Test
+    void createEventForTrabajo_withTraeMaterial_setsDetails() {
+        Maquina maquina = new Maquina();
+        maquina.setId(1);
+
+        Varios varios = new Varios();
+        varios.setHoraInicio(LocalTime.of(8, 0));
+        varios.setHoraCierre(LocalTime.of(18, 0));
+
+        TrabajoPresupuestado trabajo = new TrabajoPresupuestado();
+        trabajo.setId(5);
+        trabajo.setTraeMaterial(true);
+        trabajo.setNotas("Alguna nota");
+
+        when(maquinasRepository.findById(1)).thenReturn(Optional.of(maquina));
+        when(variosRepository.findFirstByOrderByIdAsc()).thenReturn(varios);
+        when(trabajoPresupuestadoRepository.findById(5)).thenReturn(Optional.of(trabajo));
+        when(eventsRepository.findByIdMaquinaIdAndEndDateGreaterThanOrderByStartDate(eq(1), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        Event saved = new Event();
+        saved.setId(15);
+        saved.setIdMaquina(maquina);
+        when(eventsRepository.save(eventCaptor.capture())).thenReturn(saved);
+
+        service.createEventForTrabajo(1, 100, 5, "Corte", 30, null, null);
+
+        Event captured = eventCaptor.getValue();
+        assertThat(captured.getDetails()).isEqualTo("Cliente trae material");
+        assertThat(captured.getNotas()).isEqualTo("Alguna nota");
     }
 
     @Test

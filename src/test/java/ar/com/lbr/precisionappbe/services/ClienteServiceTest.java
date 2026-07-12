@@ -9,6 +9,7 @@ import ar.com.lbr.precisionappbe.model.Punto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.PuntoRepository;
+import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,11 +52,14 @@ class ClienteServiceTest {
     @Mock
     private AuditLogService auditLogService;
 
+    @Mock
+    private PresupuestoRepository presupuestoRepository;
+
     private ClienteService service;
 
     @BeforeEach
     void setUp() {
-        service = new ClienteService(clienteRepository, clientesMapper, utilsService, puntoRepository, folderService, auditLogService);
+        service = new ClienteService(clienteRepository, clientesMapper, utilsService, puntoRepository, folderService, auditLogService, presupuestoRepository);
     }
 
     @Test
@@ -78,8 +82,9 @@ class ClienteServiceTest {
         when(clienteRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
         when(clientesMapper.map(any(List.class))).thenReturn(List.of(dto));
         when(puntoRepository.findByIdClienteIn(any(List.class))).thenReturn(List.of(punto));
+        when(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(1)).thenReturn(0L);
 
-        ClienteResponse response = service.buscarClientes("Cliente", false, 0, false, pageable);
+        ClienteResponse response = service.buscarClientes("Cliente", false, 0, false, false, pageable);
 
         assertThat(response).isNotNull();
         assertThat(response.getTotal()).isEqualTo(1);
@@ -172,6 +177,7 @@ class ClienteServiceTest {
         cliente.setNombreCliente("Cliente Cinco");
 
         when(clienteRepository.findById(5)).thenReturn(Optional.of(cliente));
+        when(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(5)).thenReturn(0L);
 
         ClienteDTO result = service.getClienteById(5);
 

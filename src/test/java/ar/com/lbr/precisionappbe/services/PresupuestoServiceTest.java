@@ -38,6 +38,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -159,6 +160,47 @@ class PresupuestoServiceTest {
         assertThat(pr.getAprobado()).isTrue();
         verify(eventsService).createEventForTrabajo(
                 eq(1), eq(10), eq(20), any(String.class), eq(15), eq(LocalTime.of(9, 0)), eq(LocalTime.of(17, 0)));
+    }
+
+    @Test
+    void aprobarPresupuesto_withTraeMaterial_createsEventWithTMInName() {
+        Presupuesto pr = new Presupuesto();
+        pr.setId(10);
+        pr.setIdCliente(5);
+
+        Cliente cl = new Cliente();
+        cl.setNombreCliente("Luis");
+
+        TrabajoPresupuestado tr = new TrabajoPresupuestado();
+        tr.setId(20);
+        tr.setSeleccionado(true);
+        tr.setPrecioTrabajo(BigDecimal.valueOf(100));
+        tr.setTiempoDeCorte(15);
+        tr.setIdMateriales(1);
+        tr.setTraeMaterial(true);
+
+        Material mat = new Material();
+        mat.setMateriales("MDF 3mm");
+
+        Varios varios = new Varios();
+        varios.setHoraInicio(LocalTime.of(9, 0));
+        varios.setHoraCierre(LocalTime.of(17, 0));
+
+        AprobarPresupuestoDTO item = new AprobarPresupuestoDTO();
+        item.setIdTrabajo(20);
+        item.setIdMaquina(1);
+
+        when(presupuestoRepository.findById(10)).thenReturn(Optional.of(pr));
+        when(trabajoPresupuestadoRepository.findByIdPresupuesto(10)).thenReturn(List.of(tr));
+        when(trabajoPresupuestadoRepository.findAllById(Collections.singleton(20))).thenReturn(List.of(tr));
+        when(clienteRepository.findById(5)).thenReturn(Optional.of(cl));
+        when(variosRepository.findFirstByOrderByIdAsc()).thenReturn(varios);
+        when(materialRepository.findById(1)).thenReturn(Optional.of(mat));
+
+        service.aprobarPresupuesto(10, List.of(item));
+
+        verify(eventsService).createEventForTrabajo(
+                eq(1), eq(10), eq(20), contains("(Trae Material)"), eq(15), eq(LocalTime.of(9, 0)), eq(LocalTime.of(17, 0)));
     }
 
     @Test

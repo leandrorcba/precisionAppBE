@@ -286,10 +286,15 @@ public class EventsService {
         String name = eventName != null && eventName.length() > 127 ? eventName.substring(0, 127) : eventName;
 
         String notes = null;
+        String details = null;
         if (idTrabajo != null) {
-            notes = trabajoPresupuestadoRepository.findById(idTrabajo)
-                    .map(TrabajoPresupuestado::getNotas)
-                    .orElse(null);
+            TrabajoPresupuestado trabajo = trabajoPresupuestadoRepository.findById(idTrabajo).orElse(null);
+            if (trabajo != null) {
+                notes = trabajo.getNotas();
+                if (Boolean.TRUE.equals(trabajo.getTraeMaterial())) {
+                    details = "Cliente trae material";
+                }
+            }
         }
 
         Event event = new Event();
@@ -302,6 +307,7 @@ public class EventsService {
         event.setDuracion(durationMinutes);
         event.setStatus("PENDIENTE");
         event.setNotas(notes);
+        event.setDetails(details);
 
         return toDTO(eventsRepository.save(event));
     }

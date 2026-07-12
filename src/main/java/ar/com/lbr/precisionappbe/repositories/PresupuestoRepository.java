@@ -13,4 +13,8 @@ public interface PresupuestoRepository  extends JpaRepository<Presupuesto, Integ
     Page<Presupuesto> findByIdClienteAndHabilitadoOrderByIdDesc(Integer idCliente, Boolean habilitado, Pageable pageable);
 
     Page<Presupuesto> findById(Integer id, Pageable pageable);
+
+    long countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(Integer idCliente);
+
+    java.util.List<Presupuesto> findByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(Integer idCliente);
 }

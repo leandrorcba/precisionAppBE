@@ -26,6 +26,7 @@ public class ClienteDTO {
     private BigDecimal precioMinutoEmpresa;
     private Integer idTipoCliente;
     private PuntoDTO punto;
+    private Long presupuestosPendientesEntregados;
 
     public ClienteDTO(Cliente cliente) {
         this.idCliente = cliente.getId();
