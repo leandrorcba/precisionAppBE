@@ -63,8 +63,8 @@ public class Varios {
     @Column(name = "descuento_estudiante", precision = 10, scale = 2)
     private BigDecimal descuentoEstudiante;
 
-    @ColumnDefault("true")
+    @ColumnDefault("false")
     @Column(name = "habilitar_carpetas", nullable = false)
-    private Boolean habilitarCarpetas = true;
+    private Boolean habilitarCarpetas = false;
 
 }
