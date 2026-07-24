@@ -17,4 +17,12 @@ public interface PresupuestoRepository  extends JpaRepository<Presupuesto, Integ
     long countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(Integer idCliente);
 
     java.util.List<Presupuesto> findByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(Integer idCliente);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT p.id) FROM Presupuesto p " +
+            "LEFT JOIN TrabajoPresupuestado t ON p.id = t.idPresupuesto " +
+            "WHERE p.idCliente = :idCliente " +
+            "AND p.habilitado = true " +
+            "AND p.cobrado = false " +
+            "AND (p.entregado = true OR (t.seleccionado = true AND t.estado = ar.com.lbr.precisionappbe.model.EstadoTrabajo.ENTREGADO))")
+    long countPresupuestosImpagosConTrabajosEntregados(@org.springframework.data.repository.query.Param("idCliente") Integer idCliente);
 }

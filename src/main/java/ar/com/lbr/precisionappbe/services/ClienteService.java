@@ -11,6 +11,8 @@ import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.PuntoRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
+import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -74,12 +76,20 @@ public class ClienteService {
             if (Boolean.TRUE.equals(conPresupuestosImpagosEntregados)) {
                 Subquery<Long> subquery = query.subquery(Long.class);
                 Root<Presupuesto> presupuestoRoot = subquery.from(Presupuesto.class);
-                subquery.select(cb.count(presupuestoRoot));
+                Root<TrabajoPresupuestado> trabajoRoot = subquery.from(TrabajoPresupuestado.class);
+                subquery.select(cb.countDistinct(presupuestoRoot));
                 subquery.where(
                     cb.equal(presupuestoRoot.get("idCliente"), root.get("id")),
-                    cb.isTrue(presupuestoRoot.get("entregado")),
+                    cb.isTrue(presupuestoRoot.get("habilitado")),
                     cb.isFalse(presupuestoRoot.get("cobrado")),
-                    cb.isTrue(presupuestoRoot.get("habilitado"))
+                    cb.equal(trabajoRoot.get("idPresupuesto"), presupuestoRoot.get("id")),
+                    cb.or(
+                        cb.isTrue(presupuestoRoot.get("entregado")),
+                        cb.and(
+                            cb.isTrue(trabajoRoot.get("seleccionado")),
+                            cb.equal(trabajoRoot.get("estado"), EstadoTrabajo.ENTREGADO)
+                        )
+                    )
                 );
                 predicates.add(cb.greaterThan(subquery, 0L));
             }
@@ -97,7 +107,7 @@ public class ClienteService {
 
         clienteDTOS.forEach(dto -> {
             dto.setPunto(puntoMap.get(dto.getIdCliente()));
-            dto.setPresupuestosPendientesEntregados(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(dto.getIdCliente()));
+            dto.setPresupuestosPendientesEntregados(presupuestoRepository.countPresupuestosImpagosConTrabajosEntregados(dto.getIdCliente()));
         });
 
         return new ClienteResponse(clienteDTOS, clientePage.getTotalElements());
@@ -149,7 +159,7 @@ public class ClienteService {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
         ClienteDTO dto = new ClienteDTO(cliente);
-        dto.setPresupuestosPendientesEntregados(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(id));
+        dto.setPresupuestosPendientesEntregados(presupuestoRepository.countPresupuestosImpagosConTrabajosEntregados(id));
         return dto;
     }
 
