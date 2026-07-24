@@ -34,7 +34,7 @@ public class EventsDTO {
         this.descripcion = event.getEventName();
         this.maquina = event.getIdMaquina().getNombreMaquina();
         this.status = event.getStatus();
-        this.tipoDeTrabajo = "Polyfan";
+        this.tipoDeTrabajo = null;
         this.notas = event.getNotas();
         this.idTrabajo = event.getIdTrabajo();
         this.idPresupuesto = event.getIdPresupuesto();

@@ -6,9 +6,11 @@ import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.Event;
 import ar.com.lbr.precisionappbe.model.Maquina;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
+import ar.com.lbr.precisionappbe.model.Material;
 import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.repositories.EventsRepository;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
+import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -38,17 +40,20 @@ public class EventsService {
     private final TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
     private final TrabajosService trabajosService;
     private final VariosRepository variosRepository;
+    private final MaterialeRepository materialeRepository;
 
     public EventsService(EventsRepository eventsRepository,
                          MaquinasRepository maquinasRepository,
                          TrabajoPresupuestadoRepository trabajoPresupuestadoRepository,
                          @org.springframework.context.annotation.Lazy TrabajosService trabajosService,
-                         VariosRepository variosRepository) {
+                         VariosRepository variosRepository,
+                         MaterialeRepository materialeRepository) {
         this.eventsRepository = eventsRepository;
         this.maquinasRepository = maquinasRepository;
         this.trabajoPresupuestadoRepository = trabajoPresupuestadoRepository;
         this.trabajosService = trabajosService;
         this.variosRepository = variosRepository;
+        this.materialeRepository = materialeRepository;
     }
 
     private EstadoTrabajo mapStatusToEstado(String status) {
@@ -94,9 +99,15 @@ public class EventsService {
         if (event.getIdTrabajo() != null) {
             trabajoPresupuestadoRepository.findById(event.getIdTrabajo()).ifPresent(trabajo -> {
                 dto.setStatus(mapEstadoToStatus(trabajo.getEstado()));
+                if (trabajo.getIdMateriales() != null) {
+                    materialeRepository.findById(trabajo.getIdMateriales()).ifPresent(material -> {
+                        dto.setTipoDeTrabajo(material.getMateriales());
+                    });
+                }
             });
         } else {
             dto.setStatus(normalizeStatus(event.getStatus()));
+            dto.setTipoDeTrabajo(null);
         }
         return dto;
     }
@@ -120,11 +131,35 @@ public class EventsService {
 
         // Query them in bulk
         java.util.Map<Integer, EstadoTrabajo> jobStatusMap = new java.util.HashMap<>();
+        java.util.Map<Integer, String> jobMaterialMap = new java.util.HashMap<>();
         if (!jobIds.isEmpty()) {
             List<TrabajoPresupuestado> trabajos = trabajoPresupuestadoRepository.findAllById(jobIds);
             for (TrabajoPresupuestado t : trabajos) {
                 if (t.getEstado() != null) {
                     jobStatusMap.put(t.getId(), t.getEstado());
+                }
+            }
+            
+            // Gather all material IDs from these jobs
+            List<Integer> materialIds = trabajos.stream()
+                    .map(TrabajoPresupuestado::getIdMateriales)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toList());
+                    
+            java.util.Map<Integer, String> materialNameMap = new java.util.HashMap<>();
+            if (!materialIds.isEmpty()) {
+                List<Material> materiales = materialeRepository.findAllById(materialIds);
+                for (Material m : materiales) {
+                    materialNameMap.put(m.getId(), m.getMateriales());
+                }
+            }
+            
+            for (TrabajoPresupuestado t : trabajos) {
+                if (t.getIdMateriales() != null) {
+                    String matName = materialNameMap.get(t.getIdMateriales());
+                    if (matName != null) {
+                        jobMaterialMap.put(t.getId(), matName);
+                    }
                 }
             }
         }
@@ -140,8 +175,10 @@ public class EventsService {
                             } else {
                                 dto.setStatus(normalizeStatus(event.getStatus()));
                             }
+                            dto.setTipoDeTrabajo(jobMaterialMap.get(event.getIdTrabajo()));
                         } else {
                             dto.setStatus(normalizeStatus(event.getStatus()));
+                            dto.setTipoDeTrabajo(null);
                         }
                     }
                     return dto;
