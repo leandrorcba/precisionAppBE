@@ -1,0 +1,2 @@
+ALTER TABLE varios ADD COLUMN habilitar_carpetas BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE varios_historial ADD COLUMN habilitar_carpetas BOOLEAN DEFAULT TRUE;

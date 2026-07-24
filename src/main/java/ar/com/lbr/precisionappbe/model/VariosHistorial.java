@@ -75,4 +75,7 @@ public class VariosHistorial {
 
     @Column(name = "descuento_estudiante", precision = 10, scale = 2)
     private BigDecimal descuentoEstudiante;
+
+    @Column(name = "habilitar_carpetas")
+    private Boolean habilitarCarpetas;
 }

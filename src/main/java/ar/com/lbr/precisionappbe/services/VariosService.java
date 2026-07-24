@@ -45,6 +45,7 @@ public class VariosService {
         varios.setDirectorioRaizCarpetas(dto.getDirectorioRaizCarpetas());
         varios.setPermitirTrabajosFds(dto.getPermitirTrabajosFds() != null ? dto.getPermitirTrabajosFds() : false);
         varios.setDescuentoEstudiante(dto.getDescuentoEstudiante());
+        varios.setHabilitarCarpetas(dto.getHabilitarCarpetas() != null ? dto.getHabilitarCarpetas() : true);
 
         Varios updatedVarios = variosRepository.save(varios);
 
@@ -66,6 +67,7 @@ public class VariosService {
         historial.setDescuentoPorPunto(updatedVarios.getDescuentoPorPunto());
         historial.setPermitirTrabajosFds(updatedVarios.getPermitirTrabajosFds());
         historial.setDescuentoEstudiante(updatedVarios.getDescuentoEstudiante());
+        historial.setHabilitarCarpetas(updatedVarios.getHabilitarCarpetas());
 
         Object principal = SecurityContextHolder.getContext().getAuthentication() != null
                 ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()

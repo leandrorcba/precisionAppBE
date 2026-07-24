@@ -24,7 +24,11 @@ public class FolderService {
         }
 
         Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
-        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+        if (varios == null || varios.getHabilitarCarpetas() == null || !varios.getHabilitarCarpetas()) {
+            log.info("Creacion de carpetas deshabilitada en los parametros del sistema. Saltando creacion de carpeta de cliente.");
+            return;
+        }
+        if (varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
             log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema.");
             return;
         }
@@ -61,7 +65,11 @@ public class FolderService {
         }
 
         Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
-        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+        if (varios == null || varios.getHabilitarCarpetas() == null || !varios.getHabilitarCarpetas()) {
+            log.info("Creacion de carpetas deshabilitada en los parametros del sistema. Saltando creacion de carpeta de presupuesto.");
+            return;
+        }
+        if (varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
             log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema.");
             return;
         }
@@ -101,7 +109,11 @@ public class FolderService {
         }
 
         Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
-        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+        if (varios == null || varios.getHabilitarCarpetas() == null || !varios.getHabilitarCarpetas()) {
+            log.info("Creacion de carpetas deshabilitada en los parametros del sistema. Saltando creacion de carpeta de trabajo.");
+            return;
+        }
+        if (varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
             log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema.");
             return;
         }
@@ -144,7 +156,11 @@ public class FolderService {
 
     public void abrirCarpeta(String nombreCliente, Integer idPresupuesto, Integer idTrabajo) {
         Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
-        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+        if (varios == null || varios.getHabilitarCarpetas() == null || !varios.getHabilitarCarpetas()) {
+            log.warn("La lectura/apertura de carpetas esta deshabilitada en los parametros del sistema.");
+            return;
+        }
+        if (varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
             log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema.");
             return;
         }
@@ -206,7 +222,11 @@ public class FolderService {
         }
 
         Varios varios = variosRepository.findAll().stream().findFirst().orElse(null);
-        if (varios == null || varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
+        if (varios == null || varios.getHabilitarCarpetas() == null || !varios.getHabilitarCarpetas()) {
+            log.info("Creacion de carpetas/archivos deshabilitada. Saltando guardado de PDF.");
+            return;
+        }
+        if (varios.getDirectorioRaizCarpetas() == null || varios.getDirectorioRaizCarpetas().trim().isEmpty()) {
             log.warn("El directorio raiz de carpetas no esta configurado en los parametros del sistema. No se puede guardar el PDF.");
             return;
         }
