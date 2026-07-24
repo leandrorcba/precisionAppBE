@@ -67,15 +67,10 @@ public class UserService {
         // Validaciones de creación según rol
         User currentUser = getCurrentUser();
         if (currentUser != null) {
-            if (currentUser.getRole() == Role.SUPER_ADMIN) {
-                // SUPER_ADMIN puede crear ADMIN y USER. No puede crear otro SUPER_ADMIN
+            if (currentUser.getRole() == Role.SUPER_ADMIN || currentUser.getRole() == Role.ADMIN) {
+                // SUPER_ADMIN y ADMIN pueden crear ADMIN y USER. No pueden crear SUPER_ADMIN
                 if (userDTO.getRole() == Role.SUPER_ADMIN) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No se puede crear otro Super Administrador");
-                }
-            } else if (currentUser.getRole() == Role.ADMIN) {
-                // ADMIN puede crear únicamente USER
-                if (userDTO.getRole() != Role.USER) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un Administrador solo puede crear Usuarios");
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No se puede crear un Super Administrador");
                 }
             } else {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permisos para crear usuarios");
