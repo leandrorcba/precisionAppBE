@@ -29,6 +29,7 @@ public class VariosDTO {
     private String directorioRaizCarpetas;
     private Boolean permitirTrabajosFds;
     private BigDecimal descuentoEstudiante;
+    private Boolean habilitarCarpetas;
 
     public VariosDTO(Varios entity) {
         this.precioMinuto = entity.getPrecioMinuto();
@@ -44,6 +45,7 @@ public class VariosDTO {
         this.directorioRaizCarpetas = entity.getDirectorioRaizCarpetas();
         this.permitirTrabajosFds = entity.getPermitirTrabajosFds();
         this.descuentoEstudiante = entity.getDescuentoEstudiante();
+        this.habilitarCarpetas = entity.getHabilitarCarpetas();
     }
 
     public static VariosDTO toDTO(Varios entity) {

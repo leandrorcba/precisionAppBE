@@ -33,13 +33,12 @@ public class PresupuestoController {
     public ResponseEntity<ApiResponse<List<PresupuestoDTO>>> getPresupuestosByClienteId(
             @PathVariable Integer id,
             @RequestParam(defaultValue = "0") int start,
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "false") boolean inhabilitados) {
+            @RequestParam(defaultValue = "10") int limit) {
 
         int page = start / limit;
         Pageable pageable = PageRequest.of(page, limit);
 
-        PresupuestoResponse presupuestoResponse = presupuestoService.buscarPresupuestoByIdCliente(id, !inhabilitados, pageable);
+        PresupuestoResponse presupuestoResponse = presupuestoService.buscarPresupuestoByIdCliente(id, pageable);
 
         return ResponseBuilder.ok("Listado obtenido con éxito", presupuestoResponse.getPresupuestos(),
                 presupuestoResponse.getTotal());
@@ -88,15 +87,5 @@ public class PresupuestoController {
         return ResponseBuilder.ok("Presupuesto aprobado con éxito", resultado, 1L);
     }
 
-    @PostMapping("/{id}/cancelar")
-    public ResponseEntity<ApiResponse<Void>> cancelarPresupuesto(@PathVariable Integer id) {
-        presupuestoService.cancelarPresupuesto(id);
-        return ResponseBuilder.ok("Presupuesto cancelado con éxito", null, 1L);
-    }
 
-    @PostMapping("/{id}/rehabilitar")
-    public ResponseEntity<ApiResponse<Void>> rehabilitarPresupuesto(@PathVariable Integer id) {
-        presupuestoService.rehabilitarPresupuesto(id);
-        return ResponseBuilder.ok("Presupuesto rehabilitado con éxito", null, 1L);
-    }
 }

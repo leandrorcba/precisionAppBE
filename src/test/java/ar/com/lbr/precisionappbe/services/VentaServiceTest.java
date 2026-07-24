@@ -7,7 +7,6 @@ import ar.com.lbr.precisionappbe.model.Venta;
 import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoVentaRepository;
 import ar.com.lbr.precisionappbe.repositories.VentaRepository;
-import ar.com.lbr.precisionappbe.services.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,12 +26,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class VentaServiceTest {
@@ -46,16 +41,13 @@ class VentaServiceTest {
     @Mock
     private PagoVentaRepository pagoVentaRepository;
 
-    @Mock
-    private AuditLogService auditLogService;
-
     private VentaService service;
 
     private static final ZoneId ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
 
     @BeforeEach
     void setUp() {
-        service = new VentaService(ventaRepository, materialeRepository, pagoVentaRepository, auditLogService);
+        service = new VentaService(ventaRepository, materialeRepository, pagoVentaRepository);
     }
 
     @Test
@@ -138,21 +130,23 @@ class VentaServiceTest {
     }
 
     @Test
-    void getAllVentas_noFilters_usesDefaultDateRange() {
+    void getAllVentas_noFilters_callsFindAllAndMapsPagos() {
+        // Arrange
         Venta v1 = new Venta();
         v1.setId(40);
         v1.setFechaHoraVenta(Instant.now());
 
-        when(ventaRepository.findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class)))
-                .thenReturn(Collections.singletonList(v1));
+        when(ventaRepository.findAll()).thenReturn(Collections.singletonList(v1));
         when(pagoVentaRepository.findByIdVenta_IdIn(Collections.singletonList(40)))
                 .thenReturn(Collections.emptyList());
 
+        // Act
         List<VentaDTO> result = service.getAllVentas(null, null, false);
 
+        // Assert
         assertThat(result).hasSize(1);
-        verify(ventaRepository).findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class));
-        verify(ventaRepository, never()).findAll();
+        verify(ventaRepository).findAll();
+        verify(ventaRepository, never()).findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class));
     }
 
     @Test
@@ -189,7 +183,7 @@ class VentaServiceTest {
     }
 
     @Test
-    void createVenta_validDtoWithMaterial_savesAndReturnsDtoAndLogsAudit() {
+    void createVenta_validDtoWithMaterial_savesAndReturnsDto() {
         // Arrange
         Material m = new Material();
         m.setId(5);
@@ -224,7 +218,6 @@ class VentaServiceTest {
         assertThat(result.getId()).isEqualTo(60);
         assertThat(result.getMontoAbonado()).isEqualByComparingTo(BigDecimal.ZERO);
         verify(ventaRepository).save(any(Venta.class));
-        verify(auditLogService).log(eq("CREAR"), eq("VENTAS"), eq("60"), anyString());
     }
 
     @Test
@@ -246,7 +239,6 @@ class VentaServiceTest {
         // Assert
         assertThat(result.getId()).isEqualTo(70);
         verify(ventaRepository).save(any(Venta.class));
-        verify(auditLogService).log(eq("CREAR"), eq("VENTAS"), eq("70"), anyString());
     }
 
     @Test
@@ -264,7 +256,7 @@ class VentaServiceTest {
     }
 
     @Test
-    void updateVenta_validDtoNoPayments_savesAndReturnsDtoAndLogsAudit() {
+    void updateVenta_validDtoNoPayments_savesAndReturnsDto() {
         // Arrange
         Venta existing = new Venta();
         existing.setId(80);
@@ -287,7 +279,6 @@ class VentaServiceTest {
         assertThat(result.getId()).isEqualTo(80);
         assertThat(result.getMontoAbonado()).isEqualByComparingTo(BigDecimal.ZERO);
         verify(ventaRepository).save(existing);
-        verify(auditLogService).log(eq("MODIFICAR"), eq("VENTAS"), eq("80"), anyString());
     }
 
     @Test
@@ -320,18 +311,13 @@ class VentaServiceTest {
     }
 
     @Test
-    void deleteVenta_ventaExistsWithPayments_deletesPaymentsThenVentaAndLogsAudit() {
+    void deleteVenta_ventaExistsWithPayments_deletesPaymentsThenVenta() {
         // Arrange
         Venta existing = new Venta();
         existing.setId(90);
-        existing.setPrecioVenta(new BigDecimal("300.00"));
         when(ventaRepository.findById(90)).thenReturn(Optional.of(existing));
 
-        PagoVenta p1 = new PagoVenta();
-        p1.setId(101);
-        PagoVenta p2 = new PagoVenta();
-        p2.setId(102);
-        List<PagoVenta> pagos = Arrays.asList(p1, p2);
+        List<PagoVenta> pagos = Arrays.asList(new PagoVenta(), new PagoVenta());
         when(pagoVentaRepository.findByIdVenta_Id(90)).thenReturn(pagos);
 
         // Act
@@ -339,18 +325,14 @@ class VentaServiceTest {
 
         // Assert
         verify(pagoVentaRepository).deleteAll(pagos);
-        verify(auditLogService).log(eq("ELIMINAR"), eq("PAGOS"), eq("101"), anyString());
-        verify(auditLogService).log(eq("ELIMINAR"), eq("PAGOS"), eq("102"), anyString());
-        verify(auditLogService).log(eq("ELIMINAR"), eq("VENTAS"), eq("90"), anyString());
         verify(ventaRepository).delete(existing);
     }
 
     @Test
-    void deleteVenta_ventaExistsNoPayments_deletesOnlyVentaAndLogsAudit() {
+    void deleteVenta_ventaExistsNoPayments_deletesOnlyVenta() {
         // Arrange
         Venta existing = new Venta();
         existing.setId(90);
-        existing.setPrecioVenta(new BigDecimal("300.00"));
         when(ventaRepository.findById(90)).thenReturn(Optional.of(existing));
         when(pagoVentaRepository.findByIdVenta_Id(90)).thenReturn(Collections.emptyList());
 
@@ -359,8 +341,6 @@ class VentaServiceTest {
 
         // Assert
         verify(pagoVentaRepository, never()).deleteAll(anyList());
-        verify(auditLogService, never()).log(eq("ELIMINAR"), eq("PAGOS"), anyString(), anyString());
-        verify(auditLogService).log(eq("ELIMINAR"), eq("VENTAS"), eq("90"), anyString());
         verify(ventaRepository).delete(existing);
     }
 

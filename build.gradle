@@ -6,7 +6,6 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'checkstyle'
     id 'com.github.spotbugs' version '6.1.7'
-    id 'jacoco'
 }
 
 group = 'ar.com.lbr'
@@ -54,44 +53,6 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
-    finalizedBy jacocoTestReport
-}
-
-jacoco {
-    toolVersion = '0.8.12'
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        html.required = true
-        xml.required  = true
-        csv.required  = false
-    }
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                '**/dto/**',
-                '**/config/**',
-                '**/exception/**',
-                '**/*Application*'
-            ])
-        }))
-    }
-}
-
-jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            element = 'PACKAGE'
-            includes = ['ar.com.lbr.precisionappbe.services']
-            limit {
-                counter = 'LINE'
-                value   = 'COVEREDRATIO'
-                minimum = 0.70
-            }
-        }
-    }
 }
 
 checkstyle {

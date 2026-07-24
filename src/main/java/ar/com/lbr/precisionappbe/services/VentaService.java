@@ -9,7 +9,6 @@ import ar.com.lbr.precisionappbe.repositories.PagoVentaRepository;
 import ar.com.lbr.precisionappbe.repositories.VentaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -28,16 +27,13 @@ public class VentaService {
     private final VentaRepository ventaRepository;
     private final MaterialeRepository materialeRepository;
     private final PagoVentaRepository pagoVentaRepository;
-    private final AuditLogService auditLogService;
 
     public VentaService(VentaRepository ventaRepository,
                         MaterialeRepository materialeRepository,
-                        PagoVentaRepository pagoVentaRepository,
-                        AuditLogService auditLogService) {
+                        PagoVentaRepository pagoVentaRepository) {
         this.ventaRepository = ventaRepository;
         this.materialeRepository = materialeRepository;
         this.pagoVentaRepository = pagoVentaRepository;
-        this.auditLogService = auditLogService;
     }
 
     public List<VentaDTO> getAllVentas(LocalDate fechaFrom, LocalDate fechaTo, Boolean hoy) {
@@ -56,9 +52,7 @@ public class VentaService {
             Instant end = fechaFrom.atTime(LocalTime.MAX).atZone(ZONE).toInstant();
             ventas = ventaRepository.findByFechaHoraVentaBetween(start, end);
         } else {
-            Instant start = LocalDate.now().minusDays(30).atStartOfDay(ZONE).toInstant();
-            Instant end = LocalDate.now().atTime(LocalTime.MAX).atZone(ZONE).toInstant();
-            ventas = ventaRepository.findByFechaHoraVentaBetween(start, end);
+            ventas = ventaRepository.findAll();
         }
 
         List<Integer> idsVentas = ventas.stream().map(Venta::getId).collect(Collectors.toList());
@@ -105,12 +99,6 @@ public class VentaService {
         if (savedDto != null) {
             savedDto.setMontoAbonado(BigDecimal.ZERO);
         }
-
-        auditLogService.log("CREAR", "VENTAS", saved.getId().toString(),
-                "Venta directa de material #" + saved.getId() + " registrada por $" + saved.getPrecioVenta()
-                + " (Material: " + (saved.getIdMateriales() != null ? saved.getIdMateriales().getMateriales() : dto.getIdMateriales())
-                + ", Cantidad: " + saved.getCantidad() + ")");
-
         return savedDto;
     }
 
@@ -131,10 +119,6 @@ public class VentaService {
         if (savedDto != null) {
             savedDto.setMontoAbonado(montoAbonado);
         }
-
-        auditLogService.log("MODIFICAR", "VENTAS", saved.getId().toString(),
-                "Venta directa de material #" + saved.getId() + " modificada (Monto: $" + saved.getPrecioVenta() + ")");
-
         return savedDto;
     }
 
@@ -147,16 +131,7 @@ public class VentaService {
         List<PagoVenta> pagos = pagoVentaRepository.findByIdVenta_Id(id);
         if (pagos != null && !pagos.isEmpty()) {
             pagoVentaRepository.deleteAll(pagos);
-            for (PagoVenta p : pagos) {
-                auditLogService.log("ELIMINAR", "PAGOS", p.getId().toString(),
-                        "Pago #" + p.getId() + " de la Venta #" + id
-                        + " deshabilitado por eliminación de la venta");
-            }
         }
-
-        auditLogService.log("ELIMINAR", "VENTAS", id.toString(),
-                "Venta directa de material #" + id + " eliminada (Monto: $" + venta.getPrecioVenta()
-                + ", Material: " + (venta.getIdMateriales() != null ? venta.getIdMateriales().getMateriales() : "Desconocido") + ")");
 
         ventaRepository.delete(venta);
     }

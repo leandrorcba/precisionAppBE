@@ -17,10 +17,6 @@ public interface PagoPresupuestoRepository extends JpaRepository<PagoPresupuesto
     // idTipoPago 1 corresponds to SENIA
     List<PagoPresupuesto> findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(Integer idPresupuesto, Integer idTipoPago);
 
-    List<PagoPresupuesto> findByIdPresupuestoInAndIdTipoPago_IdAndEnabledTrue(List<Integer> ids, Integer idTipoPago);
-
-    List<PagoPresupuesto> findByIdPresupuestoInAndEnabledTrue(List<Integer> ids);
-
     Optional<PagoPresupuesto> findByIdAndEnabledTrue(Integer id);
 
     @Query("SELECT p FROM PagoPresupuesto p WHERE p.fechaHora >= :desde AND p.fechaHora < :hasta AND p.enabled = true")

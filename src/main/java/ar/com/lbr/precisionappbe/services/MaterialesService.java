@@ -23,13 +23,10 @@ public class MaterialesService {
 
     private final MaterialeRepository materialeRepository;
     private final PrecioMaterialRepository precioMaterialRepository;
-    private final AuditLogService auditLogService;
 
-    public MaterialesService(MaterialeRepository materialeRepository,
-                             PrecioMaterialRepository precioMaterialRepository, AuditLogService auditLogService) {
+    public MaterialesService(MaterialeRepository materialeRepository, PrecioMaterialRepository precioMaterialRepository) {
         this.materialeRepository = materialeRepository;
         this.precioMaterialRepository = precioMaterialRepository;
-        this.auditLogService = auditLogService;
     }
 
     public Page<MaterialDTO> getAllMateriales(String materiales, String tipo, Boolean enabled, int page, int size) {
@@ -43,27 +40,27 @@ public class MaterialesService {
         if (esCorte) {
             result = hasFilter
                     ? (disabled
-                    ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledTrue(materiales, pageable)
-                    : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledFalse(materiales, pageable))
+                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledTrue(materiales, pageable)
+                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsMaterialTrueAndDisabledFalse(materiales, pageable))
                     : (disabled
-                    ? materialeRepository.findByIsMaterialTrueAndDisabledTrue(pageable)
-                    : materialeRepository.findByIsMaterialTrueAndDisabledFalse(pageable));
+                        ? materialeRepository.findByIsMaterialTrueAndDisabledTrue(pageable)
+                        : materialeRepository.findByIsMaterialTrueAndDisabledFalse(pageable));
         } else if (esGrabado) {
             result = hasFilter
                     ? (disabled
-                    ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledTrue(materiales, pageable)
-                    : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledFalse(materiales, pageable))
+                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledTrue(materiales, pageable)
+                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndIsGrabadoTrueAndDisabledFalse(materiales, pageable))
                     : (disabled
-                    ? materialeRepository.findByIsGrabadoTrueAndDisabledTrue(pageable)
-                    : materialeRepository.findByIsGrabadoTrueAndDisabledFalse(pageable));
+                        ? materialeRepository.findByIsGrabadoTrueAndDisabledTrue(pageable)
+                        : materialeRepository.findByIsGrabadoTrueAndDisabledFalse(pageable));
         } else {
             result = hasFilter
                     ? (disabled
-                    ? materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledTrue(materiales, pageable)
-                    : materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledFalse(materiales, pageable))
+                        ? materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledTrue(materiales, pageable)
+                        : materialeRepository.findByMaterialesContainingIgnoreCaseAndDisabledFalse(materiales, pageable))
                     : (disabled
-                    ? materialeRepository.findByDisabledTrue(pageable)
-                    : materialeRepository.findByDisabledFalse(pageable));
+                        ? materialeRepository.findByDisabledTrue(pageable)
+                        : materialeRepository.findByDisabledFalse(pageable));
         }
         Page<MaterialDTO> dtos = result.map(MaterialDTO::toDTO);
         populatePrices(dtos.getContent());
@@ -100,10 +97,6 @@ public class MaterialesService {
 
         MaterialDTO result = MaterialDTO.toDTO(saved);
         populatePrices(List.of(result));
-
-        auditLogService.log("CREAR", "MATERIALES", saved.getId().toString(),
-                "Material '" + saved.getMateriales() + "' creado", result);
-
         return result;
     }
 
@@ -123,10 +116,6 @@ public class MaterialesService {
 
         MaterialDTO result = MaterialDTO.toDTO(updated);
         populatePrices(List.of(result));
-
-        auditLogService.log("MODIFICAR", "MATERIALES", updated.getId().toString(),
-                "Material '" + updated.getMateriales() + "' modificado", result);
-
         return result;
     }
 
@@ -135,9 +124,6 @@ public class MaterialesService {
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
         material.setDisabled(true);
         materialeRepository.save(material);
-
-        auditLogService.log("DESHABILITAR", "MATERIALES", id.toString(),
-                "Material '" + material.getMateriales() + "' deshabilitado", material);
     }
 
     public MaterialDTO rehabilitarMaterial(Integer id) {
@@ -146,17 +132,11 @@ public class MaterialesService {
         material.setDisabled(false);
         MaterialDTO result = MaterialDTO.toDTO(materialeRepository.save(material));
         populatePrices(List.of(result));
-
-        auditLogService.log("MODIFICAR", "MATERIALES", material.getId().toString(),
-                "Material '" + material.getMateriales() + "' habilitado", result);
-
         return result;
     }
 
     private void populatePrices(List<MaterialDTO> dtos) {
-        if (dtos.isEmpty()) {
-            return;
-        }
+        if (dtos.isEmpty()) return;
         List<Integer> ids = dtos.stream().map(MaterialDTO::getId).collect(Collectors.toList());
         List<PrecioMateriale> prices = precioMaterialRepository.findByIdMaterialesIn(ids);
         Map<Integer, List<PrecioMateriale>> pricesByMaterial = prices.stream()
@@ -254,14 +234,7 @@ public class MaterialesService {
         PrecioMateriale saved = precioMaterialRepository.save(precioMateriale);
         Material material = materialeRepository.findById(saved.getIdMateriales()).orElse(null);
         String nombreMaterial = material != null ? material.getMateriales() : null;
-        PrecioMaterialesDTO result = PrecioMaterialesDTO.toDTO(saved, nombreMaterial);
-
-        auditLogService.log("MODIFICAR", "MATERIALES", saved.getIdMateriales().toString(),
-                "Precio del material '" +
-                        (nombreMaterial != null ? nombreMaterial : saved.getIdMateriales()) + "' actualizado a $"
-                        + saved.getPrecioMaterial(), result);
-
-        return result;
+        return PrecioMaterialesDTO.toDTO(saved, nombreMaterial);
     }
 
     public PrecioMaterialDTO calcularPrecio(Integer idMaterial, Integer idSuperficie, Integer cantidad) {

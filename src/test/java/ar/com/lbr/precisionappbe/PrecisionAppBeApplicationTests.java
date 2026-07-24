@@ -1,26 +1,7 @@
 package ar.com.lbr.precisionappbe;
 
-import ar.com.lbr.precisionappbe.model.Cierre;
-import ar.com.lbr.precisionappbe.model.MedioPago;
-import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
-import ar.com.lbr.precisionappbe.model.Presupuesto;
-import ar.com.lbr.precisionappbe.model.Role;
-import ar.com.lbr.precisionappbe.model.TipoPago;
-import ar.com.lbr.precisionappbe.model.User;
-import ar.com.lbr.precisionappbe.repositories.CierreRepository;
-import ar.com.lbr.precisionappbe.repositories.CompraMaterialeRepository;
-import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
-import ar.com.lbr.precisionappbe.repositories.EventsRepository;
-import ar.com.lbr.precisionappbe.repositories.ExtraccionRepository;
-import ar.com.lbr.precisionappbe.repositories.GastoRepository;
-import ar.com.lbr.precisionappbe.repositories.MedioPagoRepository;
-import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
-import ar.com.lbr.precisionappbe.repositories.PagoVentaRepository;
-import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
-import ar.com.lbr.precisionappbe.repositories.TipoPagoRepository;
-import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
-import ar.com.lbr.precisionappbe.repositories.UserRepository;
-import ar.com.lbr.precisionappbe.repositories.VentaRepository;
+import ar.com.lbr.precisionappbe.model.*;
+import ar.com.lbr.precisionappbe.repositories.*;
 import ar.com.lbr.precisionappbe.services.CierreService;
 import ar.com.lbr.precisionappbe.dto.CierreDTO;
 import org.junit.jupiter.api.Test;
@@ -84,9 +65,6 @@ class PrecisionAppBeApplicationTests {
     @Autowired
     private GastoRepository gastoRepository;
 
-    @Autowired
-    private DescuentoRepository descuentoRepository;
-
     private static final ZoneId ZONE_ARGENTINA = ZoneId.of("America/Argentina/Buenos_Aires");
 
     @Test
@@ -95,17 +73,16 @@ class PrecisionAppBeApplicationTests {
         System.out.println("========== INICIANDO TEST DE INTEGRACION DE CIERRE DE CAJA ==========");
 
         // 1. Limpiar cierres, pagos, trabajos, eventos, presupuestos y otros egresos/ingresos previos
-        eventsRepository.deleteAllInBatch();
-        trabajoPresupuestadoRepository.deleteAllInBatch();
-        pagoPresupuestoRepository.deleteAllInBatch();
-        pagoVentaRepository.deleteAllInBatch();
-        ventaRepository.deleteAllInBatch();
-        extraccionRepository.deleteAllInBatch();
-        compraMaterialeRepository.deleteAllInBatch();
-        gastoRepository.deleteAllInBatch();
-        cierreRepository.deleteAllInBatch();
-        descuentoRepository.deleteAllInBatch();
-        presupuestoRepository.deleteAllInBatch();
+        eventsRepository.deleteAll();
+        trabajoPresupuestadoRepository.deleteAll();
+        pagoPresupuestoRepository.deleteAll();
+        pagoVentaRepository.deleteAll();
+        ventaRepository.deleteAll();
+        extraccionRepository.deleteAll();
+        compraMaterialeRepository.deleteAll();
+        gastoRepository.deleteAll();
+        cierreRepository.deleteAll();
+        presupuestoRepository.deleteAll();
 
         // 2. Obtener o crear TipoPago y MedioPago
         TipoPago tipoPresupuesto = tipoPagoRepository.findAll().stream()
@@ -244,16 +221,13 @@ class PrecisionAppBeApplicationTests {
         Cierre savedCierre = cierreRepository.save(cierre);
 
         // 7. Ejecutar la llamada que recupera los cierres
-        List<CierreDTO> result = cierreService
-                .getCierresFiltered(null, null, org.springframework.data.domain.PageRequest.of(0, 10))
-                .getCierres();
+        List<CierreDTO> result = cierreService.getCierresFiltered(null, null, org.springframework.data.domain.PageRequest.of(0, 10)).getCierres();
         
         System.out.println("Cierres devueltos: " + result.size());
         CierreDTO dto = result.stream().filter(r -> r.getId().equals(savedCierre.getId())).findFirst().orElse(null);
         
         assertNotNull(dto);
-        System.out.println("Cierre calculado -> montoPresupuestos: " + dto.getMontoPresupuestos()
-                + ", senia: " + dto.getSenia() + ", arqueo (teorico): " + dto.getArqueo());
+        System.out.println("Cierre calculado -> montoPresupuestos: " + dto.getMontoPresupuestos() + ", senia: " + dto.getSenia() + ", arqueo (teorico): " + dto.getArqueo());
 
         assertEquals(new BigDecimal("1500.50"), dto.getMontoPresupuestos());
         assertEquals(new BigDecimal("500.00"), dto.getSenia());

@@ -1,6 +1,6 @@
 -- =============================================================
 -- V2__import_clientes.sql
--- Importa clientes desde precision_schema (schema legado)
+-- Importa clientes desde precisionschema (schema legado)
 -- mora: 'SI'/'NO' -> 1/0
 -- tipoCliente: varchar -> FK tipo_cliente
 -- fechaCreacion: 'dd/MM/yyyy HH:mm:ss' -> timestamp
@@ -19,7 +19,7 @@ SET @default_date = (
             STR_TO_DATE(c2.`fechaCreacion`, '%Y-%m-%d %H:%i:%s')
         )
     )
-    FROM `precision_schema`.`clientes` c2
+    FROM `precisionschema`.`clientes` c2
     WHERE c2.`fechaCreacion` IS NOT NULL AND c2.`fechaCreacion` <> ''
 );
 
@@ -29,7 +29,7 @@ SET @default_date = COALESCE(@default_date, CURRENT_TIMESTAMP);
 -- Crea tipos de cliente a partir de los valores distintos del legado
 INSERT INTO `tipo_cliente` (`nombre_tipo`)
 SELECT DISTINCT `tipoCliente`
-FROM `precision_schema`.`clientes`
+FROM `precisionschema`.`clientes`
 WHERE `tipoCliente` IS NOT NULL
 ORDER BY `tipoCliente`;
 
@@ -62,7 +62,7 @@ SELECT c.`idCliente`,
            @default_date
        ),
        0
-FROM `precision_schema`.`clientes` c
+FROM `precisionschema`.`clientes` c
          LEFT JOIN `tipo_cliente` tc ON tc.`nombre_tipo` = c.`tipoCliente`;
 
 SET FOREIGN_KEY_CHECKS = 1;

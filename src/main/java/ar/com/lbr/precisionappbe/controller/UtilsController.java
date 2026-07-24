@@ -105,66 +105,32 @@ public class UtilsController {
         java.util.Map<String, Object> result = new java.util.HashMap<>();
         java.util.List<String> directories = new java.util.ArrayList<>();
 
-        try {
-            String configuredRoot = folderService.getConfiguredRootPath();
-
-            if (path == null || path.trim().isEmpty()) {
-                if (configuredRoot != null) {
-                    // Root already configured: start browsing from it
-                    java.io.File rootDir = new java.io.File(configuredRoot);
-                    java.io.File[] files = rootDir.listFiles();
-                    if (files != null) {
-                        for (java.io.File file : files) {
-                            if (file.isDirectory() && !file.isHidden()) {
-                                directories.add(file.getName());
-                            }
-                        }
-                    }
-                    result.put("currentPath", rootDir.getCanonicalPath());
-                    result.put("parentPath", null);
-                } else {
-                    // No root configured yet: list filesystem roots for initial setup
-                    java.io.File[] roots = java.io.File.listRoots();
-                    if (roots != null) {
-                        for (java.io.File root : roots) {
-                            directories.add(root.getAbsolutePath());
-                        }
-                    }
-                    result.put("currentPath", "");
-                    result.put("parentPath", null);
-                }
-            } else {
-                java.io.File currentDir = new java.io.File(path);
-                String canonicalRequested = currentDir.getCanonicalPath();
-
-                if (configuredRoot != null) {
-                    String canonicalRoot = new java.io.File(configuredRoot).getCanonicalPath();
-                    if (!canonicalRequested.equals(canonicalRoot)
-                            && !canonicalRequested.startsWith(canonicalRoot + java.io.File.separator)) {
-                        return ResponseBuilder.error("Acceso denegado: ruta fuera del directorio permitido",
-                                org.springframework.http.HttpStatus.FORBIDDEN);
-                    }
-                }
-
-                if (currentDir.exists() && currentDir.isDirectory()) {
-                    java.io.File[] files = currentDir.listFiles();
-                    if (files != null) {
-                        for (java.io.File file : files) {
-                            if (file.isDirectory() && !file.isHidden()) {
-                                directories.add(file.getName());
-                            }
-                        }
-                    }
-                    result.put("currentPath", canonicalRequested);
-                    result.put("parentPath", currentDir.getParentFile() != null ? currentDir.getParentFile().getCanonicalPath() : "");
-                } else {
-                    return ResponseBuilder.error("El directorio no existe o no es válido",
-                            org.springframework.http.HttpStatus.BAD_REQUEST);
+        if (path == null || path.trim().isEmpty()) {
+            java.io.File[] roots = java.io.File.listRoots();
+            if (roots != null) {
+                for (java.io.File root : roots) {
+                    directories.add(root.getAbsolutePath());
                 }
             }
-        } catch (java.io.IOException e) {
-            return ResponseBuilder.error("Error al resolver la ruta del directorio",
-                    org.springframework.http.HttpStatus.BAD_REQUEST);
+            result.put("currentPath", "");
+            result.put("parentPath", null);
+        } else {
+            java.io.File currentDir = new java.io.File(path);
+            if (currentDir.exists() && currentDir.isDirectory()) {
+                java.io.File[] files = currentDir.listFiles();
+                if (files != null) {
+                    for (java.io.File file : files) {
+                        if (file.isDirectory() && !file.isHidden()) {
+                            directories.add(file.getName());
+                        }
+                    }
+                }
+                result.put("currentPath", currentDir.getAbsolutePath());
+                result.put("parentPath", currentDir.getParent() != null ? currentDir.getParent() : "");
+            } else {
+                return ResponseBuilder.error("El directorio no existe o no es válido",
+                        org.springframework.http.HttpStatus.BAD_REQUEST);
+            }
         }
 
         directories.sort(String.CASE_INSENSITIVE_ORDER);

@@ -24,14 +24,10 @@ public class CompraMaterialesService {
 
     private final CompraMaterialeRepository compraMaterialeRepository;
     private final UserRepository userRepository;
-    private final AuditLogService auditLogService;
 
-    public CompraMaterialesService(CompraMaterialeRepository compraMaterialeRepository,
-                                   UserRepository userRepository,
-                                   AuditLogService auditLogService) {
+    public CompraMaterialesService(CompraMaterialeRepository compraMaterialeRepository, UserRepository userRepository) {
         this.compraMaterialeRepository = compraMaterialeRepository;
         this.userRepository = userRepository;
-        this.auditLogService = auditLogService;
     }
 
     public List<CompraMaterialesDTO> getAllCompras(LocalDate fechaFrom, LocalDate fechaTo, Boolean hoy) {
@@ -58,15 +54,9 @@ public class CompraMaterialesService {
 
         return compras.stream()
                 .sorted((a, b) -> {
-                    if (a.getFechaHoraCompra() == null && b.getFechaHoraCompra() == null) {
-                        return 0;
-                    }
-                    if (a.getFechaHoraCompra() == null) {
-                        return 1;
-                    }
-                    if (b.getFechaHoraCompra() == null) {
-                        return -1;
-                    }
+                    if (a.getFechaHoraCompra() == null && b.getFechaHoraCompra() == null) return 0;
+                    if (a.getFechaHoraCompra() == null) return 1;
+                    if (b.getFechaHoraCompra() == null) return -1;
                     return b.getFechaHoraCompra().compareTo(a.getFechaHoraCompra());
                 })
                 .map(c -> {
@@ -107,21 +97,12 @@ public class CompraMaterialesService {
         if (savedDto != null) {
             savedDto.setUsername(user.getUsername());
         }
-
-        auditLogService.log("CREAR", "COMPRAS", saved.getId().toString(),
-                "Compra de material '" + saved.getMaterial() + "' registrada por un total de $" + saved.getMontoTotal()
-                        + " (Cantidad: " + saved.getCantidad() + ", Unitario: $" + saved.getMontoUnitario() + ")");
-
         return savedDto;
     }
 
     public void deleteCompra(Integer id) {
         CompraMateriale compra = compraMaterialeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Compra de material no encontrada con ID: " + id));
-
-        auditLogService.log("ELIMINAR", "COMPRAS", id.toString(),
-                "Compra de material #" + id + " ('" + compra.getMaterial() + "', Total: $" + compra.getMontoTotal() + ") eliminada");
-
         compraMaterialeRepository.delete(compra);
     }
 }

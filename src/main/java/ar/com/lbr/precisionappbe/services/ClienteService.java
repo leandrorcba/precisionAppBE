@@ -9,15 +9,10 @@ import ar.com.lbr.precisionappbe.model.Punto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.PuntoRepository;
-import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
-import ar.com.lbr.precisionappbe.model.Presupuesto;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,29 +22,24 @@ import java.util.stream.Collectors;
 @Service
 public class ClienteService {
 
-    private final ClienteRepository clienteRepository;
-    private final UtilsService utilsService;
-    private final ClientesMapper clientesMapper;
-    private final PuntoRepository puntoRepository;
-    private final FolderService folderService;
-    private final AuditLogService auditLogService;
-    private final PresupuestoRepository presupuestoRepository;
+    ClienteRepository clienteRepository;
+    UtilsService utilsService;
+    ClientesMapper clientesMapper;
+    PuntoRepository puntoRepository;
+    FolderService folderService;
 
     public ClienteService(ClienteRepository clienteRepository, ClientesMapper clientesMapper,
                           UtilsService utilsService, PuntoRepository puntoRepository,
-                          FolderService folderService, AuditLogService auditLogService,
-                          PresupuestoRepository presupuestoRepository) {
+                          FolderService folderService) {
         this.clienteRepository = clienteRepository;
         this.clientesMapper = clientesMapper;
         this.utilsService = utilsService;
         this.puntoRepository = puntoRepository;
         this.folderService = folderService;
-        this.auditLogService = auditLogService;
-        this.presupuestoRepository = presupuestoRepository;
     }
 
     public ClienteResponse buscarClientes(String nombreCliente, Boolean mora, Integer idTipoCliente,
-                                          Boolean soloDeshabilitados, Boolean conPresupuestosImpagosEntregados, Pageable pageable) {
+                                          Boolean soloDeshabilitados, Pageable pageable) {
         Page<Cliente> clientePage = clienteRepository.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -71,19 +61,6 @@ public class ClienteService {
                 predicates.add(cb.or(cb.isFalse(root.get("disabled")), cb.isNull(root.get("disabled"))));
             }
 
-            if (Boolean.TRUE.equals(conPresupuestosImpagosEntregados)) {
-                Subquery<Long> subquery = query.subquery(Long.class);
-                Root<Presupuesto> presupuestoRoot = subquery.from(Presupuesto.class);
-                subquery.select(cb.count(presupuestoRoot));
-                subquery.where(
-                    cb.equal(presupuestoRoot.get("idCliente"), root.get("id")),
-                    cb.isTrue(presupuestoRoot.get("entregado")),
-                    cb.isFalse(presupuestoRoot.get("cobrado")),
-                    cb.isTrue(presupuestoRoot.get("habilitado"))
-                );
-                predicates.add(cb.greaterThan(subquery, 0L));
-            }
-
             query.orderBy(cb.desc(root.get("id")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -95,10 +72,7 @@ public class ClienteService {
         Map<Integer, PuntoDTO> puntoMap = puntoRepository.findByIdClienteIn(ids).stream()
                 .collect(Collectors.toMap(Punto::getIdCliente, PuntoDTO::toDTO));
 
-        clienteDTOS.forEach(dto -> {
-            dto.setPunto(puntoMap.get(dto.getIdCliente()));
-            dto.setPresupuestosPendientesEntregados(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(dto.getIdCliente()));
-        });
+        clienteDTOS.forEach(dto -> dto.setPunto(puntoMap.get(dto.getIdCliente())));
 
         return new ClienteResponse(clienteDTOS, clientePage.getTotalElements());
     }
@@ -121,9 +95,6 @@ public class ClienteService {
         punto.setPuntosAcumuladosHistorico(0);
         puntoRepository.save(punto);
 
-        auditLogService.log("CREAR", "CLIENTES", cliente.getId().toString(),
-                "Cliente '" + cliente.getNombreCliente() + "' creado con tipo: " + tipoCliente.getNombreTipo(), cliente);
-
         return dto;
     }
 
@@ -132,8 +103,6 @@ public class ClienteService {
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
         cliente.setDisabled(false);
         clienteRepository.save(cliente);
-        auditLogService.log("MODIFICAR", "CLIENTES", id.toString(),
-                "Cliente '" + cliente.getNombreCliente() + "' habilitado", cliente);
     }
 
     public void deleteCliente(Integer id) {
@@ -141,16 +110,12 @@ public class ClienteService {
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
         cliente.setDisabled(true);
         clienteRepository.save(cliente);
-        auditLogService.log("DESHABILITAR", "CLIENTES", id.toString(),
-                "Cliente '" + cliente.getNombreCliente() + "' deshabilitado", cliente);
     }
 
     public ClienteDTO getClienteById(Integer id) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
-        ClienteDTO dto = new ClienteDTO(cliente);
-        dto.setPresupuestosPendientesEntregados(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(id));
-        return dto;
+        return new ClienteDTO(cliente);
     }
 
     public ClienteDTO updateCliente(ClienteDTO dto) {
@@ -167,9 +132,6 @@ public class ClienteService {
         dto.setIdCliente(cliente.getId());
 
         folderService.crearCarpetaCliente(cliente.getNombreCliente());
-
-        auditLogService.log("MODIFICAR", "CLIENTES", cliente.getId().toString(),
-                "Cliente '" + cliente.getNombreCliente() + "' modificado (Tipo: " + tipoCliente.getNombreTipo() + ")", cliente);
 
         return dto;
     }

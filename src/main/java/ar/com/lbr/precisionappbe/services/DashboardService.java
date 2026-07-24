@@ -7,12 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Transactional(readOnly = true)
@@ -84,34 +79,6 @@ public class DashboardService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dto.setTotalCobradoServicios(totalServicios);
 
-        // Paid amounts calculations
-        Map<String, BigDecimal> budgetPayments = getBudgetPaymentDistribution(year, origen);
-        BigDecimal pagadoCorte = budgetPayments.get("pagadoCorte");
-        BigDecimal pagadoMaterialTrabajos = budgetPayments.get("pagadoMaterialTrabajos");
-        BigDecimal pagadoServicios = budgetPayments.get("pagadoServicios");
-        BigDecimal pagadoVentaMateriales = getPagadoVentasMateriales(year, origen);
-
-        if ("HISTORICO".equalsIgnoreCase(origen) || "TODOS".equalsIgnoreCase(origen)) {
-            BigDecimal histCorte = getHistoricalCorteTotal(year);
-            BigDecimal histMaterialTrabajos = getHistoricalMaterialTrabajosTotal(year);
-            BigDecimal histServicios = getHistoricalServiciosTotal(year);
-
-            if ("HISTORICO".equalsIgnoreCase(origen)) {
-                pagadoCorte = histCorte;
-                pagadoMaterialTrabajos = histMaterialTrabajos;
-                pagadoServicios = histServicios;
-            } else { // TODOS
-                pagadoCorte = pagadoCorte.add(histCorte);
-                pagadoMaterialTrabajos = pagadoMaterialTrabajos.add(histMaterialTrabajos);
-                pagadoServicios = pagadoServicios.add(histServicios);
-            }
-        }
-
-        dto.setTotalPagadoCorte(pagadoCorte);
-        dto.setTotalPagadoMaterial(pagadoVentaMateriales);
-        dto.setTotalPagadoMaterialTrabajos(pagadoMaterialTrabajos);
-        dto.setTotalPagadoServicios(pagadoServicios);
-
         // 6. Material purchases monthly
         List<DashboardDTO.MonthlyCompras> comprasMaterialesPorMes = getComprasMaterialesPorMes(year, origen);
         dto.setComprasMaterialesPorMes(comprasMaterialesPorMes);
@@ -133,13 +100,13 @@ public class DashboardService {
         String sql = "SELECT MONTH(fecha_creacion) as mes, COUNT(id_cliente) as cant " +
                 "FROM clientes " +
                 "WHERE YEAR(fecha_creacion) = :year AND disabled = 0 ";
-
+        
         if ("ACTIVO".equalsIgnoreCase(origen)) {
             sql += "AND id_cliente > 20895 ";
         } else if ("HISTORICO".equalsIgnoreCase(origen)) {
             sql += "AND id_cliente <= 20895 ";
         }
-
+        
         sql += "GROUP BY MONTH(fecha_creacion)";
 
         List<?> results = entityManager.createNativeQuery(sql)
@@ -188,8 +155,7 @@ public class DashboardService {
                     "GROUP BY h.id_maquina, MONTH(h.fecha)";
         } else { // TODOS
             sqlMinutes = "SELECT id_maquina, mes, SUM(tiempo_de_corte) as total_min FROM (" +
-                    "  SELECT t.id_maquina, MONTH(p.fecha_hora_presupuesto) as mes, t.tiempo_de_corte, " +
-                    "YEAR(p.fecha_hora_presupuesto) as anio " +
+                    "  SELECT t.id_maquina, MONTH(p.fecha_hora_presupuesto) as mes, t.tiempo_de_corte, YEAR(p.fecha_hora_presupuesto) as anio " +
                     "  FROM trabajo_presupuestado t " +
                     "  JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "  WHERE p.aprobado = 1 AND t.seleccionado = 1 AND t.id_maquina IS NOT NULL " +
@@ -328,8 +294,7 @@ public class DashboardService {
                     "GROUP BY MONTH(h.fecha)";
         } else { // TODOS
             sql = "SELECT mes, SUM(precio_corte) as total_corte FROM (" +
-                    "  SELECT MONTH(p.fecha_hora_presupuesto) as mes, COALESCE(t.precio_corte, 0.00) as precio_corte, " +
-                    "YEAR(p.fecha_hora_presupuesto) as anio " +
+                    "  SELECT MONTH(p.fecha_hora_presupuesto) as mes, COALESCE(t.precio_corte, 0.00) as precio_corte, YEAR(p.fecha_hora_presupuesto) as anio " +
                     "  FROM trabajo_presupuestado t " +
                     "  JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "  WHERE p.aprobado = 1 AND t.seleccionado = 1 " +
@@ -386,8 +351,7 @@ public class DashboardService {
                     "WHERE YEAR(h.fecha) = :year " +
                     "GROUP BY MONTH(h.fecha)";
         } else { // TODOS
-            sql = "SELECT mes, SUM(vectorizado) as total_vectorizado, SUM(diseno) as total_diseno, " +
-                    "SUM(vinilo) as total_vinilo, SUM(posicionador) as total_posicionador FROM (" +
+            sql = "SELECT mes, SUM(vectorizado) as total_vectorizado, SUM(diseno) as total_diseno, SUM(vinilo) as total_vinilo, SUM(posicionador) as total_posicionador FROM (" +
                     "  SELECT MONTH(p.fecha_hora_presupuesto) as mes, " +
                     "         COALESCE(t.vectorizado, 0.00) as vectorizado, " +
                     "         COALESCE(t.extra, 0.00) as diseno, " +
@@ -441,8 +405,7 @@ public class DashboardService {
 
         List<DashboardDTO.MonthlyServicios> list = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
-            list.add(new DashboardDTO.MonthlyServicios(MONTH_NAMES[i], vecAmounts[i], disAmounts[i],
-                    vinAmounts[i], posAmounts[i]));
+            list.add(new DashboardDTO.MonthlyServicios(MONTH_NAMES[i], vecAmounts[i], disAmounts[i], vinAmounts[i], posAmounts[i]));
         }
         return list;
     }
@@ -510,116 +473,5 @@ public class DashboardService {
         list.sort((a, b) -> b.getValue().compareTo(a.getValue()));
 
         return list;
-    }
-
-    private Map<String, BigDecimal> getBudgetPaymentDistribution(int year, String origen) {
-        Map<String, BigDecimal> distribution = new HashMap<>();
-        distribution.put("pagadoCorte", BigDecimal.ZERO);
-        distribution.put("pagadoMaterialTrabajos", BigDecimal.ZERO);
-        distribution.put("pagadoServicios", BigDecimal.ZERO);
-
-        if ("HISTORICO".equalsIgnoreCase(origen)) {
-            return distribution;
-        }
-
-        String sql = "SELECT p.id_presupuesto, " +
-                "       SUM(COALESCE(t.precio_corte, 0.00)) as corte, " +
-                "       SUM(COALESCE(t.precio_material, 0.00)) as material, " +
-                "       SUM(COALESCE(t.vectorizado, 0.00) + COALESCE(t.extra, 0.00) + COALESCE(t.vinilo, 0.00) " +
-                "+ COALESCE(t.posicionador, 0.00)) as servicios, " +
-                "       (SELECT SUM(COALESCE(pp.monto, 0.00)) FROM pago_presupuesto pp" +
-                " WHERE pp.id_presupuesto = p.id_presupuesto AND pp.enabled = 1) as pagos, " +
-                "       (SELECT SUM(COALESCE(d.monto, 0.00)) FROM descuento d " +
-                "WHERE d.id_presupuesto = p.id_presupuesto AND d.id_tipo_descuento = 1) as descuentos " +
-                "FROM presupuesto p " +
-                "JOIN trabajo_presupuestado t ON t.id_presupuesto = p.id_presupuesto " +
-                "WHERE YEAR(p.fecha_hora_presupuesto) = :year AND p.aprobado = 1 AND t.seleccionado = 1 " +
-                "GROUP BY p.id_presupuesto";
-
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
-
-        BigDecimal pagadoCorte = BigDecimal.ZERO;
-        BigDecimal pagadoMaterialTrabajos = BigDecimal.ZERO;
-        BigDecimal pagadoServicios = BigDecimal.ZERO;
-
-        for (Object res : results) {
-            Object[] row = (Object[]) res;
-            BigDecimal corte = row[1] != null ? new BigDecimal(row[1].toString()) : BigDecimal.ZERO;
-            BigDecimal material = row[2] != null ? new BigDecimal(row[2].toString()) : BigDecimal.ZERO;
-            BigDecimal servicios = row[3] != null ? new BigDecimal(row[3].toString()) : BigDecimal.ZERO;
-            BigDecimal pagos = row[4] != null ? new BigDecimal(row[4].toString()) : BigDecimal.ZERO;
-            BigDecimal descuentos = row[5] != null ? new BigDecimal(row[5].toString()) : BigDecimal.ZERO;
-
-            BigDecimal totalCovered = pagos.add(descuentos);
-            BigDecimal expectedTotal = corte.add(material).add(servicios);
-            if (expectedTotal.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal ratio = totalCovered.divide(expectedTotal, 10, java.math.RoundingMode.HALF_UP);
-                pagadoCorte = pagadoCorte.add(corte.multiply(ratio));
-                pagadoMaterialTrabajos = pagadoMaterialTrabajos.add(material.multiply(ratio));
-                pagadoServicios = pagadoServicios.add(servicios.multiply(ratio));
-            }
-        }
-
-        distribution.put("pagadoCorte", pagadoCorte.setScale(2, java.math.RoundingMode.HALF_UP));
-        distribution.put("pagadoMaterialTrabajos", pagadoMaterialTrabajos.setScale(2, java.math.RoundingMode.HALF_UP));
-        distribution.put("pagadoServicios", pagadoServicios.setScale(2, java.math.RoundingMode.HALF_UP));
-
-        return distribution;
-    }
-
-    private BigDecimal getPagadoVentasMateriales(int year, String origen) {
-        if ("HISTORICO".equalsIgnoreCase(origen)) {
-            return BigDecimal.ZERO;
-        }
-
-        String sql = "SELECT SUM(COALESCE(pv.monto, 0.00)) " +
-                "FROM pago_venta pv " +
-                "JOIN ventas v ON pv.id_venta = v.id_ventas " +
-                "WHERE YEAR(v.fecha_hora_venta) = :year";
-
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
-
-        if (results != null && !results.isEmpty() && results.get(0) != null) {
-            return new BigDecimal(results.get(0).toString());
-        }
-        return BigDecimal.ZERO;
-    }
-
-    private BigDecimal getHistoricalCorteTotal(int year) {
-        String sql = "SELECT SUM(COALESCE(h.precio_corte, 0.00)) FROM historico_trabajos h WHERE YEAR(h.fecha) = :year";
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
-        if (results != null && !results.isEmpty() && results.get(0) != null) {
-            return new BigDecimal(results.get(0).toString());
-        }
-        return BigDecimal.ZERO;
-    }
-
-    private BigDecimal getHistoricalMaterialTrabajosTotal(int year) {
-        String sql = "SELECT SUM(COALESCE(h.precio_material, 0.00)) FROM historico_trabajos h WHERE YEAR(h.fecha) = :year";
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
-        if (results != null && !results.isEmpty() && results.get(0) != null) {
-            return new BigDecimal(results.get(0).toString());
-        }
-        return BigDecimal.ZERO;
-    }
-
-    private BigDecimal getHistoricalServiciosTotal(int year) {
-        String sql = "SELECT SUM(COALESCE(h.vectorizado, 0.00) + COALESCE(h.extra, 0.00) + COALESCE(h.vinilo, 0.00)) " +
-                "FROM historico_trabajos h WHERE YEAR(h.fecha) = :year";
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
-        if (results != null && !results.isEmpty() && results.get(0) != null) {
-            return new BigDecimal(results.get(0).toString());
-        }
-        return BigDecimal.ZERO;
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -23,8 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CompraMaterialesServiceTest {
@@ -35,14 +35,11 @@ class CompraMaterialesServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private AuditLogService auditLogService;
-
     private CompraMaterialesService service;
 
     @BeforeEach
     void setUp() {
-        service = new CompraMaterialesService(compraMaterialeRepository, userRepository, auditLogService);
+        service = new CompraMaterialesService(compraMaterialeRepository, userRepository);
     }
 
     @Test

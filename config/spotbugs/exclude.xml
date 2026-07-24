@@ -30,27 +30,4 @@
         <Class name="ar.com.lbr.precisionappbe.security.LoginRateLimitFilter"/>
     </Match>
 
-    <!--
-        FolderService: Todos los métodos construyen paths desde:
-          - directorioRaizCarpetas (configurado por admin, leído de DB)
-          - sanitizeFolderName(nombreCliente) — elimina chars especiales de FS
-          - idPresupuesto / idTrabajo (Integer, safe)
-        abrirCarpeta además verifica contención canónica antes de cualquier operación.
-        Falsos positivos: SpotBugs trata DB-sourced config y sanitized strings como tainted.
-    -->
-    <Match>
-        <Bug pattern="COMMAND_INJECTION,PATH_TRAVERSAL,PATH_TRAVERSAL_IN,TAINTED_PATH,RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
-        <Class name="ar.com.lbr.precisionappbe.services.FolderService"/>
-    </Match>
-
-    <!--
-        PATH_TRAVERSAL: UtilsController.browseDirectories valida que el path solicitado esté dentro del
-        directorio raiz configurado (canonicalRoot) antes de listar. Falso positivo de SpotBugs.
-    -->
-    <Match>
-        <Bug pattern="PATH_TRAVERSAL,PATH_TRAVERSAL_IN,TAINTED_PATH"/>
-        <Class name="ar.com.lbr.precisionappbe.controller.UtilsController"/>
-        <Method name="browseDirectories"/>
-    </Match>
-
 </FindBugsFilter>

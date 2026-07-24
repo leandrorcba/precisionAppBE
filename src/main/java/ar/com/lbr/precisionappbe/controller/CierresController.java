@@ -9,15 +9,9 @@ import ar.com.lbr.precisionappbe.util.ResponseBuilder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
@@ -65,27 +59,43 @@ public class CierresController {
     public ResponseEntity<ApiResponse<CierreDTO>> createCierre(
             @RequestBody CierreDTO dto,
             Principal principal) {
-        CierreDTO created = cierreService.createCierre(dto, principal.getName());
-        return ResponseBuilder.ok("Cierre inicializado con éxito", created, 1L);
+        try {
+            CierreDTO created = cierreService.createCierre(dto, principal.getName());
+            return ResponseBuilder.ok("Cierre inicializado con éxito", created, 1L);
+        } catch (IllegalArgumentException e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CierreDTO>> updateCierre(
             @PathVariable Integer id,
             @RequestBody CierreDTO dto) {
-        CierreDTO updated = cierreService.updateCierre(id, dto);
-        return ResponseBuilder.ok("Cierre actualizado con éxito", updated, 1L);
+        try {
+            CierreDTO updated = cierreService.updateCierre(id, dto);
+            return ResponseBuilder.ok("Cierre actualizado con éxito", updated, 1L);
+        } catch (IllegalArgumentException e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PostMapping("/{id}/cerrar")
     public ResponseEntity<ApiResponse<CierreDTO>> cerrarCierre(@PathVariable Integer id) {
-        CierreDTO closed = cierreService.cerrarCierre(id);
-        return ResponseBuilder.ok("Cierre de caja bloqueado con éxito", closed, 1L);
+        try {
+            CierreDTO closed = cierreService.cerrarCierre(id);
+            return ResponseBuilder.ok("Cierre de caja bloqueado con éxito", closed, 1L);
+        } catch (IllegalArgumentException e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @GetMapping("/reporte-diario")
     public ResponseEntity<ApiResponse<ReporteDiarioDTO>> getReporteDiario(@RequestParam String fecha) {
-        ReporteDiarioDTO report = cierreService.getReporteDiario(fecha);
-        return ResponseBuilder.ok("Reporte diario obtenido con éxito", report, 1L);
+        try {
+            ReporteDiarioDTO report = cierreService.getReporteDiario(fecha);
+            return ResponseBuilder.ok("Reporte diario obtenido con éxito", report, 1L);
+        } catch (Exception e) {
+            return ResponseBuilder.error(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 }

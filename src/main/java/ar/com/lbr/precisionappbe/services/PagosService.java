@@ -4,23 +4,23 @@ import ar.com.lbr.precisionappbe.dto.MedioPagoDTO;
 import ar.com.lbr.precisionappbe.dto.PagoDTO;
 import ar.com.lbr.precisionappbe.dto.TipoPagoDTO;
 import ar.com.lbr.precisionappbe.model.CuentaBancaria;
-import ar.com.lbr.precisionappbe.model.Descuento;
 import ar.com.lbr.precisionappbe.model.MedioPago;
 import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.PagoVenta;
-import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.Tarjeta;
 import ar.com.lbr.precisionappbe.model.TipoPago;
-import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.model.Venta;
-import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
+import ar.com.lbr.precisionappbe.model.Presupuesto;
+import ar.com.lbr.precisionappbe.model.Varios;
+import ar.com.lbr.precisionappbe.model.Descuento;
 import ar.com.lbr.precisionappbe.repositories.MedioPagoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoVentaRepository;
-import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoPagoRepository;
-import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import ar.com.lbr.precisionappbe.repositories.VentaRepository;
+import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
+import ar.com.lbr.precisionappbe.repositories.VariosRepository;
+import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -45,7 +45,6 @@ public class PagosService {
     private final VariosRepository variosRepository;
     private final DescuentoRepository descuentoRepository;
     private final PresupuestoService presupuestoService;
-    private final AuditLogService auditLogService;
 
     public PagosService(PagoPresupuestoRepository pagoPresupuestoRepository,
                         PagoVentaRepository pagoVentaRepository,
@@ -55,8 +54,7 @@ public class PagosService {
                         PresupuestoRepository presupuestoRepository,
                         VariosRepository variosRepository,
                         DescuentoRepository descuentoRepository,
-                        PresupuestoService presupuestoService,
-                        AuditLogService auditLogService) {
+                        PresupuestoService presupuestoService) {
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.pagoVentaRepository = pagoVentaRepository;
         this.tipoPagoRepository = tipoPagoRepository;
@@ -66,7 +64,6 @@ public class PagosService {
         this.variosRepository = variosRepository;
         this.descuentoRepository = descuentoRepository;
         this.presupuestoService = presupuestoService;
-        this.auditLogService = auditLogService;
     }
 
     // ---------------------------------------------------------------
@@ -88,16 +85,9 @@ public class PagosService {
     }
 
     public List<PagoDTO> getAllPagos(Instant desde, Instant hasta, String tipo, String medio) {
-        Instant effectiveDe = desde != null ? desde
-                : java.time.LocalDate.now().minusDays(30)
-                        .atStartOfDay(java.time.ZoneId.of("America/Argentina/Buenos_Aires")).toInstant();
-        Instant effectiveHasta = hasta != null ? hasta : Instant.now();
-
-        List<PagoDTO> pagosPresupuesto = pagoPresupuestoRepository
-                .findByFechaHoraBetweenAndEnabledTrue(effectiveDe, effectiveHasta)
+        List<PagoDTO> pagosPresupuesto = pagoPresupuestoRepository.findAll()
                 .stream().map(this::toDTO).collect(Collectors.toList());
-        List<PagoDTO> pagosVenta = pagoVentaRepository
-                .findByFechaHoraBetween(effectiveDe, effectiveHasta)
+        List<PagoDTO> pagosVenta = pagoVentaRepository.findAll()
                 .stream().map(this::toDTO).collect(Collectors.toList());
 
         List<PagoDTO> allPagos = new ArrayList<>();
@@ -106,6 +96,12 @@ public class PagosService {
 
         List<PagoDTO> filteredPagos = allPagos.stream()
                 .filter(p -> {
+                    if (desde != null && p.getFechaHora() != null && p.getFechaHora().isBefore(desde)) {
+                        return false;
+                    }
+                    if (hasta != null && p.getFechaHora() != null && p.getFechaHora().isAfter(hasta)) {
+                        return false;
+                    }
                     if (tipo != null && !tipo.isBlank() && !"todos".equalsIgnoreCase(tipo)) {
                         if (p.getTipoPago() == null || !tipo.equalsIgnoreCase(p.getTipoPago().getTipo())) {
                             return false;
@@ -115,8 +111,7 @@ public class PagosService {
                         if (p.getMedioPago() == null) {
                             return false;
                         }
-                        String mVal = p.getMedioPago().getDescripcion() != null
-                                ? p.getMedioPago().getDescripcion() : p.getMedioPago().getTipo();
+                        String mVal = p.getMedioPago().getDescripcion() != null ? p.getMedioPago().getDescripcion() : p.getMedioPago().getTipo();
                         if (mVal == null || !medio.equalsIgnoreCase(mVal)) {
                             return false;
                         }
@@ -126,12 +121,9 @@ public class PagosService {
                 .collect(Collectors.toList());
 
         filteredPagos.sort((p1, p2) -> {
-            if (p1.getFechaHora() == null) {
-                return p2.getFechaHora() == null ? 0 : 1;
-            }
-            if (p2.getFechaHora() == null) {
-                return -1;
-            }
+            if (p1.getFechaHora() == null && p2.getFechaHora() == null) return 0;
+            if (p1.getFechaHora() == null) return 1;
+            if (p2.getFechaHora() == null) return -1;
             return p2.getFechaHora().compareTo(p1.getFechaHora());
         });
 
@@ -160,7 +152,7 @@ public class PagosService {
 
     private PagoDTO createPagoPresupuesto(PagoDTO dto, TipoPago tipoPago) {
         List<PagoPresupuesto> existing = pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(dto.getIdPresupuesto());
-
+        
         BigDecimal totalPresupuesto = presupuestoRepository.findById(dto.getIdPresupuesto())
                 .map(Presupuesto::getPrecioSinDescuento).orElse(BigDecimal.ZERO);
 
@@ -192,14 +184,14 @@ public class PagosService {
                         BigDecimal totalAbonadoPrevio = existing.stream()
                                 .map(PagoPresupuesto::getMonto)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+                        
                         BigDecimal discountPercentage = BigDecimal.valueOf(varios.getDescuentoEfectivo());
                         BigDecimal discountAmount = totalPresupuesto
                                 .multiply(discountPercentage)
                                 .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-
+                        
                         BigDecimal expectedNetRemaining = totalPresupuesto.subtract(totalAbonadoPrevio).subtract(discountAmount);
-
+                        
                         if (dto.getMonto().subtract(expectedNetRemaining).abs().compareTo(BigDecimal.valueOf(0.1)) < 0) {
                             Descuento discount = new Descuento();
                             discount.setIdPresupuesto(dto.getIdPresupuesto());
@@ -214,13 +206,7 @@ public class PagosService {
 
         PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
         updatePresupuestoCobradoStatus(dto.getIdPresupuesto());
-
-        PagoDTO resultDto = toDTO(saved);
-        auditLogService.log("CREAR", "PAGOS", saved.getId().toString(),
-                "Pago registrado para Presupuesto #" + saved.getIdPresupuesto() + " por $" + saved.getMonto()
-                        + " (Tipo: " + tipoPago.getTipo() + " / Medio: " + saved.getIdMedioPago().getTipo() + ")", resultDto);
-
-        return resultDto;
+        return toDTO(saved);
     }
 
     private PagoDTO createPagoVenta(PagoDTO dto, TipoPago tipoPago) {
@@ -230,14 +216,7 @@ public class PagosService {
         mapCommonFields(dto, tipoPago, pago);
         pago.setIdVenta(venta);
         pago.setFechaHora(Instant.now());
-        PagoVenta saved = pagoVentaRepository.save(pago);
-
-        PagoDTO resultDto = toDTO(saved);
-        auditLogService.log("CREAR", "PAGOS", saved.getId().toString(),
-                "Pago registrado para Venta #" + venta.getId() + " por $" + saved.getMonto()
-                        + " (Medio: " + saved.getIdMedioPago().getTipo() + ")", resultDto);
-
-        return resultDto;
+        return toDTO(pagoVentaRepository.save(pago));
     }
 
     // ---------------------------------------------------------------
@@ -272,26 +251,14 @@ public class PagosService {
 
         PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
         updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
-
-        PagoDTO resultDto = toDTO(saved);
-        auditLogService.log("MODIFICAR", "PAGOS", saved.getId().toString(),
-                "Pago #" + saved.getId() + " del Presupuesto #"
-                        + saved.getIdPresupuesto() + " actualizado. Activo: " + saved.getEnabled(), resultDto);
-
-        return resultDto;
+        return toDTO(saved);
     }
 
     private PagoDTO updatePagoVenta(Integer id, PagoDTO dto, TipoPago tipoPago) {
         PagoVenta pago = pagoVentaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado: " + id));
         mapCommonFields(dto, tipoPago, pago);
-        PagoVenta saved = pagoVentaRepository.save(pago);
-
-        PagoDTO resultDto = toDTO(saved);
-        auditLogService.log("MODIFICAR", "PAGOS", saved.getId().toString(),
-                "Pago #" + saved.getId() + " de la Venta #" + saved.getIdVenta().getId() + " modificado", resultDto);
-
-        return resultDto;
+        return toDTO(pagoVentaRepository.save(pago));
     }
 
     // ---------------------------------------------------------------
@@ -299,9 +266,8 @@ public class PagosService {
     // ---------------------------------------------------------------
 
     public void deletePago(Integer id) {
-        java.util.Optional<PagoPresupuesto> maybePago = pagoPresupuestoRepository.findByIdAndEnabledTrue(id);
-        if (maybePago.isPresent()) {
-            PagoPresupuesto pago = maybePago.get();
+        if (pagoPresupuestoRepository.findByIdAndEnabledTrue(id).isPresent()) {
+            PagoPresupuesto pago = pagoPresupuestoRepository.findByIdAndEnabledTrue(id).get();
             pago.setEnabled(false);
             pagoPresupuestoRepository.save(pago);
 
@@ -313,16 +279,10 @@ public class PagosService {
                 }
             }
             updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
-
-            auditLogService.log("ELIMINAR", "PAGOS", id.toString(),
-                    "Pago #" + id + " del Presupuesto #" + pago.getIdPresupuesto() + " deshabilitado", toDTO(pago));
         } else {
             PagoVenta pago = pagoVentaRepository.findById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado: " + id));
             pagoVentaRepository.delete(pago);
-
-            auditLogService.log("ELIMINAR", "PAGOS", id.toString(),
-                    "Pago #" + id + " de la Venta #" + pago.getIdVenta().getId() + " eliminado", toDTO(pago));
         }
     }
 
@@ -333,7 +293,7 @@ public class PagosService {
         }
 
         List<PagoPresupuesto> allActivePagos = pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(idPresupuesto);
-
+        
         BigDecimal totalPaid = allActivePagos.stream()
                 .map(PagoPresupuesto::getMonto)
                 .filter(java.util.Objects::nonNull)
@@ -350,7 +310,7 @@ public class PagosService {
         BigDecimal totalPresupuesto = presupuesto.getPrecioSinDescuento() != null ? presupuesto.getPrecioSinDescuento() : BigDecimal.ZERO;
 
         BigDecimal difference = totalPresupuesto.subtract(totalCovered);
-
+        
         // If remaining balance is <= 0.1 (accounting for rounding/float differences)
         if (difference.compareTo(BigDecimal.valueOf(0.1)) <= 0) {
             presupuesto.setCobrado(true);
@@ -387,9 +347,7 @@ public class PagosService {
                 .orElseThrow(() -> new EntityNotFoundException("MedioPago no encontrado: " + id));
     }
 
-    /**
-     * Mapea los campos comunes a ambos tipos de pago.
-     */
+    /** Mapea los campos comunes a ambos tipos de pago. */
     private void mapCommonFields(PagoDTO dto, TipoPago tipoPago, PagoPresupuesto pago) {
         pago.setMonto(dto.getMonto());
         pago.setCuotas(dto.getCuotas());

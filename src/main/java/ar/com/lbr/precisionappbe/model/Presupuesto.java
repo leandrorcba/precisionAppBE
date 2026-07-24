@@ -68,8 +68,4 @@ public class Presupuesto {
     @Column(name = "fecha_realizado")
     private Instant fechaRealizado;
 
-    @NotNull
-    @Column(name = "habilitado", nullable = false, columnDefinition = "TINYINT(1)")
-    private Boolean habilitado = true;
-
 }

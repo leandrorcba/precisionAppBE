@@ -3,15 +3,14 @@ package ar.com.lbr.precisionappbe.services;
 import ar.com.lbr.precisionappbe.dto.ClienteDTO;
 import ar.com.lbr.precisionappbe.dto.TrabajoPresupuestadoDTO;
 import ar.com.lbr.precisionappbe.model.Cliente;
+import ar.com.lbr.precisionappbe.model.Descuento;
 import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
-import ar.com.lbr.precisionappbe.model.Event;
 import ar.com.lbr.precisionappbe.model.Maquina;
 import ar.com.lbr.precisionappbe.model.Material;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.Superficie;
 import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
-import ar.com.lbr.precisionappbe.repositories.EventsRepository;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
 import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
@@ -40,8 +39,6 @@ public class TrabajosService {
     private final PresupuestoCalculadorService presupuestoCalculadorService;
     private final DescuentoRepository descuentoRepository;
     private final FolderService folderService;
-    private final AuditLogService auditLogService;
-    private final EventsRepository eventsRepository;
 
     public TrabajosService(TrabajoPresupuestadoRepository trabajosRepository,
                            PresupuestoRepository presupuestoRepository,
@@ -51,9 +48,7 @@ public class TrabajosService {
                            VariosService variosService, ClienteService clienteService,
                            PresupuestoCalculadorService presupuestoCalculadorService,
                            DescuentoRepository descuentoRepository,
-                           FolderService folderService,
-                           AuditLogService auditLogService,
-                           EventsRepository eventsRepository) {
+                           FolderService folderService) {
         this.trabajosRepository = trabajosRepository;
         this.presupuestoRepository = presupuestoRepository;
         this.materialeRepository = materialeRepository;
@@ -65,8 +60,6 @@ public class TrabajosService {
         this.presupuestoCalculadorService = presupuestoCalculadorService;
         this.descuentoRepository = descuentoRepository;
         this.folderService = folderService;
-        this.auditLogService = auditLogService;
-        this.eventsRepository = eventsRepository;
     }
 
     public TrabajoPresupuestadoDTO createTrabajo(TrabajoPresupuestadoDTO dto) {
@@ -107,69 +100,15 @@ public class TrabajosService {
 
         presupuestoService.actualizarPdfFisico(dto.getIdPresupuesto());
 
-        auditLogService.log("CREAR", "TRABAJOS", saved.getId().toString(),
-                "Trabajo #" + saved.getId() + " ("
-                        + (saved.getArchivoCad() != null ? saved.getArchivoCad() : "Sin archivo") + ") creado en Presupuesto #"
-                        + saved.getIdPresupuesto() + " por $" + saved.getPrecioTrabajo());
-
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
     public TrabajoPresupuestadoDTO updateSeleccionado(Integer idTrabajo, Boolean newValue) {
         TrabajoPresupuestado entity = trabajosRepository.findById(idTrabajo)
                 .orElseThrow(() -> new RuntimeException("Trabajo no encontrado: " + idTrabajo));
-
-        Presupuesto presupuesto = presupuestoRepository.findById(entity.getIdPresupuesto())
-                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + entity.getIdPresupuesto()));
-
-        boolean wasApproved = Boolean.TRUE.equals(presupuesto.getAprobado());
-
-        if (Boolean.FALSE.equals(newValue)) {
-            // Check if any job is realizado or entregado in this budget
-            List<TrabajoPresupuestado> trabajos = trabajosRepository.findByIdPresupuesto(entity.getIdPresupuesto());
-            boolean tieneTrabajoRealizado = trabajos.stream()
-                    .anyMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado())
-                            || EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
-
-            // Check if budget has payments
-            boolean tienePagos = presupuestoService.tienePagos(entity.getIdPresupuesto());
-
-            if (tieneTrabajoRealizado || tienePagos) {
-                throw new IllegalArgumentException("No se puede deseleccionar el trabajo porque el presupuesto " +
-                        "tiene trabajos realizados o cobros registrados.");
-            }
-
-            // If budget was approved, unmark it as approved and delete all calendar events for this budget
-            if (wasApproved) {
-                presupuesto.setAprobado(false);
-                eventsRepository.deleteAll(eventsRepository.findByIdPresupuesto(entity.getIdPresupuesto()));
-            } else {
-                // If it wasn't approved, just delete the event of this specific job (if any)
-                List<Event> events = eventsRepository.findByIdTrabajo(idTrabajo);
-                if (events != null && !events.isEmpty()) {
-                    eventsRepository.deleteAll(events);
-                }
-            }
-        }
-
         entity.setSeleccionado(newValue);
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
-
-        // Recalcular el total si estaba aprobado
-        if (wasApproved) {
-            BigDecimal precioSinDescuento = trabajosRepository.findByIdPresupuesto(entity.getIdPresupuesto()).stream()
-                    .filter(t -> Boolean.TRUE.equals(t.getSeleccionado()))
-                    .map(t -> t.getPrecioTrabajo() != null ? t.getPrecioTrabajo() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            presupuesto.setPrecioSinDescuento(precioSinDescuento);
-        }
-        presupuestoRepository.save(presupuesto);
-
         presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
-
-        auditLogService.log("MODIFICAR", "TRABAJOS", idTrabajo.toString(),
-                "Trabajo #" + idTrabajo + " cambió selección a: " + (newValue ? "ACTIVO" : "INACTIVO"));
-
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
@@ -187,9 +126,6 @@ public class TrabajosService {
         }
 
         presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
-
-        auditLogService.log("MODIFICAR", "TRABAJOS", idTrabajo.toString(),
-                "Trabajo #" + idTrabajo + " cambió de estado a: " + nuevoEstado);
 
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
@@ -228,7 +164,7 @@ public class TrabajosService {
     public void confirmarPresupuesto(Integer idPresupuesto) {
         Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
                 .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
-
+        
         presupuesto.setAprobado(true);
         presupuestoRepository.save(presupuesto);
     }

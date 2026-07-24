@@ -25,14 +25,11 @@ class MaterialesServiceTest {
     @Mock
     private MaterialeRepository materialeRepository;
 
-    @Mock
-    private AuditLogService auditLogService;
-
     private MaterialesService service;
 
     @BeforeEach
     void setUp() {
-        service = new MaterialesService(materialeRepository, precioMaterialRepository, auditLogService);
+        service = new MaterialesService(materialeRepository, precioMaterialRepository);
     }
 
     // --- Por superficie ---

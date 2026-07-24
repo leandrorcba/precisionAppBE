@@ -34,7 +34,6 @@ public class PresupuestoMapper {
         presupuesto.setFechaRealizado(dto.getFechaRealizado());
         presupuesto.setFechaCobrado(dto.getFechaCobrado());
         presupuesto.setPuntosCanjeados(0);
-        presupuesto.setHabilitado(dto.getHabilitado() != null ? dto.getHabilitado() : true);
 
         return presupuesto;
     }

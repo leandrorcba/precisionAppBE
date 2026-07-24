@@ -7,7 +7,6 @@ import ar.com.lbr.precisionappbe.dto.PresupuestoDTO;
 import ar.com.lbr.precisionappbe.dto.response.PresupuestoResponse;
 import ar.com.lbr.precisionappbe.model.Cliente;
 import ar.com.lbr.precisionappbe.model.Descuento;
-import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
 import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TipoCliente;
@@ -21,37 +20,35 @@ import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import ar.com.lbr.precisionappbe.model.EstadoTrabajo;
+import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@Slf4j
 public class PresupuestoService {
 
-    private final PresupuestoRepository presupuestoRepository;
-    private final TipoClienteRepository tipoClienteRepository;
-    private final PresupuestoMapper presupuestoMapper;
-    private final PagoPresupuestoRepository pagoPresupuestoRepository;
-    private final DescuentoRepository descuentoRepository;
-    private final TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
-    private final ClienteRepository clienteRepository;
-    private final MaterialRepository materialRepository;
-    private final VariosRepository variosRepository;
-    private final EventsService eventsService;
-    private final FolderService folderService;
-    private final RemitoPdfService remitoPdfService;
-    private final AuditLogService auditLogService;
+    PresupuestoRepository presupuestoRepository;
+    TipoClienteRepository tipoClienteRepository;
+    PresupuestoMapper presupuestoMapper;
+    PagoPresupuestoRepository pagoPresupuestoRepository;
+    DescuentoRepository descuentoRepository;
+    TrabajoPresupuestadoRepository trabajoPresupuestadoRepository;
+    ClienteRepository clienteRepository;
+    MaterialRepository materialRepository;
+    VariosRepository variosRepository;
+    EventsService eventsService;
+    FolderService folderService;
+    RemitoPdfService remitoPdfService;
 
     public PresupuestoService(PresupuestoRepository presupuestoRepository,
                               TipoClienteRepository tipoClienteRepository,
@@ -64,8 +61,7 @@ public class PresupuestoService {
                               VariosRepository variosRepository,
                               EventsService eventsService,
                               FolderService folderService,
-                              RemitoPdfService remitoPdfService,
-                              AuditLogService auditLogService
+                              RemitoPdfService remitoPdfService
     ) {
         this.presupuestoRepository = presupuestoRepository;
         this.tipoClienteRepository = tipoClienteRepository;
@@ -79,17 +75,16 @@ public class PresupuestoService {
         this.eventsService = eventsService;
         this.folderService = folderService;
         this.remitoPdfService = remitoPdfService;
-        this.auditLogService = auditLogService;
     }
 
-    public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Boolean habilitado, Pageable pageable) {
+    public PresupuestoResponse buscarPresupuestoByIdCliente(Integer idCliente, Pageable pageable) {
 
         Cliente cliente = clienteRepository.findById(idCliente).orElse(null);
         if (cliente != null) {
             folderService.crearCarpetaCliente(cliente.getNombreCliente());
         }
 
-        Page<Presupuesto> presupuesto = presupuestoRepository.findByIdClienteAndHabilitadoOrderByIdDesc(idCliente, habilitado, pageable);
+        Page<Presupuesto> presupuesto = presupuestoRepository.findByIdClienteOrderByIdDesc(idCliente, pageable);
         List<PresupuestoDTO> presupuestoDTOS = getPresupuestoDTOS(presupuesto);
 
         return new PresupuestoResponse(presupuestoDTOS, presupuesto.getTotalElements());
@@ -106,51 +101,35 @@ public class PresupuestoService {
     private List<PresupuestoDTO> getPresupuestoDTOS(Page<Presupuesto> presupuesto) {
         List<PresupuestoDTO> presupuestoDTOS = presupuestoMapper.map(presupuesto.getContent());
 
-        if (presupuestoDTOS.isEmpty()) {
-            return presupuestoDTOS;
-        }
-
-        List<Integer> ids = presupuestoDTOS.stream()
-                .map(PresupuestoDTO::getIdPresupuesto)
-                .collect(Collectors.toList());
-
-        // 4 batch queries regardless of page size
-        Map<Integer, List<PagoPresupuesto>> seniasByPresupuesto =
-                pagoPresupuestoRepository.findByIdPresupuestoInAndIdTipoPago_IdAndEnabledTrue(ids, 1)
-                        .stream().collect(Collectors.groupingBy(PagoPresupuesto::getIdPresupuesto));
-
-        Map<Integer, List<PagoPresupuesto>> pagosByPresupuesto =
-                pagoPresupuestoRepository.findByIdPresupuestoInAndIdTipoPago_IdAndEnabledTrue(ids, 2)
-                        .stream().collect(Collectors.groupingBy(PagoPresupuesto::getIdPresupuesto));
-
-        Map<Integer, List<Descuento>> descuentosByPresupuesto =
-                descuentoRepository.findByIdPresupuestoIn(ids)
-                        .stream().filter(d -> d.getIdTipoDescuento() != null && d.getIdTipoDescuento() == 1)
-                        .collect(Collectors.groupingBy(Descuento::getIdPresupuesto));
-
-        Map<Integer, List<TrabajoPresupuestado>> trabajosByPresupuesto =
-                trabajoPresupuestadoRepository.findByIdPresupuestoIn(ids)
-                        .stream().collect(Collectors.groupingBy(TrabajoPresupuestado::getIdPresupuesto));
-
         presupuestoDTOS.forEach(dto -> {
-            List<PagoPresupuesto> senias = seniasByPresupuesto.getOrDefault(dto.getIdPresupuesto(), new ArrayList<>());
-            List<PagoPresupuesto> pagos = pagosByPresupuesto.getOrDefault(dto.getIdPresupuesto(), new ArrayList<>());
-            List<Descuento> descuentos = descuentosByPresupuesto.getOrDefault(dto.getIdPresupuesto(), new ArrayList<>());
-            List<TrabajoPresupuestado> trabajos = trabajosByPresupuesto.getOrDefault(dto.getIdPresupuesto(), new ArrayList<>());
+            List<PagoPresupuesto> senias = pagoPresupuestoRepository
+                    .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 1);
+            List<Descuento> descuentos = descuentoRepository.findByIdPresupuesto(dto.getIdPresupuesto()).stream()
+                    .filter(d -> d.getIdTipoDescuento() != null && d.getIdTipoDescuento() == 1)
+                    .collect(Collectors.toList());
+            List<PagoPresupuesto> pagos = pagoPresupuestoRepository
+                    .findByIdPresupuestoAndIdTipoPago_IdAndEnabledTrue(dto.getIdPresupuesto(), 2);
+
 
             BigDecimal totalSenia = senias.stream()
-                    .map(PagoPresupuesto::getMonto).filter(java.util.Objects::nonNull)
+                    .map(PagoPresupuesto::getMonto)
+                    .filter(java.util.Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+
             BigDecimal totalDescuento = descuentos.stream()
-                    .map(Descuento::getMonto).filter(java.util.Objects::nonNull)
+                    .map(Descuento::getMonto)
+                    .filter(java.util.Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+
             BigDecimal totalPagos = pagos.stream()
-                    .map(PagoPresupuesto::getMonto).filter(java.util.Objects::nonNull)
+                    .map(PagoPresupuesto::getMonto)
+                    .filter(java.util.Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             dto.setMontoSenia(totalSenia);
             dto.setDescuento(totalDescuento);
             dto.setPrecioCobrado(totalPagos);
+            dto.setPrecioSinDescuento(dto.getPrecioSinDescuento());
             dto.setDescuentos(descuentos.stream().map(d -> {
                 DescuentoDTO dDto = new DescuentoDTO();
                 dDto.setIdPresupuesto(d.getIdPresupuesto());
@@ -163,14 +142,84 @@ public class PresupuestoService {
                 return dDto;
             }).collect(Collectors.toList()));
 
-            List<TrabajoPresupuestado> seleccionados = trabajos.stream()
+            List<TrabajoPresupuestado> seleccionados = trabajoPresupuestadoRepository
+                    .findByIdPresupuesto(dto.getIdPresupuesto()).stream()
                     .filter(t -> Boolean.TRUE.equals(t.getSeleccionado()))
                     .collect(Collectors.toList());
+            int realizados = (int) seleccionados.stream()
+                    .filter(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()))
+                    .count();
+            int entregados = (int) seleccionados.stream()
+                    .filter(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado()))
+                    .count();
             dto.setTrabajosSeleccionados(seleccionados.size());
-            dto.setTrabajosRealizados((int) seleccionados.stream()
-                    .filter(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado())).count());
-            dto.setTrabajosEntregados((int) seleccionados.stream()
-                    .filter(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado())).count());
+            dto.setTrabajosRealizados(realizados);
+            dto.setTrabajosEntregados(entregados);
+
+            /*
+             * dto.setPagos(pagos.stream().map(p -> {
+             * PagoPresupuesto pagoDTO = new PagoPresupuesto();
+             * pagoDTO.setId(p.getId());
+             * pagoDTO.setMonto(p.getMonto());
+             * pagoDTO.setFechaHora(p.getFechaHora());
+             *
+             * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
+             * tipoPagoDTO.setId(p..getId());
+             * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
+             * pagoDTO.setTipoPago(tipoPagoDTO);
+             *
+             * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
+             * //medioPagoDTO.setId(p.getMedioPago().getId());
+             * //medioPagoDTO.setTipo(p.getMedioPago().getTipo());
+             * // medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
+             * pagoDTO.setMedioPago(medioPagoDTO);
+             *
+             * return pagoDTO;
+             * }).collect(java.util.stream.Collectors.toList()));
+             *
+             * dto.setSenias(senias.stream().map(p -> {
+             * PagoDTO pagoDTO = new PagoDTO();
+             * pagoDTO.setId(p.getId());
+             * pagoDTO.setMonto(p.getMonto());
+             * pagoDTO.setFechaHora(p.getFechaHora());
+             *
+             * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
+             * tipoPagoDTO.setId(p.getTipoPago().getId());
+             * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
+             * pagoDTO.setTipoPago(tipoPagoDTO);
+             *
+             * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
+             * medioPagoDTO.setId(p.getMedioPago().getId());
+             * medioPagoDTO.setTipo(p.getMedioPago().getTipo());
+             * medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
+             * pagoDTO.setMedioPago(medioPagoDTO);
+             *
+             * return pagoDTO;
+             * }).collect(java.util.stream.Collectors.toList()));
+             *
+             * dto.setDescuentos(descuentos.stream().map(p -> {
+             * DescuentoDTO descuentoDTO = new DescuentoDTO();
+             * descuentoDTO.setMonto(p.getMonto());
+             *
+             * TipoDescuentoDTO tipoDescuentoDTO = new TipoDescuentoDTO();
+             * //tipoDescuentoDTO.setTipo(p.getIdTipoDescuento().getNombre());
+             * descuentoDTO.setTipoDescuento(tipoDescuentoDTO);
+             *
+             * return descuentoDTO;
+             * }).collect(java.util.stream.Collectors.toList()));
+             *
+             * BigDecimal descuento = descuentos.stream().map(p ->
+             * p.getMonto()).reduce(BigDecimal.ZERO, BigDecimal::add);
+             * BigDecimal senia = senias.stream().map(p ->
+             * p.getMonto()).reduce(BigDecimal.ZERO, BigDecimal::add);
+             *
+             * dto.setDescuento(descuento);
+             * dto.setMontoSenia(senia);
+             *
+             * dto.setPrecioCobrado(dto.getPrecioSinDescuento().subtract(dto.getDescuento())
+             * .subtract(dto.getMontoSenia()));
+             */
+
         });
         return presupuestoDTOS;
     }
@@ -192,11 +241,6 @@ public class PresupuestoService {
         dto.setIdCliente(presupuesto.getId());
         actualizarPdfFisico(presupuesto.getId());
 
-        auditLogService.log("CREAR", "PRESUPUESTOS", presupuesto.getId().toString(),
-                "Presupuesto #" + presupuesto.getId()
-                        + " creado para Cliente: "
-                        + (cliente != null ? cliente.getNombreCliente() : presupuesto.getIdCliente()), presupuesto);
-
         return dto;
     }
 
@@ -208,9 +252,6 @@ public class PresupuestoService {
 
         dto.setIdCliente(presupuesto.getId());
         actualizarPdfFisico(presupuesto.getId());
-
-        auditLogService.log("MODIFICAR", "PRESUPUESTOS", presupuesto.getId().toString(),
-                "Presupuesto #" + presupuesto.getId() + " actualizado", presupuesto);
 
         return dto;
     }
@@ -256,9 +297,6 @@ public class PresupuestoService {
             String eventName = String.format("%s - %s - %d - %s",
                     cliente.getNombreCliente(), materialNombre,
                     trabajo.getTiempoDeCorte(), precioStr);
-            if (Boolean.TRUE.equals(trabajo.getTraeMaterial())) {
-                eventName += " (Trae Material)";
-            }
 
             eventsService.createEventForTrabajo(
                     trabajo.getIdMaquina(), idPresupuesto, trabajo.getId(),
@@ -266,10 +304,6 @@ public class PresupuestoService {
         }
 
         actualizarPdfFisico(idPresupuesto);
-
-        auditLogService.log("APROBAR", "PRESUPUESTOS", idPresupuesto.toString(),
-                "Presupuesto #" + idPresupuesto + " aprobado para Cliente: "
-                        + cliente.getNombreCliente() + " (Monto: $" + precioSinDescuento + ")", items);
 
         return PresupuestoDTO.toDTO(presupuesto);
     }
@@ -295,85 +329,40 @@ public class PresupuestoService {
         return cliente;
     }
 
-    @Transactional
-    public void cancelarPresupuesto(Integer idPresupuesto) {
-        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
-                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
-
-        // Check if any job is realizado or entregado
-        List<TrabajoPresupuestado> trabajos = trabajoPresupuestadoRepository.findByIdPresupuesto(idPresupuesto);
-        boolean tieneTrabajoRealizado = trabajos.stream()
-                .anyMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()) || EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
-
-        // Check if budget is cobrado or has enabled payments
-        boolean tienePagos = tienePagos(idPresupuesto);
-
-        if (tieneTrabajoRealizado || tienePagos) {
-            throw new IllegalArgumentException("No se puede cancelar el presupuesto porque tiene " +
-                    "trabajos realizados o cobros registrados.");
-        }
-
-        // 1. Mark all jobs as seleccionado = 0
-        trabajos.forEach(t -> t.setSeleccionado(false));
-        trabajoPresupuestadoRepository.saveAll(trabajos);
-
-        // 2. Delete calendar events
-        eventsService.deleteEventsByPresupuesto(idPresupuesto);
-
-        // 3. Mark budget as habilitado = false and aprobado = false
-        presupuesto.setHabilitado(false);
-        presupuesto.setAprobado(false);
-        presupuestoRepository.save(presupuesto);
-
-        // Actualizar PDF físico del remito para reflejar el estado cancelado
-        actualizarPdfFisico(idPresupuesto);
-
-        // Audit log
-        auditLogService.log("DESHABILITAR", "PRESUPUESTOS", idPresupuesto.toString(),
-                "Presupuesto #" + idPresupuesto + " cancelado/inhabilitado. Trabajos deseleccionados y eventos eliminados.");
-    }
-
-    @Transactional
-    public void rehabilitarPresupuesto(Integer idPresupuesto) {
-        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
-                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
-
-        presupuesto.setHabilitado(true);
-        presupuestoRepository.save(presupuesto);
-
-        // Actualizar PDF físico del remito para reflejar el estado rehabilitado
-        actualizarPdfFisico(idPresupuesto);
-
-        // Audit log
-        auditLogService.log("MODIFICAR", "PRESUPUESTOS", idPresupuesto.toString(),
-                "Presupuesto #" + idPresupuesto + " rehabilitado/habilitado.");
-    }
-
-    public boolean tienePagos(Integer idPresupuesto) {
-        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto).orElse(null);
-        if (presupuesto == null) {
-            return false;
-        }
-        return Boolean.TRUE.equals(presupuesto.getCobrado()) ||
-                !pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(idPresupuesto).isEmpty();
-    }
-
     public void actualizarPdfFisico(Integer idPresupuesto) {
         try {
             Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto).orElse(null);
-            if (presupuesto == null) {
-                return;
-            }
+            if (presupuesto == null) return;
             Cliente cliente = clienteRepository.findById(presupuesto.getIdCliente()).orElse(null);
-            if (cliente == null) {
-                return;
-            }
+            if (cliente == null) return;
 
             byte[] pdfBytes = remitoPdfService.generateRemito(idPresupuesto);
             folderService.guardarPdfEnCarpeta(cliente.getNombreCliente(), idPresupuesto, pdfBytes);
         } catch (Exception e) {
-            log.error("Error al actualizar PDF físico para presupuesto {}: {}", idPresupuesto, e.getMessage());
+            System.err.println("Error al actualizar PDF físico para presupuesto " + idPresupuesto + ": " + e.getMessage());
         }
     }
 
+    /*
+     * mapPagos(List<Pago> pagos) {
+     * pagos.stream().map(p -> {
+     * PagoDTO pagoDTO = new PagoDTO();
+     * pagoDTO.setId(p.getId());
+     * pagoDTO.setMonto(p.getMonto());
+     * pagoDTO.setFechaHora(p.getFechaHora());
+     *
+     * TipoPagoDTO tipoPagoDTO = new TipoPagoDTO();
+     * tipoPagoDTO.setId(p.getTipoPago().getId());
+     * tipoPagoDTO.setTipo(p.getTipoPago().getTipo());
+     * pagoDTO.setTipoPago(tipoPagoDTO);
+     *
+     * MedioPagoDTO medioPagoDTO = new MedioPagoDTO();
+     * medioPagoDTO.setId(p.getMedioPago().getId());
+     * medioPagoDTO.setTipo(p.getMedioPago().getTipo());
+     * medioPagoDTO.setDescripcion(p.getMedioPago().getDescripcion());
+     * pagoDTO.setMedioPago(medioPagoDTO);
+     *
+     * return pagoDTO;
+     * }
+     */
 }

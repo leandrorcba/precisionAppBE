@@ -15,11 +15,9 @@ import java.util.stream.Collectors;
 public class ExtraccionService {
 
     private final ExtraccionRepository extraccionRepository;
-    private final AuditLogService auditLogService;
 
-    public ExtraccionService(ExtraccionRepository extraccionRepository, AuditLogService auditLogService) {
+    public ExtraccionService(ExtraccionRepository extraccionRepository) {
         this.extraccionRepository = extraccionRepository;
-        this.auditLogService = auditLogService;
     }
 
     public List<ExtraccionDTO> getAllExtracciones(LocalDate fechaDesde, LocalDate fechaHasta) {
@@ -30,8 +28,8 @@ public class ExtraccionService {
         Instant hastaInstant = hasta.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
 
         return extraccionRepository.findByFechaExtraccionBetween(desdeInstant, hastaInstant).stream()
-                 .map(ExtraccionDTO::toDTO)
-                 .collect(Collectors.toList());
+                .map(ExtraccionDTO::toDTO)
+                .collect(Collectors.toList());
     }
 
     public ExtraccionDTO createExtraccion(ExtraccionDTO dto) {
@@ -42,13 +40,7 @@ public class ExtraccionService {
         extraccione.setFechaExtraccion(dto.getFechaExtraccion() != null ? dto.getFechaExtraccion() : Instant.now());
 
         Extraccione saved = extraccionRepository.save(extraccione);
-        ExtraccionDTO result = ExtraccionDTO.toDTO(saved);
-
-        auditLogService.log("CREAR", "EXTRACCIONES", saved.getId().toString(),
-                "Extracción de caja chica #" + saved.getId() + " registrada por $" + saved.getMontoExtraccion()
-                + " (Motivo: " + saved.getMotivoExtraccion() + ")", result);
-
-        return result;
+        return ExtraccionDTO.toDTO(saved);
     }
 
     public ExtraccionDTO updateExtraccion(Integer id, ExtraccionDTO dto) {
@@ -63,22 +55,12 @@ public class ExtraccionService {
         }
 
         Extraccione updated = extraccionRepository.save(extraccione);
-        ExtraccionDTO result = ExtraccionDTO.toDTO(updated);
-
-        auditLogService.log("MODIFICAR", "EXTRACCIONES", updated.getId().toString(),
-                "Extracción de caja chica #" + updated.getId() + " modificada (Monto: $" + updated.getMontoExtraccion()
-                + ", Motivo: " + updated.getMotivoExtraccion() + ")", result);
-
-        return result;
+        return ExtraccionDTO.toDTO(updated);
     }
 
     public void deleteExtraccion(Integer id) {
         Extraccione extraccione = extraccionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Extracción no encontrada"));
-
-        auditLogService.log("ELIMINAR", "EXTRACCIONES", id.toString(),
-                "Extracción de caja chica #" + id + " eliminada (Monto: $" + extraccione.getMontoExtraccion()
-                + ", Motivo: " + extraccione.getMotivoExtraccion() + ")", ExtraccionDTO.toDTO(extraccione));
 
         extraccionRepository.delete(extraccione);
     }

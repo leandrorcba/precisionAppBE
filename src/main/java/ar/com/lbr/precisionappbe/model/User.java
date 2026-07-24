@@ -42,9 +42,6 @@ public class User implements UserDetails {
     @Column(name = "role", nullable = false, length = 20)
     private Role role;
 
-    @Column(name = "allowed_menus", length = 500)
-    private String allowedMenus;
-
     @Builder.Default
     @Column(name = "enabled", nullable = false)
     private boolean enabled = true;

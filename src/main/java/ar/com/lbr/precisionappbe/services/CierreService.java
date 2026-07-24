@@ -3,23 +3,9 @@ package ar.com.lbr.precisionappbe.services;
 import ar.com.lbr.precisionappbe.dto.CierreDTO;
 import ar.com.lbr.precisionappbe.dto.MovimientoReporteDTO;
 import ar.com.lbr.precisionappbe.dto.ReporteDiarioDTO;
+import ar.com.lbr.precisionappbe.model.*;
+import ar.com.lbr.precisionappbe.repositories.*;
 import ar.com.lbr.precisionappbe.dto.response.CierreResponse;
-import ar.com.lbr.precisionappbe.model.Cierre;
-import ar.com.lbr.precisionappbe.model.CompraMateriale;
-import ar.com.lbr.precisionappbe.model.Extraccione;
-import ar.com.lbr.precisionappbe.model.Gasto;
-import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
-import ar.com.lbr.precisionappbe.model.PagoVenta;
-import ar.com.lbr.precisionappbe.model.User;
-import ar.com.lbr.precisionappbe.repositories.CierreRepository;
-import ar.com.lbr.precisionappbe.repositories.CompraMaterialeRepository;
-import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
-import ar.com.lbr.precisionappbe.repositories.ExtraccionRepository;
-import ar.com.lbr.precisionappbe.repositories.GastoRepository;
-import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
-import ar.com.lbr.precisionappbe.repositories.PagoVentaRepository;
-import ar.com.lbr.precisionappbe.repositories.UserRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,7 +20,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Slf4j
 public class CierreService {
 
     private final CierreRepository cierreRepository;
@@ -45,7 +30,6 @@ public class CierreService {
     private final GastoRepository gastoRepository;
     private final UserRepository userRepository;
     private final DescuentoRepository descuentoRepository;
-    private final AuditLogService auditLogService;
 
     private static final ZoneId ZONE_ARGENTINA = ZoneId.of("America/Argentina/Buenos_Aires");
 
@@ -56,8 +40,7 @@ public class CierreService {
                          CompraMaterialeRepository compraMaterialeRepository,
                          GastoRepository gastoRepository,
                          UserRepository userRepository,
-                         DescuentoRepository descuentoRepository,
-                         AuditLogService auditLogService) {
+                         DescuentoRepository descuentoRepository) {
         this.cierreRepository = cierreRepository;
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.pagoVentaRepository = pagoVentaRepository;
@@ -66,7 +49,34 @@ public class CierreService {
         this.gastoRepository = gastoRepository;
         this.userRepository = userRepository;
         this.descuentoRepository = descuentoRepository;
-        this.auditLogService = auditLogService;
+    }
+
+    public CierreResponse getAllCierres(Pageable pageable) {
+        Page<Cierre> cierresPage = cierreRepository.findAll(pageable);
+        List<CierreDTO> cierreDTOs = cierresPage.getContent().stream()
+                .map(c -> {
+                    if (!Boolean.TRUE.equals(c.getCerrado())) {
+                        calculateAndFillCierre(c);
+                        cierreRepository.save(c);
+                    }
+                    return CierreDTO.toDTO(c);
+                })
+                .collect(Collectors.toList());
+        return new CierreResponse(cierreDTOs, cierresPage.getTotalElements());
+    }
+
+    public CierreResponse getAllCierresByMesCierre(String mesCierre, Pageable pageable) {
+        Page<Cierre> cierresPage = cierreRepository.findByMesCierre(mesCierre, pageable);
+        List<CierreDTO> cierreDTOs = cierresPage.getContent().stream()
+                .map(c -> {
+                    if (!Boolean.TRUE.equals(c.getCerrado())) {
+                        calculateAndFillCierre(c);
+                        cierreRepository.save(c);
+                    }
+                    return CierreDTO.toDTO(c);
+                })
+                .collect(Collectors.toList());
+        return new CierreResponse(cierreDTOs, cierresPage.getTotalElements());
     }
 
     public CierreResponse getCierresFiltered(String mesCierre, String fechaCierre, Pageable pageable) {
@@ -99,7 +109,11 @@ public class CierreService {
         Instant startOfDay = todayLocal.atStartOfDay(ZONE_ARGENTINA).toInstant();
         Instant endOfDay = todayLocal.plusDays(1).atStartOfDay(ZONE_ARGENTINA).toInstant();
 
-        if (cierreRepository.existsByFechaCierreBetween(startOfDay, endOfDay)) {
+        List<Cierre> existing = cierreRepository.findAll().stream()
+                .filter(c -> c.getFechaCierre() != null && c.getFechaCierre().isAfter(startOfDay) && c.getFechaCierre().isBefore(endOfDay))
+                .collect(Collectors.toList());
+
+        if (!existing.isEmpty()) {
             throw new IllegalArgumentException("Ya existe un cierre registrado para el día de hoy.");
         }
 
@@ -116,11 +130,6 @@ public class CierreService {
         calculateAndFillCierre(cierre);
 
         Cierre saved = cierreRepository.save(cierre);
-
-        auditLogService.log("CREAR", "CIERRES", saved.getId().toString(),
-                "Cierre de caja inicializado para el período " + saved.getMesCierre()
-                        + " con Monto Inicial: $" + saved.getMontoInicial());
-
         return CierreDTO.toDTO(saved);
     }
 
@@ -142,11 +151,6 @@ public class CierreService {
         calculateAndFillCierre(cierre);
 
         Cierre saved = cierreRepository.save(cierre);
-
-        auditLogService.log("MODIFICAR", "CIERRES", saved.getId().toString(),
-                "Cierre de caja #" + saved.getId() + " actualizado (Monto Inicial: $" + saved.getMontoInicial()
-                        + ", Monto Final/Arqueo: $" + saved.getMontoFinal() + ")");
-
         return CierreDTO.toDTO(saved);
     }
 
@@ -158,12 +162,6 @@ public class CierreService {
         cierre.setCerrado(true);
 
         Cierre saved = cierreRepository.save(cierre);
-
-        auditLogService.log("CERRAR", "CIERRES", saved.getId().toString(),
-                "Cierre de caja #" + saved.getId() + " cerrado y bloqueado con Arqueo: $" + saved.getMontoFinal()
-                        + " (Teórico Aplicación: $" + saved.getArqueo().add(saved.getMontoInicial())
-                        + ", Diferencia: $" + saved.getDiferencia() + ")");
-
         return CierreDTO.toDTO(saved);
     }
 
@@ -181,9 +179,9 @@ public class CierreService {
         List<PagoPresupuesto> pagosPresupuesto = pagoPresupuestoRepository.findByFechaHoraBetweenAndEnabledTrue(startOfDay, endOfDay);
         List<PagoVenta> pagosVenta = pagoVentaRepository.findByFechaHoraBetween(startOfDay, endOfDay);
 
-        log.debug("Calculando cierre ID: {} para fecha: {}", cierre.getId(), fechaCierre);
-        log.debug("Rango UTC de busqueda: desde {} hasta {}", startOfDay, endOfDay);
-        log.debug("Cantidad de pagos presupuesto encontrados en el rango: {}", pagosPresupuesto.size());
+        System.out.println("DEBUG CIERRE: Calculando cierre ID: " + cierre.getId() + " para fecha: " + fechaCierre);
+        System.out.println("DEBUG CIERRE: Rango UTC de busqueda: desde " + startOfDay + " hasta " + endOfDay);
+        System.out.println("DEBUG CIERRE: Cantidad de pagos presupuesto encontrados en el rango: " + pagosPresupuesto.size());
 
         BigDecimal totalPresupuestosEfectivo = BigDecimal.ZERO;
         BigDecimal totalSeniaEfectivo = BigDecimal.ZERO;
@@ -191,9 +189,8 @@ public class CierreService {
         for (PagoPresupuesto p : pagosPresupuesto) {
             String medioTipo = p.getIdMedioPago() != null ? p.getIdMedioPago().getTipo() : "NULL";
             String tipoPagoTipo = p.getIdTipoPago() != null ? p.getIdTipoPago().getTipo() : "NULL";
-            log.debug("Pago Presupuesto ID: {}, Monto: {}, Medio: {}, Tipo: {}, Enabled: {}",
-                    p.getId(), p.getMonto(), medioTipo, tipoPagoTipo, p.getEnabled());
-
+            System.out.println("  -> Pago Presupuesto ID: " + p.getId() + ", Monto: " + p.getMonto() + ", Medio: " + medioTipo + ", Tipo: " + tipoPagoTipo + ", Enabled: " + p.getEnabled());
+            
             boolean esEfectivo = false;
             if (p.getIdMedioPago() != null) {
                 String mTipo = p.getIdMedioPago().getTipo();
@@ -205,25 +202,23 @@ public class CierreService {
             if (esEfectivo) {
                 Integer idTipo = p.getIdTipoPago() != null ? p.getIdTipoPago().getId() : 0;
                 String tTipo = p.getIdTipoPago() != null ? p.getIdTipoPago().getTipo() : "";
-
+                
                 if (idTipo == 2 || "PRESUPUESTO".equalsIgnoreCase(tTipo != null ? tTipo.trim() : "")) {
                     totalPresupuestosEfectivo = totalPresupuestosEfectivo.add(p.getMonto() != null ? p.getMonto() : BigDecimal.ZERO);
-                } else if (idTipo == 1 || "SENIA".equalsIgnoreCase(tTipo != null ? tTipo.trim() : "")
-                        || "SEÑA".equalsIgnoreCase(tTipo != null ? tTipo.trim() : "")) {
+                } else if (idTipo == 1 || "SENIA".equalsIgnoreCase(tTipo != null ? tTipo.trim() : "") || "SEÑA".equalsIgnoreCase(tTipo != null ? tTipo.trim() : "")) {
                     totalSeniaEfectivo = totalSeniaEfectivo.add(p.getMonto() != null ? p.getMonto() : BigDecimal.ZERO);
                 }
             }
         }
 
-        log.debug("Sumarizado -> totalPresupuestosEfectivo: {}, totalSeniaEfectivo: {}",
-                totalPresupuestosEfectivo, totalSeniaEfectivo);
-        log.debug("Cantidad de pagos venta encontrados en el rango: {}", pagosVenta.size());
+        System.out.println("DEBUG CIERRE: Sumarizado -> totalPresupuestosEfectivo: " + totalPresupuestosEfectivo + ", totalSeniaEfectivo: " + totalSeniaEfectivo);
+        System.out.println("DEBUG CIERRE: Cantidad de pagos venta encontrados en el rango: " + pagosVenta.size());
 
         BigDecimal totalVentasEfectivo = BigDecimal.ZERO;
         for (PagoVenta p : pagosVenta) {
             String medioTipo = p.getIdMedioPago() != null ? p.getIdMedioPago().getTipo() : "NULL";
-            log.debug("Pago Venta ID: {}, Monto: {}, Medio: {}", p.getId(), p.getMonto(), medioTipo);
-
+            System.out.println("  -> Pago Venta ID: " + p.getId() + ", Monto: " + p.getMonto() + ", Medio: " + medioTipo);
+            
             boolean esEfectivo = false;
             if (p.getIdMedioPago() != null) {
                 String mTipo = p.getIdMedioPago().getTipo();
@@ -235,7 +230,7 @@ public class CierreService {
                 totalVentasEfectivo = totalVentasEfectivo.add(p.getMonto() != null ? p.getMonto() : BigDecimal.ZERO);
             }
         }
-        log.debug("Sumarizado -> totalVentasEfectivo: {}", totalVentasEfectivo);
+        System.out.println("DEBUG CIERRE: Sumarizado -> totalVentasEfectivo: " + totalVentasEfectivo);
 
         // 2. Egresos (Extracciones, Compra de Materiales, Gastos Generales)
         List<Extraccione> extracciones = extraccionRepository.findByFechaExtraccionBetween(startOfDay, endOfDay);
@@ -268,7 +263,7 @@ public class CierreService {
         BigDecimal montoInicial = cierre.getMontoInicial() != null ? cierre.getMontoInicial() : BigDecimal.ZERO;
         BigDecimal montoTotal = montoInicial.add(arqueo);
         BigDecimal montoFinal = cierre.getMontoFinal() != null ? cierre.getMontoFinal() : BigDecimal.ZERO;
-
+        
         // Diferencia es Monto total - Monto arqueo (montoFinal)
         BigDecimal diferencia = montoTotal.subtract(montoFinal);
 
@@ -298,8 +293,7 @@ public class CierreService {
         // 1. Ingresos por Pagos de Presupuesto
         List<PagoPresupuesto> pagosPresupuesto = pagoPresupuestoRepository.findByFechaHoraBetweenAndEnabledTrue(startOfDay, endOfDay);
         for (PagoPresupuesto p : pagosPresupuesto) {
-            String medio = p.getIdMedioPago() != null ? (p.getIdMedioPago().getDescripcion()
-                    != null ? p.getIdMedioPago().getDescripcion() : p.getIdMedioPago().getTipo()) : "-";
+            String medio = p.getIdMedioPago() != null ? (p.getIdMedioPago().getDescripcion() != null ? p.getIdMedioPago().getDescripcion() : p.getIdMedioPago().getTipo()) : "-";
             String cat = p.getIdTipoPago() != null ? p.getIdTipoPago().getTipo() : "PRESUPUESTO";
             BigDecimal monto = p.getMonto() != null ? p.getMonto() : BigDecimal.ZERO;
 
@@ -320,8 +314,7 @@ public class CierreService {
             ingresos.add(MovimientoReporteDTO.builder()
                     .tipoMovimiento("INGRESO")
                     .categoria(cat)
-                    .descripcion("Pago Presupuesto #" + p.getIdPresupuesto() +
-                            (p.getNotas() != null && !p.getNotas().isBlank() ? " - " + p.getNotas() : ""))
+                    .descripcion("Pago Presupuesto #" + p.getIdPresupuesto() + (p.getNotas() != null && !p.getNotas().isBlank() ? " - " + p.getNotas() : ""))
                     .monto(monto)
                     .medioPago(medio)
                     .fechaHora(p.getFechaHora())
@@ -332,8 +325,7 @@ public class CierreService {
         // 2. Ingresos por Pagos de Ventas
         List<PagoVenta> pagosVenta = pagoVentaRepository.findByFechaHoraBetween(startOfDay, endOfDay);
         for (PagoVenta p : pagosVenta) {
-            String medio = p.getIdMedioPago() != null ? (p.getIdMedioPago().getDescripcion() != null ?
-                    p.getIdMedioPago().getDescripcion() : p.getIdMedioPago().getTipo()) : "-";
+            String medio = p.getIdMedioPago() != null ? (p.getIdMedioPago().getDescripcion() != null ? p.getIdMedioPago().getDescripcion() : p.getIdMedioPago().getTipo()) : "-";
             BigDecimal monto = p.getMonto() != null ? p.getMonto() : BigDecimal.ZERO;
 
             boolean esEfectivo = false;
@@ -353,8 +345,7 @@ public class CierreService {
             ingresos.add(MovimientoReporteDTO.builder()
                     .tipoMovimiento("INGRESO")
                     .categoria("VENTA")
-                    .descripcion("Pago Venta #" + (p.getIdVenta() != null ?
-                            p.getIdVenta().getId() : "") + (p.getNotas() != null && !p.getNotas().isBlank() ? " - " + p.getNotas() : ""))
+                    .descripcion("Pago Venta #" + (p.getIdVenta() != null ? p.getIdVenta().getId() : "") + (p.getNotas() != null && !p.getNotas().isBlank() ? " - " + p.getNotas() : ""))
                     .monto(monto)
                     .medioPago(medio)
                     .fechaHora(p.getFechaHora())
@@ -392,8 +383,7 @@ public class CierreService {
             egresos.add(MovimientoReporteDTO.builder()
                     .tipoMovimiento("EGRESO")
                     .categoria("COMPRA_MATERIAL")
-                    .descripcion("Compra de " + c.getCantidad() + " "
-                            + (c.getMaterial() != null ? c.getMaterial() : "Materiales") + " (caja: " + c.getCaja() + ")")
+                    .descripcion("Compra de " + c.getCantidad() + " " + (c.getMaterial() != null ? c.getMaterial() : "Materiales") + " (caja: " + c.getCaja() + ")")
                     .monto(monto)
                     .medioPago("EFECTIVO")
                     .fechaHora(c.getFechaHoraCompra())

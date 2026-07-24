@@ -95,7 +95,7 @@ SELECT
     COALESCE(lt.vectorizado, 0.00) AS `vectorizado`,
     COALESCE(lt.disenio, 0.00) AS `extra`,
     COALESCE(lt.vinilo, 0.00) AS `vinilo`
-FROM `precision_schema`.`trabajopresupuestado` lt
-JOIN `precision_schema`.`presupuesto` lp ON lt.idPResupuesto = lp.idPresupuesto
-LEFT JOIN `precision_schema`.`materiales` lm ON CAST(lt.material AS UNSIGNED) = lm.idmateriales
+FROM `precisionschema`.`trabajopresupuestado` lt
+JOIN `precisionschema`.`presupuesto` lp ON lt.idPResupuesto = lp.idPresupuesto
+LEFT JOIN `precisionschema`.`materiales` lm ON CAST(lt.material AS UNSIGNED) = lm.idmateriales
 WHERE lp.aprobado = 'si' AND lt.seleccionado = 1;

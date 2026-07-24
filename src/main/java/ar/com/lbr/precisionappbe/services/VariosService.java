@@ -8,21 +8,16 @@ import ar.com.lbr.precisionappbe.repositories.VariosHistorialRepository;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 @Service
 public class VariosService {
 
     private final VariosRepository variosRepository;
     private final VariosHistorialRepository variosHistorialRepository;
-    private final AuditLogService auditLogService;
 
-    public VariosService(VariosRepository variosRepository,
-                         VariosHistorialRepository variosHistorialRepository,
-                         AuditLogService auditLogService) {
+    public VariosService(VariosRepository variosRepository, VariosHistorialRepository variosHistorialRepository) {
         this.variosRepository = variosRepository;
         this.variosHistorialRepository = variosHistorialRepository;
-        this.auditLogService = auditLogService;
     }
 
     public VariosDTO getVarios() {
@@ -45,12 +40,9 @@ public class VariosService {
         varios.setDirectorioRaizCarpetas(dto.getDirectorioRaizCarpetas());
         varios.setPermitirTrabajosFds(dto.getPermitirTrabajosFds() != null ? dto.getPermitirTrabajosFds() : false);
         varios.setDescuentoEstudiante(dto.getDescuentoEstudiante());
+        varios.setHabilitarCarpetas(dto.getHabilitarCarpetas() != null ? dto.getHabilitarCarpetas() : true);
 
         Varios updatedVarios = variosRepository.save(varios);
-
-        auditLogService.log("CONFIGURAR", "PARAMETROS", updatedVarios.getId().toString(),
-                "Parámetros globales del local actualizados (Precio Minuto: $" + updatedVarios.getPrecioMinuto()
-                + ", Ajuste: " + updatedVarios.getAjuste() + "%, Descuento Efectivo: " + updatedVarios.getDescuentoEfectivo() + "%)");
 
         VariosHistorial historial = new VariosHistorial();
         historial.setVarios(updatedVarios);
@@ -66,6 +58,7 @@ public class VariosService {
         historial.setDescuentoPorPunto(updatedVarios.getDescuentoPorPunto());
         historial.setPermitirTrabajosFds(updatedVarios.getPermitirTrabajosFds());
         historial.setDescuentoEstudiante(updatedVarios.getDescuentoEstudiante());
+        historial.setHabilitarCarpetas(updatedVarios.getHabilitarCarpetas());
 
         Object principal = SecurityContextHolder.getContext().getAuthentication() != null
                 ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()

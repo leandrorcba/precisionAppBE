@@ -66,12 +66,12 @@ BEGIN
     DECLARE col_exists INT DEFAULT 0;
     SELECT COUNT(*) INTO col_exists 
     FROM information_schema.columns 
-    WHERE table_schema = 'precision_schema' 
+    WHERE table_schema = 'precisionschema' 
       AND table_name = 'costosfijos' 
       AND column_name = 'periodo';
       
     IF col_exists = 0 THEN
-        ALTER TABLE `precision_schema`.`costosfijos` ADD COLUMN `periodo` DATE NULL;
+        ALTER TABLE `precisionschema`.`costosfijos` ADD COLUMN `periodo` DATE NULL;
     END IF;
 END //
 DELIMITER ;
@@ -79,7 +79,7 @@ CALL AddColumnIfNotExist();
 DROP PROCEDURE AddColumnIfNotExist;
 
 -- Convierte "Noviembre-2015" -> 2015-11-01
-UPDATE `precision_schema`.`costosfijos`
+UPDATE `precisionschema`.`costosfijos`
 SET periodo = STR_TO_DATE(
         CONCAT(
                 '01-',
@@ -108,7 +108,7 @@ INSERT INTO costo_fijo (periodo, fecha_cambio, total)
 SELECT c.periodo,
        COALESCE(c.fechaCambio, NOW()),
        COALESCE(c.total, 0.00)
-FROM `precision_schema`.`costosfijos` c
+FROM `precisionschema`.`costosfijos` c
 WHERE c.periodo IS NOT NULL
 ON DUPLICATE KEY UPDATE fecha_cambio = VALUES(fecha_cambio),
                         total        = VALUES(total);
@@ -116,46 +116,46 @@ ON DUPLICATE KEY UPDATE fecha_cambio = VALUES(fecha_cambio),
 INSERT INTO costo_fijo_detalle (id_costo_fijo, id_tipo_costo_fijo, monto)
 SELECT cf.id_costo_fijo, t.id_tipo_costo_fijo, x.monto
 FROM (SELECT periodo, 'ELECTRICIDAD' codigo, COALESCE(electricidad, 0) monto
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'AFIP', COALESCE(afip, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'MUNICIPALIDAD', COALESCE(municipalidad, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'RENTAS', COALESCE(rentas, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'ALQUILER', COALESCE(alquiler, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'EXPENSAS', COALESCE(expensas, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'SUELDO', COALESCE(sueldo, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'AGUA', COALESCE(agua, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'INGRESOS_BRUTOS', COALESCE(ingresosbrutos, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'PLUS_SUELDOS', COALESCE(plussueldos, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'TELEFONO', COALESCE(telefono, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'CABLE_INTERNET', COALESCE(cable_internet, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'EMPLEADO', COALESCE(empleado, 0)
-      FROM `precision_schema`.`costosfijos`
+      FROM `precisionschema`.`costosfijos`
       UNION ALL
       SELECT periodo, 'TARJETA', COALESCE(tarjeta, 0)
-      FROM `precision_schema`.`costosfijos`) x
+      FROM `precisionschema`.`costosfijos`) x
          JOIN costo_fijo cf ON cf.periodo = x.periodo
          JOIN tipo_costo_fijo t ON t.codigo = x.codigo
 ON DUPLICATE KEY UPDATE monto = VALUES(monto);
