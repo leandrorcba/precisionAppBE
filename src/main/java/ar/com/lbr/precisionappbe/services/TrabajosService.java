@@ -87,9 +87,10 @@ public class TrabajosService {
         entity.setPrecioMaterial(dto.getPrecioMaterial() != null ? dto.getPrecioMaterial() : BigDecimal.ZERO);
         entity.setPrecioTrabajo(dto.getPrecioTrabajo() != null ? dto.getPrecioTrabajo() : BigDecimal.ZERO);
         entity.setPrecioCorte(dto.getPrecioCorte() != null ? dto.getPrecioCorte() : BigDecimal.ZERO);
-        entity.setVinilo(dto.getVinilo() != null ? dto.getVinilo() : BigDecimal.ZERO);
-        entity.setExtra(dto.getExtra() != null ? dto.getExtra() : BigDecimal.ZERO);
-        entity.setVectorizado(dto.getVectorizado() != null ? dto.getVectorizado() : BigDecimal.ZERO);
+        boolean isEspecial = Boolean.TRUE.equals(dto.getGrabado()) || Boolean.TRUE.equals(dto.getCarteles()) || Boolean.TRUE.equals(dto.getCortesEspeciales());
+        entity.setVinilo(isEspecial ? BigDecimal.ZERO : (dto.getVinilo() != null ? dto.getVinilo() : BigDecimal.ZERO));
+        entity.setExtra(isEspecial ? BigDecimal.ZERO : (dto.getExtra() != null ? dto.getExtra() : BigDecimal.ZERO));
+        entity.setVectorizado(isEspecial ? BigDecimal.ZERO : (dto.getVectorizado() != null ? dto.getVectorizado() : BigDecimal.ZERO));
         entity.setPrecioMinuto(dto.getPrecioMinuto() != null ? dto.getPrecioMinuto() : BigDecimal.ZERO);
         entity.setDescuento(dto.getDescuento());
         entity.setIdSuperficie(dto.getIdSuperficie());
@@ -98,7 +99,7 @@ public class TrabajosService {
         entity.setGrabado(dto.getGrabado() != null ? dto.getGrabado() : false);
         entity.setCortesEspeciales(dto.getCortesEspeciales() != null ? dto.getCortesEspeciales() : false);
         entity.setCarteles(dto.getCarteles() != null ? dto.getCarteles() : false);
-        entity.setPosicionador(dto.getPosicionador() != null ? dto.getPosicionador() : BigDecimal.ZERO);
+        entity.setPosicionador(isEspecial ? BigDecimal.ZERO : (dto.getPosicionador() != null ? dto.getPosicionador() : BigDecimal.ZERO));
         entity.setTraeMaterial(dto.getTraeMaterial() != null ? dto.getTraeMaterial() : false);
         entity.setPrecioSinDescuento(dto.getPrecioSinDescuento() != null ? dto.getPrecioSinDescuento() : BigDecimal.ZERO);
         entity.setEstado(EstadoTrabajo.PENDIENTE);

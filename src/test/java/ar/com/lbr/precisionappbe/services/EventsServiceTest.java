@@ -9,6 +9,7 @@ import ar.com.lbr.precisionappbe.model.TrabajoPresupuestado;
 import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.repositories.EventsRepository;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
+import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -52,12 +53,15 @@ class EventsServiceTest {
     @Mock
     private VariosRepository variosRepository;
 
+    @Mock
+    private MaterialeRepository materialeRepository;
+
     private EventsService service;
 
     @BeforeEach
     void setUp() {
         service = new EventsService(eventsRepository, maquinasRepository,
-                trabajoPresupuestadoRepository, trabajosService, variosRepository);
+                trabajoPresupuestadoRepository, trabajosService, variosRepository, materialeRepository);
     }
 
     @Test

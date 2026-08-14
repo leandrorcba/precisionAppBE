@@ -74,7 +74,7 @@ public class PresupuestoCalculadorService {
 
     // Métodos privados para limpiar el flujo principal (SRP)
     private BigDecimal obtenerPrecioMaterial(TrabajoPresupuestadoDTO t) {
-        if (Boolean.TRUE.equals(t.getTraeMaterial()) || esTrabajoManual(t)) {
+        if (Boolean.TRUE.equals(t.getTraeMaterial()) || esTrabajoManual(t) || t.getIdMateriales() == null) {
             return BigDecimal.ZERO;
         }
         return materialesService.calcularPrecio(t.getIdMateriales(), t.getIdSuperficie(), t.getUnidades()).getPrecio();
@@ -94,7 +94,7 @@ public class PresupuestoCalculadorService {
     }
 
     private boolean esTrabajoManual(TrabajoPresupuestadoDTO t) {
-        return t.getGrabado() == true || t.getCarteles() == true || t.getCortesEspeciales() == true;
+        return Boolean.TRUE.equals(t.getGrabado()) || Boolean.TRUE.equals(t.getCarteles()) || Boolean.TRUE.equals(t.getCortesEspeciales());
     }
 
     private BigDecimal calcularPrecioMinuto(ClienteDTO cliente, VariosDTO config) {
