@@ -320,8 +320,7 @@ public class PresupuestoService {
         // 2. Delete calendar events
         eventsService.deleteEventsByPresupuesto(idPresupuesto);
 
-        // 3. Mark budget as habilitado = false and aprobado = false
-        presupuesto.setHabilitado(false);
+        // 3. Mark budget as aprobado = false (keep habilitado = true as requested by user)
         presupuesto.setAprobado(false);
         presupuestoRepository.save(presupuesto);
 
