@@ -31,5 +31,6 @@ public class PagoDTO {
     private String autorizacion;
     private String notas;
     private Boolean enabled;
+    private String clienteNombre;
 
 }

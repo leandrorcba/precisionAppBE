@@ -13,6 +13,8 @@ import ar.com.lbr.precisionappbe.model.Tarjeta;
 import ar.com.lbr.precisionappbe.model.TipoPago;
 import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.model.Venta;
+import ar.com.lbr.precisionappbe.model.Cliente;
+import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.MedioPagoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
@@ -46,6 +48,7 @@ public class PagosService {
     private final DescuentoRepository descuentoRepository;
     private final PresupuestoService presupuestoService;
     private final AuditLogService auditLogService;
+    private final ClienteRepository clienteRepository;
 
     public PagosService(PagoPresupuestoRepository pagoPresupuestoRepository,
                         PagoVentaRepository pagoVentaRepository,
@@ -56,7 +59,8 @@ public class PagosService {
                         VariosRepository variosRepository,
                         DescuentoRepository descuentoRepository,
                         PresupuestoService presupuestoService,
-                        AuditLogService auditLogService) {
+                        AuditLogService auditLogService,
+                        ClienteRepository clienteRepository) {
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.pagoVentaRepository = pagoVentaRepository;
         this.tipoPagoRepository = tipoPagoRepository;
@@ -67,6 +71,7 @@ public class PagosService {
         this.descuentoRepository = descuentoRepository;
         this.presupuestoService = presupuestoService;
         this.auditLogService = auditLogService;
+        this.clienteRepository = clienteRepository;
     }
 
     // ---------------------------------------------------------------
@@ -165,9 +170,6 @@ public class PagosService {
                 .map(Presupuesto::getPrecioSinDescuento).orElse(BigDecimal.ZERO);
 
         if (tipoPago.getTipo().equalsIgnoreCase("SENIA")) {
-            if (!existing.isEmpty()) {
-                throw new IllegalArgumentException("La seña solo puede ser el primer pago del presupuesto");
-            }
             if (dto.getMonto().compareTo(totalPresupuesto) >= 0) {
                 throw new IllegalArgumentException("La seña debe ser menor que el monto total del presupuesto");
             }
@@ -447,6 +449,15 @@ public class PagosService {
         if (p.getIdCuentaBancaria() != null) {
             dto.setIdCuentaBancaria(p.getIdCuentaBancaria().getId());
             dto.setCuentaBancariaNombre(p.getIdCuentaBancaria().getBanco() + " (" + p.getIdCuentaBancaria().getNumeroCuenta() + ")");
+        }
+        if (p.getIdPresupuesto() != null) {
+            presupuestoRepository.findById(p.getIdPresupuesto()).ifPresent(presupuesto -> {
+                if (presupuesto.getIdCliente() != null) {
+                    clienteRepository.findById(presupuesto.getIdCliente()).ifPresent(cliente -> {
+                        dto.setClienteNombre(cliente.getNombreCliente());
+                    });
+                }
+            });
         }
         return dto;
     }

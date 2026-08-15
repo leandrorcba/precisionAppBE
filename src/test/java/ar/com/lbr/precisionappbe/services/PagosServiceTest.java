@@ -7,6 +7,7 @@ import ar.com.lbr.precisionappbe.model.PagoVenta;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TipoPago;
 import ar.com.lbr.precisionappbe.model.Venta;
+import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.MedioPagoRepository;
 import ar.com.lbr.precisionappbe.repositories.PagoPresupuestoRepository;
@@ -46,13 +47,14 @@ class PagosServiceTest {
     @Mock private DescuentoRepository descuentoRepository;
     @Mock private PresupuestoService presupuestoService;
     @Mock private AuditLogService auditLogService;
+    @Mock private ClienteRepository clienteRepository;
 
     private PagosService service;
 
     @BeforeEach
     void setUp() {
         service = new PagosService(pagoPresupuestoRepository, pagoVentaRepository, tipoPagoRepository, medioPagoRepository,
-                ventaRepository, presupuestoRepository, variosRepository, descuentoRepository, presupuestoService, auditLogService);
+                ventaRepository, presupuestoRepository, variosRepository, descuentoRepository, presupuestoService, auditLogService, clienteRepository);
     }
 
     private TipoPago createTipoPago(Integer id, String tipo) {
@@ -179,23 +181,6 @@ class PagosServiceTest {
         assertThat(result.getId()).isEqualTo(100);
     }
 
-    @Test
-    void createPago_senia_notFirstPayment_throwsIllegalArgument() {
-        PagoDTO dto = new PagoDTO();
-        dto.setIdPresupuesto(10);
-        dto.setIdTipoPago(1); // SENIA
-        dto.setMonto(BigDecimal.valueOf(500));
-
-        TipoPago tp = createTipoPago(1, "SENIA");
-        PagoPresupuesto existing = new PagoPresupuesto();
-
-        when(tipoPagoRepository.findById(1)).thenReturn(Optional.of(tp));
-        when(pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(10)).thenReturn(List.of(existing));
-
-        assertThatThrownBy(() -> service.createPago(dto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("La seña solo puede ser el primer pago");
-    }
 
     @Test
     void createPago_venta_saves() {
