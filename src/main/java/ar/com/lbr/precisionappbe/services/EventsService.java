@@ -261,12 +261,9 @@ public class EventsService {
                 if (targetEnd == null) {
                     targetEnd = targetStart.plus(durationMinutes, ChronoUnit.MINUTES);
                 }
-                boolean overlaps = eventsRepository.existsOverlappingEvent(dto.getCalendarId(), targetStart, targetEnd, event.getId());
-                if (!overlaps) {
-                    event.setStartDate(targetStart);
-                    event.setEndDate(targetEnd);
-                    useTarget = true;
-                }
+                event.setStartDate(targetStart);
+                event.setEndDate(targetEnd);
+                useTarget = true;
             }
 
             if (!useTarget) {

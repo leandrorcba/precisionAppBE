@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,6 +39,14 @@ public class TrabajosController {
             @RequestBody TrabajoPresupuestadoDTO dto) {
         TrabajoPresupuestadoDTO created = trabajosService.createTrabajo(dto);
         return ResponseBuilder.ok("Trabajo creado con éxito", created, 0L);
+    }
+
+    @PutMapping("/{idTrabajo}")
+    public ResponseEntity<ApiResponse<TrabajoPresupuestadoDTO>> updateTrabajo(
+            @PathVariable Integer idTrabajo,
+            @RequestBody TrabajoPresupuestadoDTO dto) {
+        TrabajoPresupuestadoDTO updated = trabajosService.updateTrabajo(idTrabajo, dto);
+        return ResponseBuilder.ok("Trabajo actualizado con éxito", updated, 0L);
     }
 
     @PatchMapping("/{idTrabajo}/seleccion_presupuesto")

@@ -17,6 +17,7 @@ import ar.com.lbr.precisionappbe.repositories.MaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.SuperficieRepository;
 import ar.com.lbr.precisionappbe.repositories.TrabajoPresupuestadoRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -166,6 +167,8 @@ public class TrabajosService {
         }
         presupuestoRepository.save(presupuesto);
 
+        propagarEstadosAPresupuesto(entity.getIdPresupuesto());
+
         presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
 
         auditLogService.log("MODIFICAR", "TRABAJOS", idTrabajo.toString(),
@@ -180,12 +183,7 @@ public class TrabajosService {
         entity.setEstado(nuevoEstado);
         TrabajoPresupuestado saved = trabajosRepository.save(entity);
 
-        if (nuevoEstado == EstadoTrabajo.REALIZADO) {
-            propagarRealizadoAPresupuesto(entity.getIdPresupuesto());
-        }
-        if (nuevoEstado == EstadoTrabajo.ENTREGADO) {
-            propagarEntregadoAPresupuesto(entity.getIdPresupuesto());
-        }
+        propagarEstadosAPresupuesto(entity.getIdPresupuesto());
 
         presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
 
@@ -201,29 +199,32 @@ public class TrabajosService {
                 .collect(Collectors.toList());
     }
 
-    private void propagarRealizadoAPresupuesto(Integer idPresupuesto) {
+    private void propagarEstadosAPresupuesto(Integer idPresupuesto) {
         List<TrabajoPresupuestado> seleccionados = getSeleccionados(idPresupuesto);
+        
         boolean todosRealizados = !seleccionados.isEmpty() &&
-                seleccionados.stream().allMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()));
-        if (todosRealizados) {
-            Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
-                    .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
-            presupuesto.setRealizado(true);
-            presupuesto.setFechaRealizado(Instant.now());
-            presupuestoRepository.save(presupuesto);
-        }
-    }
-
-    private void propagarEntregadoAPresupuesto(Integer idPresupuesto) {
-        List<TrabajoPresupuestado> seleccionados = getSeleccionados(idPresupuesto);
+                seleccionados.stream().allMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado())
+                        || EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
+                        
         boolean todosEntregados = !seleccionados.isEmpty() &&
                 seleccionados.stream().allMatch(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
-        if (todosEntregados) {
-            Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
-                    .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
-            presupuesto.setEntregado(true);
-            presupuestoRepository.save(presupuesto);
+                
+        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
+                
+        if (todosRealizados) {
+            presupuesto.setRealizado(true);
+            if (presupuesto.getFechaRealizado() == null) {
+                presupuesto.setFechaRealizado(Instant.now());
+            }
+        } else {
+            presupuesto.setRealizado(false);
+            presupuesto.setFechaRealizado(null);
         }
+        
+        presupuesto.setEntregado(todosEntregados);
+        
+        presupuestoRepository.save(presupuesto);
     }
 
     public void confirmarPresupuesto(Integer idPresupuesto) {
@@ -272,5 +273,50 @@ public class TrabajosService {
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public TrabajoPresupuestadoDTO updateTrabajo(Integer idTrabajo, TrabajoPresupuestadoDTO dto) {
+        TrabajoPresupuestado entity = trabajosRepository.findById(idTrabajo)
+                .orElseThrow(() -> new EntityNotFoundException("Trabajo no encontrado: " + idTrabajo));
+
+        Cliente cliente = presupuestoService.getClienteByPresupuestoId(dto.getIdPresupuesto());
+        ClienteDTO clienteDTO = ClienteDTO.toDTO(cliente);
+
+        presupuestoCalculadorService.calcularYValidarTrabajo(dto, clienteDTO);
+
+        entity.setArchivoCad(dto.getArchivoCad());
+        entity.setArchivoOriginal(dto.getArchivoOriginal());
+        entity.setNotas(dto.getNotas());
+        entity.setTiempoDeCorte(dto.getTiempoDeCorte() != null ? dto.getTiempoDeCorte() : 0);
+        entity.setIdMateriales(dto.getIdMateriales());
+        entity.setPrecioMaterial(dto.getPrecioMaterial() != null ? dto.getPrecioMaterial() : BigDecimal.ZERO);
+        entity.setPrecioTrabajo(dto.getPrecioTrabajo() != null ? dto.getPrecioTrabajo() : BigDecimal.ZERO);
+        entity.setPrecioCorte(dto.getPrecioCorte() != null ? dto.getPrecioCorte() : BigDecimal.ZERO);
+
+        boolean isEspecial = Boolean.TRUE.equals(dto.getGrabado()) || Boolean.TRUE.equals(dto.getCarteles()) || Boolean.TRUE.equals(dto.getCortesEspeciales());
+        entity.setVinilo(isEspecial ? BigDecimal.ZERO : (dto.getVinilo() != null ? dto.getVinilo() : BigDecimal.ZERO));
+        entity.setExtra(isEspecial ? BigDecimal.ZERO : (dto.getExtra() != null ? dto.getExtra() : BigDecimal.ZERO));
+        entity.setVectorizado(isEspecial ? BigDecimal.ZERO : (dto.getVectorizado() != null ? dto.getVectorizado() : BigDecimal.ZERO));
+        entity.setPrecioMinuto(dto.getPrecioMinuto() != null ? dto.getPrecioMinuto() : BigDecimal.ZERO);
+        entity.setDescuento(dto.getDescuento());
+        entity.setIdSuperficie(dto.getIdSuperficie());
+        entity.setIdMaquina(dto.getIdMaquina());
+        entity.setUnidades(dto.getUnidades() != null ? dto.getUnidades() : 0);
+        entity.setGrabado(dto.getGrabado() != null ? dto.getGrabado() : false);
+        entity.setCortesEspeciales(dto.getCortesEspeciales() != null ? dto.getCortesEspeciales() : false);
+        entity.setCarteles(dto.getCarteles() != null ? dto.getCarteles() : false);
+        entity.setPosicionador(isEspecial ? BigDecimal.ZERO : (dto.getPosicionador() != null ? dto.getPosicionador() : BigDecimal.ZERO));
+        entity.setTraeMaterial(dto.getTraeMaterial() != null ? dto.getTraeMaterial() : false);
+        entity.setPrecioSinDescuento(dto.getPrecioSinDescuento() != null ? dto.getPrecioSinDescuento() : BigDecimal.ZERO);
+
+        TrabajoPresupuestado saved = trabajosRepository.save(entity);
+
+        presupuestoService.actualizarPdfFisico(dto.getIdPresupuesto());
+
+        auditLogService.log("EDITAR", "TRABAJOS", saved.getId().toString(),
+                "Trabajo #" + saved.getId() + " editado en Presupuesto #"
+                        + saved.getIdPresupuesto() + " por $" + saved.getPrecioTrabajo());
+
+        return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 }

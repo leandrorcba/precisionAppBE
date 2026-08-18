@@ -181,8 +181,6 @@ class EventsServiceTest {
         when(eventsRepository.findById(10)).thenReturn(Optional.of(event));
         when(maquinasRepository.findById(2)).thenReturn(Optional.of(m2));
         when(variosRepository.findFirstByOrderByIdAsc()).thenReturn(varios);
-        when(eventsRepository.existsOverlappingEvent(eq(2), any(Instant.class), any(Instant.class), eq(10)))
-                .thenReturn(false);
         when(eventsRepository.save(event)).thenReturn(event);
 
         EventsDTO result = service.updateEvent(10, dto);
