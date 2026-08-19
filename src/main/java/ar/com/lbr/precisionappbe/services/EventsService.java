@@ -104,6 +104,11 @@ public class EventsService {
                         dto.setTipoDeTrabajo(material.getMateriales());
                     });
                 }
+                String archivo = trabajo.getArchivoCad() != null && !trabajo.getArchivoCad().isEmpty()
+                        ? trabajo.getArchivoCad()
+                        : trabajo.getArchivoOriginal();
+                dto.setArchivo(archivo);
+                dto.setNotas(trabajo.getNotas());
             });
         } else {
             dto.setStatus(normalizeStatus(event.getStatus()));
@@ -132,11 +137,22 @@ public class EventsService {
         // Query them in bulk
         java.util.Map<Integer, EstadoTrabajo> jobStatusMap = new java.util.HashMap<>();
         java.util.Map<Integer, String> jobMaterialMap = new java.util.HashMap<>();
+        java.util.Map<Integer, String> jobArchivoMap = new java.util.HashMap<>();
+        java.util.Map<Integer, String> jobNotasMap = new java.util.HashMap<>();
         if (!jobIds.isEmpty()) {
             List<TrabajoPresupuestado> trabajos = trabajoPresupuestadoRepository.findAllById(jobIds);
             for (TrabajoPresupuestado t : trabajos) {
                 if (t.getEstado() != null) {
                     jobStatusMap.put(t.getId(), t.getEstado());
+                }
+                String archivo = t.getArchivoCad() != null && !t.getArchivoCad().isEmpty()
+                        ? t.getArchivoCad()
+                        : t.getArchivoOriginal();
+                if (archivo != null) {
+                    jobArchivoMap.put(t.getId(), archivo);
+                }
+                if (t.getNotas() != null) {
+                    jobNotasMap.put(t.getId(), t.getNotas());
                 }
             }
             
@@ -176,6 +192,10 @@ public class EventsService {
                                 dto.setStatus(normalizeStatus(event.getStatus()));
                             }
                             dto.setTipoDeTrabajo(jobMaterialMap.get(event.getIdTrabajo()));
+                            dto.setArchivo(jobArchivoMap.get(event.getIdTrabajo()));
+                            if (jobNotasMap.containsKey(event.getIdTrabajo())) {
+                                dto.setNotas(jobNotasMap.get(event.getIdTrabajo()));
+                            }
                         } else {
                             dto.setStatus(normalizeStatus(event.getStatus()));
                             dto.setTipoDeTrabajo(null);
