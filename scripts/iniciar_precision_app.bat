@@ -47,9 +47,25 @@ set CORS_ALLOWED_ORIGINS=https://precision.lbrebolini.net,http://localhost:10081
 set SUPER_ADMIN_PASSWORD=Escaramujo;01
 set SERVER_PORT=10080
 
+:: Detectar ejecutable de Java 21 (coexistencia con Java 8 Legacy)
+set "JAVA_EXEC=java"
+if defined JAVA21_HOME (
+    if exist "%JAVA21_HOME%\bin\java.exe" set "JAVA_EXEC=%JAVA21_HOME%\bin\java.exe"
+) else (
+    for /d %%i in ("C:\Program Files\Eclipse Adoptium\jdk-21*") do (
+        if exist "%%i\bin\java.exe" set "JAVA_EXEC=%%i\bin\java.exe"
+    )
+    for /d %%i in ("C:\Program Files\Java\jdk-21*") do (
+        if exist "%%i\bin\java.exe" set "JAVA_EXEC=%%i\bin\java.exe"
+    )
+    for /d %%i in ("C:\Program Files\Microsoft\jdk-21*") do (
+        if exist "%%i\bin\java.exe" set "JAVA_EXEC=%%i\bin\java.exe"
+    )
+)
+
 :: 4. Levantar el Backend (Spring Boot)
-echo Levantando servidor Backend (Spring Boot)...
-start "Backend - Spring Boot" powershell -NoProfile -Command "$host.UI.RawUI.WindowTitle = 'Backend - Spring Boot'; java '-Dserver.port=10080' '-DDB_PASSWORD=Escaramujo;01' '-DJWT_SECRET=28Hl0Hq1a3rFX25bNKAsP1YvCsl9TB2rc+znyJgYXfc=' '-DCORS_ALLOWED_ORIGINS=https://precision.lbrebolini.net,http://localhost:10081,http://localhost' '-DSUPER_ADMIN_PASSWORD=Escaramujo;01' -jar C:\precision_app\precisionAppBE.jar | Tee-Object -FilePath C:\precision_app\backend.log"
+echo Levantando servidor Backend (Spring Boot con Java 21)...
+start "Backend - Spring Boot" powershell -NoProfile -Command "$host.UI.RawUI.WindowTitle = 'Backend - Spring Boot'; & '%JAVA_EXEC%' '-Dserver.port=10080' '-DDB_PASSWORD=Escaramujo;01' '-DJWT_SECRET=28Hl0Hq1a3rFX25bNKAsP1YvCsl9TB2rc+znyJgYXfc=' '-DCORS_ALLOWED_ORIGINS=https://precision.lbrebolini.net,http://localhost:10081,http://localhost' '-DSUPER_ADMIN_PASSWORD=Escaramujo;01' -jar C:\precision_app\precisionAppBE.jar | Tee-Object -FilePath C:\precision_app\backend.log"
 
 :: 5. Levantar NGINX (servidor web del Frontend)
 echo Levantando servidor Frontend (NGINX)...
