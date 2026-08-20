@@ -35,14 +35,16 @@ public class CierresController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<CierreDTO>>> getCierres(
             @RequestParam(required = false) String mesCierre,
+            @RequestParam(required = false) String fechaCreacion,
             @RequestParam(required = false) String fechaCierre,
             @RequestParam(defaultValue = "0") int start,
             @RequestParam(defaultValue = "10") int limit) {
 
         int page = start / limit;
-        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "fechaCierre"));
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
 
-        CierreResponse response = cierreService.getCierresFiltered(mesCierre, fechaCierre, pageable);
+        String fechaFiltro = (fechaCreacion != null && !fechaCreacion.trim().isEmpty()) ? fechaCreacion : fechaCierre;
+        CierreResponse response = cierreService.getCierresFiltered(mesCierre, fechaFiltro, pageable);
 
         return ResponseBuilder.ok("Cierres obtenidos con éxito", response.getCierres(), response.getTotal());
     }
@@ -54,7 +56,7 @@ public class CierresController {
             @RequestParam(defaultValue = "10") int limit) {
 
         int page = start / limit;
-        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "fechaCierre"));
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
 
         CierreResponse response = cierreService.getCierresFiltered(mesCierre, null, pageable);
 

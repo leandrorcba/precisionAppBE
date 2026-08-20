@@ -160,7 +160,7 @@ class CierreServiceTest {
 
     @Test
     void createCierre_sinCierreHoy_guardaYDevuelveDTO() {
-        when(cierreRepository.existsByFechaCierreBetween(any(Instant.class), any(Instant.class))).thenReturn(false);
+        when(cierreRepository.existsByFechaCreacionBetween(any(Instant.class), any(Instant.class))).thenReturn(false);
 
         User user = new User();
         user.setId(5);
@@ -195,7 +195,7 @@ class CierreServiceTest {
 
     @Test
     void createCierre_yaExisteCierreHoy_lanzaIllegalArgument() {
-        when(cierreRepository.existsByFechaCierreBetween(any(Instant.class), any(Instant.class))).thenReturn(true);
+        when(cierreRepository.existsByFechaCreacionBetween(any(Instant.class), any(Instant.class))).thenReturn(true);
 
         CierreDTO dto = new CierreDTO();
         assertThatThrownBy(() -> service.createCierre(dto, "admin"))
@@ -397,16 +397,16 @@ class CierreServiceTest {
     // =========================================================================
 
     @Test
-    void getCierresFiltered_conFechaCierre_usaFindByFechaCierreBetween() {
+    void getCierresFiltered_conFechaCierre_usaFindByFechaCreacionBetween() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Cierre> pagina = new PageImpl<>(List.of(cierreCerrado(1)));
-        when(cierreRepository.findByFechaCierreBetween(any(Instant.class), any(Instant.class), eq(pageable)))
+        when(cierreRepository.findByFechaCreacionBetween(any(Instant.class), any(Instant.class), eq(pageable)))
                 .thenReturn(pagina);
 
         CierreResponse result = service.getCierresFiltered("2026-06", "2026-06-08", pageable);
 
         assertThat(result.getCierres()).hasSize(1);
-        verify(cierreRepository).findByFechaCierreBetween(any(), any(), eq(pageable));
+        verify(cierreRepository).findByFechaCreacionBetween(any(), any(), eq(pageable));
         verify(cierreRepository, never()).findByMesCierre(any(), any());
         verify(cierreRepository, never()).findAll(pageable);
     }

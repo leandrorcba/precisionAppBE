@@ -24,6 +24,7 @@ public class CierreDTO {
     private BigDecimal arqueo;
     private BigDecimal diferencia;
     private String responsable;
+    private Instant fechaCreacion;
     private Instant fechaCierre;
     private BigDecimal senia;
     private BigDecimal ventas;
@@ -44,6 +45,7 @@ public class CierreDTO {
         this.arqueo = c.getArqueo();
         this.diferencia = c.getDiferencia();
         this.responsable = c.getResponsable();
+        this.fechaCreacion = c.getFechaCreacion() != null ? c.getFechaCreacion() : c.getFechaCierre();
         this.fechaCierre = c.getFechaCierre();
         this.senia = c.getSenia();
         this.ventas = c.getVentas();

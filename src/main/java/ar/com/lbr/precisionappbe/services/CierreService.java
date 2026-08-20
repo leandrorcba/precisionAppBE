@@ -70,7 +70,7 @@ public class CierreService {
             LocalDate localDate = LocalDate.parse(fechaCierre);
             Instant desde = localDate.atStartOfDay(ZONE_ARGENTINA).toInstant();
             Instant hasta = localDate.plusDays(1).atStartOfDay(ZONE_ARGENTINA).toInstant();
-            cierresPage = cierreRepository.findByFechaCierreBetween(desde, hasta, pageable);
+            cierresPage = cierreRepository.findByFechaCreacionBetween(desde, hasta, pageable);
         } else if (mesCierre != null && !mesCierre.trim().isEmpty()) {
             cierresPage = cierreRepository.findByMesCierre(mesCierre, pageable);
         } else {
@@ -100,7 +100,7 @@ public class CierreService {
                             + "Por favor, realice el arqueo y cierre la caja abierta antes de continuar.");
         }
 
-        if (cierreRepository.existsByFechaCierreBetween(startOfDay, endOfDay)) {
+        if (cierreRepository.existsByFechaCreacionBetween(startOfDay, endOfDay)) {
             throw new IllegalArgumentException("Ya existe un cierre registrado para el día de hoy.");
         }
 
@@ -109,7 +109,9 @@ public class CierreService {
         Cierre cierre = new Cierre();
         cierre.setMontoInicial(dto.getMontoInicial() != null ? dto.getMontoInicial() : BigDecimal.ZERO);
         cierre.setMontoFinal(BigDecimal.ZERO);
-        cierre.setFechaCierre(Instant.now());
+        cierre.setFechaCreacion(Instant.now());
+        cierre.setFechaCierre(null);
+        cierre.setCerrado(false);
         cierre.setMesCierre(dto.getMesCierre());
         cierre.setResponsable(user != null ? user.getUsername() : username);
         cierre.setIdUsuario(user != null ? user.getId() : null);
@@ -156,6 +158,7 @@ public class CierreService {
                 .orElseThrow(() -> new IllegalArgumentException("Cierre no encontrado con ID: " + id));
 
         calculateAndFillCierre(cierre);
+        cierre.setFechaCierre(Instant.now());
         cierre.setCerrado(true);
 
         Cierre saved = cierreRepository.save(cierre);
@@ -169,12 +172,10 @@ public class CierreService {
     }
 
     private void calculateAndFillCierre(Cierre cierre) {
-        Instant fechaCierre = cierre.getFechaCierre();
-        if (fechaCierre == null) {
-            fechaCierre = Instant.now();
-            cierre.setFechaCierre(fechaCierre);
-        }
-        ZonedDateTime zdt = ZonedDateTime.ofInstant(fechaCierre, ZONE_ARGENTINA);
+        Instant fechaBase = cierre.getFechaCreacion() != null
+                ? cierre.getFechaCreacion()
+                : (cierre.getFechaCierre() != null ? cierre.getFechaCierre() : Instant.now());
+        ZonedDateTime zdt = ZonedDateTime.ofInstant(fechaBase, ZONE_ARGENTINA);
         Instant startOfDay = zdt.toLocalDate().atStartOfDay(ZONE_ARGENTINA).toInstant();
         Instant endOfDay = zdt.toLocalDate().plusDays(1).atStartOfDay(ZONE_ARGENTINA).toInstant();
 
@@ -182,7 +183,7 @@ public class CierreService {
         List<PagoPresupuesto> pagosPresupuesto = pagoPresupuestoRepository.findByFechaHoraBetweenAndEnabledTrue(startOfDay, endOfDay);
         List<PagoVenta> pagosVenta = pagoVentaRepository.findByFechaHoraBetween(startOfDay, endOfDay);
 
-        log.debug("Calculando cierre ID: {} para fecha: {}", cierre.getId(), fechaCierre);
+        log.debug("Calculando cierre ID: {} para fecha: {}", cierre.getId(), fechaBase);
         log.debug("Rango UTC de busqueda: desde {} hasta {}", startOfDay, endOfDay);
         log.debug("Cantidad de pagos presupuesto encontrados en el rango: {}", pagosPresupuesto.size());
 

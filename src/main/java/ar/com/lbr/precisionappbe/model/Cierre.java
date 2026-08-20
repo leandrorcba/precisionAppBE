@@ -53,7 +53,10 @@ public class Cierre {
     private String responsable;
 
     @ColumnDefault("(UTC_TIMESTAMP())")
-    @Column(name = "fecha_cierre", nullable = false)
+    @Column(name = "fecha_creacion", nullable = false)
+    private Instant fechaCreacion;
+
+    @Column(name = "fecha_cierre")
     private Instant fechaCierre;
 
     @ColumnDefault("0.00")
