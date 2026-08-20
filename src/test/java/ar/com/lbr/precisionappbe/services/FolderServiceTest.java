@@ -35,6 +35,7 @@ class FolderServiceTest {
     @Test
     void crearCarpetaCliente_withConfiguredRoot_createsDirectory(@TempDir Path tempDir) {
         Varios varios = new Varios();
+        varios.setHabilitarCarpetas(true);
         varios.setDirectorioRaizCarpetas(tempDir.toAbsolutePath().toString());
         when(variosRepository.findAll()).thenReturn(List.of(varios));
 
@@ -56,6 +57,7 @@ class FolderServiceTest {
     @Test
     void crearCarpetaPresupuesto_createsSubdirectory(@TempDir Path tempDir) {
         Varios varios = new Varios();
+        varios.setHabilitarCarpetas(true);
         varios.setDirectorioRaizCarpetas(tempDir.toAbsolutePath().toString());
         when(variosRepository.findAll()).thenReturn(List.of(varios));
 
@@ -70,6 +72,7 @@ class FolderServiceTest {
     @Test
     void crearCarpetaTrabajo_createsNestedSubdirectories(@TempDir Path tempDir) {
         Varios varios = new Varios();
+        varios.setHabilitarCarpetas(true);
         varios.setDirectorioRaizCarpetas(tempDir.toAbsolutePath().toString());
         when(variosRepository.findAll()).thenReturn(List.of(varios));
 
@@ -85,6 +88,7 @@ class FolderServiceTest {
     @Test
     void getConfiguredRootPath_returnsPath(@TempDir Path tempDir) {
         Varios varios = new Varios();
+        varios.setHabilitarCarpetas(true);
         varios.setDirectorioRaizCarpetas(tempDir.toAbsolutePath().toString());
         when(variosRepository.findAll()).thenReturn(List.of(varios));
 
@@ -105,6 +109,7 @@ class FolderServiceTest {
     @Test
     void guardarPdfEnCarpeta_writesPdfFile(@TempDir Path tempDir) throws IOException {
         Varios varios = new Varios();
+        varios.setHabilitarCarpetas(true);
         varios.setDirectorioRaizCarpetas(tempDir.toAbsolutePath().toString());
         when(variosRepository.findAll()).thenReturn(List.of(varios));
 
@@ -122,6 +127,7 @@ class FolderServiceTest {
     @Test
     void abrirCarpeta_outsideRootPath_deniesAccess(@TempDir Path tempDir) {
         Varios varios = new Varios();
+        varios.setHabilitarCarpetas(true);
         varios.setDirectorioRaizCarpetas(tempDir.toAbsolutePath().toString());
         when(variosRepository.findAll()).thenReturn(List.of(varios));
 

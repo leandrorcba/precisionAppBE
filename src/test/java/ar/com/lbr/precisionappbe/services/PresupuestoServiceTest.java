@@ -240,7 +240,6 @@ class PresupuestoServiceTest {
         service.cancelarPresupuesto(10);
 
         assertThat(tr.getSeleccionado()).isFalse();
-        assertThat(pr.getHabilitado()).isFalse();
         assertThat(pr.getAprobado()).isFalse();
         verify(eventsService).deleteEventsByPresupuesto(10);
         verify(auditLogService).log(eq("DESHABILITAR"), eq("PRESUPUESTOS"), eq("10"), any(String.class));

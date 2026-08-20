@@ -225,6 +225,7 @@ class PrecisionAppBeApplicationTests {
         Cierre cierre = new Cierre();
         cierre.setMontoInicial(new BigDecimal("1000.00"));
         cierre.setMontoFinal(BigDecimal.ZERO);
+        cierre.setFechaCreacion(Instant.now());
         cierre.setFechaCierre(Instant.now());
         cierre.setMesCierre("2026-05-12");
         cierre.setCerrado(false);

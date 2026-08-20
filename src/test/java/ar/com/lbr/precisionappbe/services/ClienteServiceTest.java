@@ -83,7 +83,7 @@ class ClienteServiceTest {
         when(clienteRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
         when(clientesMapper.map(any(List.class))).thenReturn(List.of(dto));
         when(puntoRepository.findByIdClienteIn(any(List.class))).thenReturn(List.of(punto));
-        when(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(1)).thenReturn(0L);
+        when(presupuestoRepository.countPresupuestosImpagosConTrabajosEntregados(1)).thenReturn(0L);
 
         ClienteResponse response = service.buscarClientes("Cliente", false, 0, false, false, pageable);
 
@@ -178,7 +178,7 @@ class ClienteServiceTest {
         cliente.setNombreCliente("Cliente Cinco");
 
         when(clienteRepository.findById(5)).thenReturn(Optional.of(cliente));
-        when(presupuestoRepository.countByIdClienteAndEntregadoTrueAndCobradoFalseAndHabilitadoTrue(5)).thenReturn(0L);
+        when(presupuestoRepository.countPresupuestosImpagosConTrabajosEntregados(5)).thenReturn(0L);
 
         ClienteDTO result = service.getClienteById(5);
 

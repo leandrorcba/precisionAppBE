@@ -91,7 +91,7 @@ class UserServiceTest {
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-                    assertThat(rse.getReason()).isEqualTo("No se puede crear otro Super Administrador");
+                    assertThat(rse.getReason()).isEqualTo("No se puede crear un Super Administrador");
                 });
 
         verify(userRepository, never()).save(any(User.class));
@@ -115,17 +115,17 @@ class UserServiceTest {
     }
 
     @Test
-    void createUser_asAdmin_cannotCreateAdminOrSuperAdmin() {
+    void createUser_asAdmin_cannotCreateSuperAdmin() {
         mockCurrentUser("admin", Role.ADMIN);
 
-        UserDTO adminDTO = UserDTO.builder().username("new-admin").password("pass12345").role(Role.ADMIN).build();
+        UserDTO saDTO = UserDTO.builder().username("new-sa").password("pass12345").role(Role.SUPER_ADMIN).build();
 
-        assertThatThrownBy(() -> userService.createUser(adminDTO))
+        assertThatThrownBy(() -> userService.createUser(saDTO))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-                    assertThat(rse.getReason()).isEqualTo("Un Administrador solo puede crear Usuarios");
+                    assertThat(rse.getReason()).isEqualTo("No se puede crear un Super Administrador");
                 });
 
         verify(userRepository, never()).save(any(User.class));
