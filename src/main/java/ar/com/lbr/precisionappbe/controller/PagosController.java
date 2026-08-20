@@ -70,4 +70,22 @@ public class PagosController {
         pagosService.deletePago(id);
         return ResponseBuilder.ok("Pago deshabilitado con éxito", null, 0L);
     }
+
+    @PostMapping("/{id}/anular")
+    public ResponseEntity<ApiResponse<PagoDTO>> anularPago(
+            @PathVariable Integer id,
+            @RequestBody java.util.Map<String, String> requestBody) {
+        String motivo = requestBody.get("motivo");
+        if (motivo == null || motivo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El motivo de la anulación es requerido");
+        }
+        PagoDTO dto = pagosService.anularPago(id, motivo);
+        return ResponseBuilder.ok("Pago anulado con éxito", dto, 1L);
+    }
+
+    @GetMapping("/auditoria-anulaciones")
+    public ResponseEntity<ApiResponse<List<ar.com.lbr.precisionappbe.model.AuditoriaAnulacionPago>>> getAuditoriaAnulaciones() {
+        List<ar.com.lbr.precisionappbe.model.AuditoriaAnulacionPago> list = pagosService.getAuditoriaAnulaciones();
+        return ResponseBuilder.ok("Auditoría de anulaciones obtenida con éxito", list, (long) list.size());
+    }
 }

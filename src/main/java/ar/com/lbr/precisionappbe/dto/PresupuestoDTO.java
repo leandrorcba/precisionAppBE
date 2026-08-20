@@ -53,6 +53,7 @@ public class PresupuestoDTO {
           this.entregado = presupuesto.getEntregado();
           this.fechaHoraPresupuesto = presupuesto.getFechaHoraPresupuesto();
           this.fechaRealizado = presupuesto.getFechaRealizado();
+          this.fechaCobrado = presupuesto.getFechaCobrado();
           this.habilitado = presupuesto.getHabilitado();
     }
 
@@ -79,6 +80,7 @@ public class PresupuestoDTO {
           dto.setEntregado(presupuesto.getEntregado());
          dto.setFechaHoraPresupuesto(presupuesto.getFechaHoraPresupuesto());
          dto.setFechaRealizado(presupuesto.getFechaRealizado());
+         dto.setFechaCobrado(presupuesto.getFechaCobrado());
          dto.setHabilitado(presupuesto.getHabilitado());
         // dto.setFechaAprobado(presupuesto.getFechaAprobado());
 

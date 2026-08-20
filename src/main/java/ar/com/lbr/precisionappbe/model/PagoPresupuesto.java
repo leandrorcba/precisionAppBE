@@ -65,4 +65,19 @@ public class PagoPresupuesto {
     @Column(name = "enabled", nullable = false)
     private Boolean enabled = true;
 
+    @Column(name = "anulado", nullable = false)
+    private Boolean anulado = false;
+
+    @Column(name = "motivo_anulado", length = 250)
+    private String motivoAnulado;
+
+    @Column(name = "fecha_anulado")
+    private java.time.Instant fechaAnulado;
+
+    @Column(name = "usuario_creador", length = 50)
+    private String usuarioCreador;
+
+    @Column(name = "usuario_anulador", length = 50)
+    private String usuarioAnulador;
+
 }

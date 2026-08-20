@@ -17,4 +17,11 @@ public interface CierreRepository extends JpaRepository<Cierre, Integer> {
 
     @Query("SELECT COUNT(c) > 0 FROM Cierre c WHERE c.fechaCierre >= :desde AND c.fechaCierre < :hasta")
     boolean existsByFechaCierreBetween(@Param("desde") Instant desde, @Param("hasta") Instant hasta);
+
+    @Query("SELECT COUNT(c) > 0 FROM Cierre c WHERE c.fechaCierre >= :desde AND c.fechaCierre < :hasta AND c.cerrado = true")
+    boolean existsClosedCierreBetween(@Param("desde") Instant desde, @Param("hasta") Instant hasta);
+
+    java.util.Optional<Cierre> findFirstByCerradoTrueOrderByFechaCierreDesc();
+
+    boolean existsByCerrado(Boolean cerrado);
 }

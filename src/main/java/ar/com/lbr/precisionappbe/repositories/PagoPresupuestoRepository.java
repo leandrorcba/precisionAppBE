@@ -12,6 +12,8 @@ import java.util.Optional;
 
 public interface PagoPresupuestoRepository extends JpaRepository<PagoPresupuesto, Integer> {
 
+    List<PagoPresupuesto> findByIdPresupuesto(Integer idPresupuesto);
+
     List<PagoPresupuesto> findByIdPresupuestoAndEnabledTrue(Integer idPresupuesto);
 
     // idTipoPago 1 corresponds to SENIA
@@ -25,4 +27,7 @@ public interface PagoPresupuestoRepository extends JpaRepository<PagoPresupuesto
 
     @Query("SELECT p FROM PagoPresupuesto p WHERE p.fechaHora >= :desde AND p.fechaHora < :hasta AND p.enabled = true")
     List<PagoPresupuesto> findByFechaHoraBetweenAndEnabledTrue(@Param("desde") Instant desde, @Param("hasta") Instant hasta);
+
+    @Query("SELECT p FROM PagoPresupuesto p WHERE p.fechaHora >= :desde AND p.fechaHora < :hasta")
+    List<PagoPresupuesto> findByFechaHoraBetween(@Param("desde") Instant desde, @Param("hasta") Instant hasta);
 }

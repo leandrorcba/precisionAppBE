@@ -32,5 +32,10 @@ public class PagoDTO {
     private String notas;
     private Boolean enabled;
     private String clienteNombre;
-
+    private Boolean anulado;
+    private String motivoAnulado;
+    private Instant fechaAnulado;
+    private String usuarioCreador;
+    private String usuarioAnulador;
+    private Boolean anulable;
 }

@@ -14,6 +14,8 @@ import ar.com.lbr.precisionappbe.model.TipoPago;
 import ar.com.lbr.precisionappbe.model.Varios;
 import ar.com.lbr.precisionappbe.model.Venta;
 import ar.com.lbr.precisionappbe.model.Cliente;
+import ar.com.lbr.precisionappbe.model.AuditoriaAnulacionPago;
+import ar.com.lbr.precisionappbe.model.Cierre;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.MedioPagoRepository;
@@ -23,7 +25,12 @@ import ar.com.lbr.precisionappbe.repositories.PresupuestoRepository;
 import ar.com.lbr.precisionappbe.repositories.TipoPagoRepository;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import ar.com.lbr.precisionappbe.repositories.VentaRepository;
+import ar.com.lbr.precisionappbe.repositories.AuditoriaAnulacionPagoRepository;
+import ar.com.lbr.precisionappbe.repositories.CierreRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -36,7 +43,7 @@ import java.util.stream.Collectors;
 @Service
 public class PagosService {
 
-    private static final Set<String> TIPOS_PRESUPUESTO = Set.of("SENIA", "PRESUPUESTO");
+    private static final Set<String> TIPOS_PRESUPUESTO = Set.of("SENIA", "PRESUPUESTO", "AJUSTE");
 
     private final PagoPresupuestoRepository pagoPresupuestoRepository;
     private final PagoVentaRepository pagoVentaRepository;
@@ -49,6 +56,8 @@ public class PagosService {
     private final PresupuestoService presupuestoService;
     private final AuditLogService auditLogService;
     private final ClienteRepository clienteRepository;
+    private final AuditoriaAnulacionPagoRepository auditoriaAnulacionPagoRepository;
+    private final CierreRepository cierreRepository;
 
     public PagosService(PagoPresupuestoRepository pagoPresupuestoRepository,
                         PagoVentaRepository pagoVentaRepository,
@@ -60,7 +69,9 @@ public class PagosService {
                         DescuentoRepository descuentoRepository,
                         PresupuestoService presupuestoService,
                         AuditLogService auditLogService,
-                        ClienteRepository clienteRepository) {
+                        ClienteRepository clienteRepository,
+                        AuditoriaAnulacionPagoRepository auditoriaAnulacionPagoRepository,
+                        CierreRepository cierreRepository) {
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.pagoVentaRepository = pagoVentaRepository;
         this.tipoPagoRepository = tipoPagoRepository;
@@ -72,6 +83,8 @@ public class PagosService {
         this.presupuestoService = presupuestoService;
         this.auditLogService = auditLogService;
         this.clienteRepository = clienteRepository;
+        this.auditoriaAnulacionPagoRepository = auditoriaAnulacionPagoRepository;
+        this.cierreRepository = cierreRepository;
     }
 
     // ---------------------------------------------------------------
@@ -79,7 +92,7 @@ public class PagosService {
     // ---------------------------------------------------------------
 
     public List<PagoDTO> getPagosByPresupuesto(Integer idPresupuesto) {
-        return pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(idPresupuesto)
+        return pagoPresupuestoRepository.findByIdPresupuesto(idPresupuesto)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
@@ -99,7 +112,7 @@ public class PagosService {
         Instant effectiveHasta = hasta != null ? hasta : Instant.now();
 
         List<PagoDTO> pagosPresupuesto = pagoPresupuestoRepository
-                .findByFechaHoraBetweenAndEnabledTrue(effectiveDe, effectiveHasta)
+                .findByFechaHoraBetween(effectiveDe, effectiveHasta)
                 .stream().map(this::toDTO).collect(Collectors.toList());
         List<PagoDTO> pagosVenta = pagoVentaRepository
                 .findByFechaHoraBetween(effectiveDe, effectiveHasta)
@@ -169,6 +182,7 @@ public class PagosService {
         BigDecimal totalPresupuesto = presupuestoRepository.findById(dto.getIdPresupuesto())
                 .map(Presupuesto::getPrecioSinDescuento).orElse(BigDecimal.ZERO);
 
+
         if (tipoPago.getTipo().equalsIgnoreCase("SENIA")) {
             if (dto.getMonto().compareTo(totalPresupuesto) >= 0) {
                 throw new IllegalArgumentException("La seña debe ser menor que el monto total del presupuesto");
@@ -180,6 +194,8 @@ public class PagosService {
         pago.setIdPresupuesto(dto.getIdPresupuesto());
         pago.setFechaHora(Instant.now());
         pago.setEnabled(true);
+        pago.setAnulado(false);
+        pago.setUsuarioCreador(getCurrentUsername());
 
         if (tipoPago.getTipo().equalsIgnoreCase("PRESUPUESTO")) {
             boolean allPreviousCash = existing.stream()
@@ -328,6 +344,72 @@ public class PagosService {
         }
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public PagoDTO anularPago(Integer id, String motivo) {
+        PagoPresupuesto pago = pagoPresupuestoRepository.findByIdAndEnabledTrue(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado o ya anulado: " + id));
+
+        Cierre ultimoCierreCerrado = cierreRepository.findFirstByCerradoTrueOrderByFechaCierreDesc().orElse(null);
+        if (ultimoCierreCerrado != null && !pago.getFechaHora().isAfter(ultimoCierreCerrado.getFechaCierre())) {
+            throw new IllegalArgumentException("No se puede anular un pago realizado antes o durante el último cierre de caja bloqueado. Por favor, registre un ajuste.");
+        }
+
+        pago.setEnabled(false);
+        pago.setAnulado(true);
+        pago.setMotivoAnulado(motivo);
+        pago.setFechaAnulado(Instant.now());
+        pago.setUsuarioAnulador(getCurrentUsername());
+        PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
+
+        // Fetch client name to log in AuditoriaAnulacionPago
+        String clientName = "";
+        Presupuesto pres = presupuestoRepository.findById(pago.getIdPresupuesto()).orElse(null);
+        if (pres != null && pres.getIdCliente() != null) {
+            clientName = clienteRepository.findById(pres.getIdCliente())
+                    .map(Cliente::getNombreCliente).orElse("");
+        }
+
+        AuditoriaAnulacionPago audit = new AuditoriaAnulacionPago();
+        audit.setIdPago(pago.getId());
+        audit.setIdPresupuesto(pago.getIdPresupuesto());
+        audit.setMonto(pago.getMonto());
+        audit.setClienteNombre(clientName);
+        audit.setUsuarioCreador(pago.getUsuarioCreador());
+        audit.setUsuarioAnulador(pago.getUsuarioAnulador());
+        audit.setFechaHoraAnulacion(Instant.now());
+        audit.setMotivo(motivo);
+        audit.setFechaHoraPago(pago.getFechaHora());
+        audit.setTipoPago(pago.getIdTipoPago() != null ? pago.getIdTipoPago().getTipo() : "-");
+        audit.setMedioPago(pago.getIdMedioPago() != null ? (pago.getIdMedioPago().getDescripcion() != null ? pago.getIdMedioPago().getDescripcion() : pago.getIdMedioPago().getTipo()) : "-");
+        auditoriaAnulacionPagoRepository.save(audit);
+
+        if (pago.getIdTipoPago().getTipo().equalsIgnoreCase("PRESUPUESTO")) {
+            List<Descuento> discounts = descuentoRepository.findByIdPresupuesto(pago.getIdPresupuesto());
+            List<Descuento> cashDiscounts = discounts.stream().filter(d -> d.getIdTipoDescuento() == 1).collect(Collectors.toList());
+            if (!cashDiscounts.isEmpty()) {
+                descuentoRepository.deleteAll(cashDiscounts);
+            }
+        }
+        updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
+
+        PagoDTO result = toDTO(saved);
+        auditLogService.log("ANULAR", "PAGOS", id.toString(),
+                "Pago #" + id + " del Presupuesto #" + pago.getIdPresupuesto() + " anulado. Motivo: " + motivo, result);
+        return result;
+    }
+
+    public List<AuditoriaAnulacionPago> getAuditoriaAnulaciones() {
+        return auditoriaAnulacionPagoRepository.findByOrderByFechaHoraAnulacionDesc();
+    }
+
+    private String getCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+            return auth.getName();
+        }
+        return "SYSTEM";
+    }
+
     private void updatePresupuestoCobradoStatus(Integer idPresupuesto) {
         Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto).orElse(null);
         if (presupuesto == null) {
@@ -440,6 +522,12 @@ public class PagosService {
         dto.setAutorizacion(p.getAutorizacion());
         dto.setNotas(p.getNotas());
         dto.setEnabled(p.getEnabled());
+        dto.setAnulado(p.getAnulado());
+        dto.setMotivoAnulado(p.getMotivoAnulado());
+        dto.setFechaAnulado(p.getFechaAnulado());
+        dto.setUsuarioCreador(p.getUsuarioCreador());
+        dto.setUsuarioAnulador(p.getUsuarioAnulador());
+        dto.setAnulable(isPagoAnulable(p));
         dto.setTipoPago(buildTipoPagoDTO(p.getIdTipoPago()));
         dto.setMedioPago(buildMedioPagoDTO(p.getIdMedioPago()));
         if (p.getIdTarjeta() != null) {
@@ -462,8 +550,20 @@ public class PagosService {
         return dto;
     }
 
+    private boolean isPagoAnulable(PagoPresupuesto p) {
+        if (Boolean.TRUE.equals(p.getAnulado()) || !Boolean.TRUE.equals(p.getEnabled())) {
+            return false;
+        }
+        Cierre ultimoCierreCerrado = cierreRepository.findFirstByCerradoTrueOrderByFechaCierreDesc().orElse(null);
+        if (ultimoCierreCerrado == null) {
+            return true;
+        }
+        return p.getFechaHora().isAfter(ultimoCierreCerrado.getFechaCierre());
+    }
+
     private PagoDTO toDTO(PagoVenta p) {
         PagoDTO dto = new PagoDTO();
+        dto.setAnulado(false);
         dto.setId(p.getId());
         dto.setIdVenta(p.getIdVenta() != null ? p.getIdVenta().getId() : null);
         dto.setMonto(p.getMonto());
