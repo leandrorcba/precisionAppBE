@@ -5,14 +5,12 @@ import ar.com.lbr.precisionappbe.dto.MovimientoReporteDTO;
 import ar.com.lbr.precisionappbe.dto.ReporteDiarioDTO;
 import ar.com.lbr.precisionappbe.dto.response.CierreResponse;
 import ar.com.lbr.precisionappbe.model.Cierre;
-import ar.com.lbr.precisionappbe.model.CompraMateriale;
 import ar.com.lbr.precisionappbe.model.Extraccione;
 import ar.com.lbr.precisionappbe.model.Gasto;
 import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.PagoVenta;
 import ar.com.lbr.precisionappbe.model.User;
 import ar.com.lbr.precisionappbe.repositories.CierreRepository;
-import ar.com.lbr.precisionappbe.repositories.CompraMaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.ExtraccionRepository;
 import ar.com.lbr.precisionappbe.repositories.GastoRepository;
@@ -41,7 +39,6 @@ public class CierreService {
     private final PagoPresupuestoRepository pagoPresupuestoRepository;
     private final PagoVentaRepository pagoVentaRepository;
     private final ExtraccionRepository extraccionRepository;
-    private final CompraMaterialeRepository compraMaterialeRepository;
     private final GastoRepository gastoRepository;
     private final UserRepository userRepository;
     private final DescuentoRepository descuentoRepository;
@@ -53,7 +50,6 @@ public class CierreService {
                          PagoPresupuestoRepository pagoPresupuestoRepository,
                          PagoVentaRepository pagoVentaRepository,
                          ExtraccionRepository extraccionRepository,
-                         CompraMaterialeRepository compraMaterialeRepository,
                          GastoRepository gastoRepository,
                          UserRepository userRepository,
                          DescuentoRepository descuentoRepository,
@@ -62,7 +58,6 @@ public class CierreService {
         this.pagoPresupuestoRepository = pagoPresupuestoRepository;
         this.pagoVentaRepository = pagoVentaRepository;
         this.extraccionRepository = extraccionRepository;
-        this.compraMaterialeRepository = compraMaterialeRepository;
         this.gastoRepository = gastoRepository;
         this.userRepository = userRepository;
         this.descuentoRepository = descuentoRepository;
@@ -243,18 +238,12 @@ public class CierreService {
         }
         log.debug("Sumarizado -> totalVentasEfectivo: {}", totalVentasEfectivo);
 
-        // 2. Egresos (Extracciones, Compra de Materiales, Gastos Generales)
+        // 2. Egresos (Extracciones y Gastos Generales de Caja Diaria)
         List<Extraccione> extracciones = extraccionRepository.findByFechaExtraccionBetween(startOfDay, endOfDay);
-        List<CompraMateriale> compras = compraMaterialeRepository.findByFechaHoraCompraBetween(startOfDay, endOfDay);
         List<Gasto> gastosGenerales = gastoRepository.findByFechaGastoBetween(startOfDay, endOfDay);
 
         BigDecimal totalExtraccionesEfectivo = extracciones.stream()
                 .map(Extraccione::getMontoExtraccion)
-                .filter(java.util.Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalComprasEfectivo = compras.stream()
-                .map(CompraMateriale::getMontoTotal)
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -264,7 +253,6 @@ public class CierreService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // 3. Calcular Arqueo Teórico (Monto Aplicación - sin incluir el monto inicial)
-        // Compra de materiales no afecta a la caja diaria (sale de otra caja/fondo)
         BigDecimal arqueo = totalPresupuestosEfectivo
                 .add(totalSeniaEfectivo)
                 .add(totalVentasEfectivo)
@@ -282,7 +270,7 @@ public class CierreService {
         cierre.setSenia(totalSeniaEfectivo);
         cierre.setVentas(totalVentasEfectivo);
         cierre.setMontoExtracciones(totalExtraccionesEfectivo);
-        cierre.setMontoCompraMateriales(totalComprasEfectivo);
+        cierre.setMontoCompraMateriales(BigDecimal.ZERO);
         cierre.setGastos(totalGastosGenerales);
         cierre.setDescuentoEfectivo(BigDecimal.ZERO);
         cierre.setArqueo(arqueo);
@@ -391,26 +379,7 @@ public class CierreService {
                     .build());
         }
 
-        // 4. Egresos por Compra de Materiales (Caja separada - se registran en el reporte pero no restan de la caja diaria)
-        List<CompraMateriale> compras = compraMaterialeRepository.findByFechaHoraCompraBetween(startOfDay, endOfDay);
-        for (CompraMateriale c : compras) {
-            BigDecimal monto = c.getMontoTotal() != null ? c.getMontoTotal() : BigDecimal.ZERO;
-
-            String resp = c.getIdUser() != null ? userRepository.findById(c.getIdUser()).map(User::getUsername).orElse("-") : "-";
-
-            egresos.add(MovimientoReporteDTO.builder()
-                    .tipoMovimiento("EGRESO")
-                    .categoria("COMPRA_MATERIAL")
-                    .descripcion("Compra de " + c.getCantidad() + " "
-                            + (c.getMaterial() != null ? c.getMaterial() : "Materiales") + " (caja: " + c.getCaja() + ")")
-                    .monto(monto)
-                    .medioPago("EFECTIVO")
-                    .fechaHora(c.getFechaHoraCompra())
-                    .responsable(resp)
-                    .build());
-        }
-
-        // 5. Egresos por Gastos Generales
+        // 4. Egresos por Gastos Generales
         List<Gasto> gastos = gastoRepository.findByFechaGastoBetween(startOfDay, endOfDay);
         for (Gasto g : gastos) {
             BigDecimal monto = g.getMontoGasto() != null ? g.getMontoGasto() : BigDecimal.ZERO;

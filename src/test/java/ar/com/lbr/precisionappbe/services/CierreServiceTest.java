@@ -4,7 +4,6 @@ import ar.com.lbr.precisionappbe.dto.CierreDTO;
 import ar.com.lbr.precisionappbe.dto.ReporteDiarioDTO;
 import ar.com.lbr.precisionappbe.dto.response.CierreResponse;
 import ar.com.lbr.precisionappbe.model.Cierre;
-import ar.com.lbr.precisionappbe.model.CompraMateriale;
 import ar.com.lbr.precisionappbe.model.Extraccione;
 import ar.com.lbr.precisionappbe.model.Gasto;
 import ar.com.lbr.precisionappbe.model.MedioPago;
@@ -12,7 +11,6 @@ import ar.com.lbr.precisionappbe.model.PagoPresupuesto;
 import ar.com.lbr.precisionappbe.model.TipoPago;
 import ar.com.lbr.precisionappbe.model.User;
 import ar.com.lbr.precisionappbe.repositories.CierreRepository;
-import ar.com.lbr.precisionappbe.repositories.CompraMaterialeRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.ExtraccionRepository;
 import ar.com.lbr.precisionappbe.repositories.GastoRepository;
@@ -57,8 +55,6 @@ class CierreServiceTest {
     @Mock
     private ExtraccionRepository extraccionRepository;
     @Mock
-    private CompraMaterialeRepository compraMaterialeRepository;
-    @Mock
     private GastoRepository gastoRepository;
     @Mock
     private UserRepository userRepository;
@@ -73,7 +69,7 @@ class CierreServiceTest {
     void setUp() {
         service = new CierreService(
                 cierreRepository, pagoPresupuestoRepository, pagoVentaRepository,
-                extraccionRepository, compraMaterialeRepository, gastoRepository,
+                extraccionRepository, gastoRepository,
                 userRepository, descuentoRepository, auditLogService);
     }
 
@@ -153,8 +149,6 @@ class CierreServiceTest {
         when(pagoVentaRepository.findByFechaHoraBetween(any(), any()))
                 .thenReturn(Collections.emptyList());
         when(extraccionRepository.findByFechaExtraccionBetween(any(), any()))
-                .thenReturn(Collections.emptyList());
-        when(compraMaterialeRepository.findByFechaHoraCompraBetween(any(), any()))
                 .thenReturn(Collections.emptyList());
         when(gastoRepository.findByFechaGastoBetween(any(), any()))
                 .thenReturn(Collections.emptyList());
@@ -297,7 +291,6 @@ class CierreServiceTest {
                 .thenReturn(List.of(pago));
         when(pagoVentaRepository.findByFechaHoraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(extraccionRepository.findByFechaExtraccionBetween(any(), any())).thenReturn(Collections.emptyList());
-        when(compraMaterialeRepository.findByFechaHoraCompraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(gastoRepository.findByFechaGastoBetween(any(), any())).thenReturn(Collections.emptyList());
 
         CierreDTO result = service.cerrarCierre(1);
@@ -320,7 +313,6 @@ class CierreServiceTest {
                 .thenReturn(List.of(senia));
         when(pagoVentaRepository.findByFechaHoraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(extraccionRepository.findByFechaExtraccionBetween(any(), any())).thenReturn(Collections.emptyList());
-        when(compraMaterialeRepository.findByFechaHoraCompraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(gastoRepository.findByFechaGastoBetween(any(), any())).thenReturn(Collections.emptyList());
 
         CierreDTO result = service.cerrarCierre(2);
@@ -343,7 +335,6 @@ class CierreServiceTest {
                 .thenReturn(List.of(transferencia));
         when(pagoVentaRepository.findByFechaHoraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(extraccionRepository.findByFechaExtraccionBetween(any(), any())).thenReturn(Collections.emptyList());
-        when(compraMaterialeRepository.findByFechaHoraCompraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(gastoRepository.findByFechaGastoBetween(any(), any())).thenReturn(Collections.emptyList());
 
         CierreDTO result = service.cerrarCierre(3);
@@ -367,14 +358,10 @@ class CierreServiceTest {
                 .thenReturn(List.of(pago));
         when(pagoVentaRepository.findByFechaHoraBetween(any(), any())).thenReturn(Collections.emptyList());
 
-        // Egresos: extraccion 200 + compra 150 + gasto 50 = 400
+        // Egresos: extraccion 200 + gasto 50 = 250
         Extraccione ext = new Extraccione();
         ext.setMontoExtraccion(new BigDecimal("200.00"));
         when(extraccionRepository.findByFechaExtraccionBetween(any(), any())).thenReturn(List.of(ext));
-
-        CompraMateriale compra = new CompraMateriale();
-        compra.setMontoTotal(new BigDecimal("150.00"));
-        when(compraMaterialeRepository.findByFechaHoraCompraBetween(any(), any())).thenReturn(List.of(compra));
 
         Gasto gasto = new Gasto();
         gasto.setMontoGasto(new BigDecimal("50.00"));
@@ -382,10 +369,10 @@ class CierreServiceTest {
 
         CierreDTO result = service.cerrarCierre(4);
 
-        // arqueo = 1000 - 200 (extracciones) - 50 (gastos) = 750 (compra materiales no resta de la caja diaria)
+        // arqueo = 1000 - 200 (extracciones) - 50 (gastos) = 750
         assertThat(result.getArqueo()).isEqualByComparingTo("750.00");
         assertThat(result.getMontoExtracciones()).isEqualByComparingTo("200.00");
-        assertThat(result.getMontoCompraMateriales()).isEqualByComparingTo("150.00");
+        assertThat(result.getMontoCompraMateriales()).isEqualByComparingTo("0.00");
         assertThat(result.getGastos()).isEqualByComparingTo("50.00");
     }
 
@@ -459,7 +446,6 @@ class CierreServiceTest {
                 .thenReturn(Collections.emptyList());
         when(pagoVentaRepository.findByFechaHoraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(extraccionRepository.findByFechaExtraccionBetween(any(), any())).thenReturn(Collections.emptyList());
-        when(compraMaterialeRepository.findByFechaHoraCompraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(gastoRepository.findByFechaGastoBetween(any(), any())).thenReturn(Collections.emptyList());
 
         ReporteDiarioDTO report = service.getReporteDiario("2026-06-08");
@@ -484,7 +470,6 @@ class CierreServiceTest {
         ext.setMontoExtraccion(new BigDecimal("200.00"));
         ext.setMotivoExtraccion("Retiro para gastos");
         when(extraccionRepository.findByFechaExtraccionBetween(any(), any())).thenReturn(List.of(ext));
-        when(compraMaterialeRepository.findByFechaHoraCompraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(gastoRepository.findByFechaGastoBetween(any(), any())).thenReturn(Collections.emptyList());
 
         ReporteDiarioDTO report = service.getReporteDiario("2026-06-08");
@@ -505,7 +490,6 @@ class CierreServiceTest {
                 .thenReturn(List.of(transferencia));
         when(pagoVentaRepository.findByFechaHoraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(extraccionRepository.findByFechaExtraccionBetween(any(), any())).thenReturn(Collections.emptyList());
-        when(compraMaterialeRepository.findByFechaHoraCompraBetween(any(), any())).thenReturn(Collections.emptyList());
         when(gastoRepository.findByFechaGastoBetween(any(), any())).thenReturn(Collections.emptyList());
 
         ReporteDiarioDTO report = service.getReporteDiario("2026-06-08");
