@@ -264,11 +264,11 @@ public class CierreService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // 3. Calcular Arqueo Teórico (Monto Aplicación - sin incluir el monto inicial)
+        // Compra de materiales no afecta a la caja diaria (sale de otra caja/fondo)
         BigDecimal arqueo = totalPresupuestosEfectivo
                 .add(totalSeniaEfectivo)
                 .add(totalVentasEfectivo)
                 .subtract(totalExtraccionesEfectivo)
-                .subtract(totalComprasEfectivo)
                 .subtract(totalGastosGenerales);
 
         BigDecimal montoInicial = cierre.getMontoInicial() != null ? cierre.getMontoInicial() : BigDecimal.ZERO;
@@ -323,23 +323,26 @@ public class CierreService {
                 totalIngresosOtrosMedios = totalIngresosOtrosMedios.add(monto);
             }
 
+            String userCreador = p.getUsuarioCreador() != null && !p.getUsuarioCreador().isBlank()
+                    ? p.getUsuarioCreador() : "-";
+
             ingresos.add(MovimientoReporteDTO.builder()
                     .tipoMovimiento("INGRESO")
                     .categoria(cat)
-                    .descripcion("Pago Presupuesto #" + p.getIdPresupuesto() +
-                            (p.getNotas() != null && !p.getNotas().isBlank() ? " - " + p.getNotas() : ""))
+                    .descripcion("Pago Presupuesto #" + p.getIdPresupuesto()
+                            + (p.getNotas() != null && !p.getNotas().isBlank() ? " - " + p.getNotas() : ""))
                     .monto(monto)
                     .medioPago(medio)
                     .fechaHora(p.getFechaHora())
-                    .responsable("-")
+                    .responsable(userCreador)
                     .build());
         }
 
         // 2. Ingresos por Pagos de Ventas
         List<PagoVenta> pagosVenta = pagoVentaRepository.findByFechaHoraBetween(startOfDay, endOfDay);
         for (PagoVenta p : pagosVenta) {
-            String medio = p.getIdMedioPago() != null ? (p.getIdMedioPago().getDescripcion() != null ?
-                    p.getIdMedioPago().getDescripcion() : p.getIdMedioPago().getTipo()) : "-";
+            String medio = p.getIdMedioPago() != null ? (p.getIdMedioPago().getDescripcion() != null
+                    ? p.getIdMedioPago().getDescripcion() : p.getIdMedioPago().getTipo()) : "-";
             BigDecimal monto = p.getMonto() != null ? p.getMonto() : BigDecimal.ZERO;
 
             boolean esEfectivo = false;
@@ -359,8 +362,9 @@ public class CierreService {
             ingresos.add(MovimientoReporteDTO.builder()
                     .tipoMovimiento("INGRESO")
                     .categoria("VENTA")
-                    .descripcion("Pago Venta #" + (p.getIdVenta() != null ?
-                            p.getIdVenta().getId() : "") + (p.getNotas() != null && !p.getNotas().isBlank() ? " - " + p.getNotas() : ""))
+                    .descripcion("Pago Venta #" + (p.getIdVenta() != null
+                            ? p.getIdVenta().getId() : "")
+                            + (p.getNotas() != null && !p.getNotas().isBlank() ? " - " + p.getNotas() : ""))
                     .monto(monto)
                     .medioPago(medio)
                     .fechaHora(p.getFechaHora())
@@ -387,11 +391,10 @@ public class CierreService {
                     .build());
         }
 
-        // 4. Egresos por Compra de Materiales
+        // 4. Egresos por Compra de Materiales (Caja separada - se registran en el reporte pero no restan de la caja diaria)
         List<CompraMateriale> compras = compraMaterialeRepository.findByFechaHoraCompraBetween(startOfDay, endOfDay);
         for (CompraMateriale c : compras) {
             BigDecimal monto = c.getMontoTotal() != null ? c.getMontoTotal() : BigDecimal.ZERO;
-            totalEgresosEfectivo = totalEgresosEfectivo.add(monto);
 
             String resp = c.getIdUser() != null ? userRepository.findById(c.getIdUser()).map(User::getUsername).orElse("-") : "-";
 

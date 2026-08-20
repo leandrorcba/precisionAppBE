@@ -382,8 +382,8 @@ class CierreServiceTest {
 
         CierreDTO result = service.cerrarCierre(4);
 
-        // arqueo = 1000 - 200 - 150 - 50 = 600
-        assertThat(result.getArqueo()).isEqualByComparingTo("600.00");
+        // arqueo = 1000 - 200 (extracciones) - 50 (gastos) = 750 (compra materiales no resta de la caja diaria)
+        assertThat(result.getArqueo()).isEqualByComparingTo("750.00");
         assertThat(result.getMontoExtracciones()).isEqualByComparingTo("200.00");
         assertThat(result.getMontoCompraMateriales()).isEqualByComparingTo("150.00");
         assertThat(result.getGastos()).isEqualByComparingTo("50.00");
