@@ -3,16 +3,6 @@ name: Java CI with Gradle
 on:
   push:
     branches:
-      - master
-      - main
-      - 'feature/**'
-    paths-ignore:
-      - '**.md'
-      - '.gitignore'
-      - 'docs/**'
-  pull_request:
-    branches:
-      - master
       - main
     paths-ignore:
       - '**.md'
