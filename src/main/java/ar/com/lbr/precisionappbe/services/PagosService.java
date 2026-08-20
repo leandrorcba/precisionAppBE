@@ -351,7 +351,9 @@ public class PagosService {
 
         Cierre ultimoCierreCerrado = cierreRepository.findFirstByCerradoTrueOrderByFechaCierreDesc().orElse(null);
         if (ultimoCierreCerrado != null && !pago.getFechaHora().isAfter(ultimoCierreCerrado.getFechaCierre())) {
-            throw new IllegalArgumentException("No se puede anular un pago realizado antes o durante el último cierre de caja bloqueado. Por favor, registre un ajuste.");
+            throw new IllegalArgumentException(
+                    "No se puede anular un pago realizado antes o durante el último cierre de caja bloqueado. "
+                            + "Por favor, registre un ajuste.");
         }
 
         pago.setEnabled(false);
@@ -380,7 +382,12 @@ public class PagosService {
         audit.setMotivo(motivo);
         audit.setFechaHoraPago(pago.getFechaHora());
         audit.setTipoPago(pago.getIdTipoPago() != null ? pago.getIdTipoPago().getTipo() : "-");
-        audit.setMedioPago(pago.getIdMedioPago() != null ? (pago.getIdMedioPago().getDescripcion() != null ? pago.getIdMedioPago().getDescripcion() : pago.getIdMedioPago().getTipo()) : "-");
+        String medioDesc = "-";
+        if (pago.getIdMedioPago() != null) {
+            medioDesc = pago.getIdMedioPago().getDescripcion() != null
+                    ? pago.getIdMedioPago().getDescripcion() : pago.getIdMedioPago().getTipo();
+        }
+        audit.setMedioPago(medioDesc);
         auditoriaAnulacionPagoRepository.save(audit);
 
         if (pago.getIdTipoPago().getTipo().equalsIgnoreCase("PRESUPUESTO")) {

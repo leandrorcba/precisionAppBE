@@ -7,6 +7,8 @@ import ar.com.lbr.precisionappbe.model.PagoVenta;
 import ar.com.lbr.precisionappbe.model.Presupuesto;
 import ar.com.lbr.precisionappbe.model.TipoPago;
 import ar.com.lbr.precisionappbe.model.Venta;
+import ar.com.lbr.precisionappbe.repositories.AuditoriaAnulacionPagoRepository;
+import ar.com.lbr.precisionappbe.repositories.CierreRepository;
 import ar.com.lbr.precisionappbe.repositories.ClienteRepository;
 import ar.com.lbr.precisionappbe.repositories.DescuentoRepository;
 import ar.com.lbr.precisionappbe.repositories.MedioPagoRepository;
@@ -48,13 +50,16 @@ class PagosServiceTest {
     @Mock private PresupuestoService presupuestoService;
     @Mock private AuditLogService auditLogService;
     @Mock private ClienteRepository clienteRepository;
+    @Mock private AuditoriaAnulacionPagoRepository auditoriaAnulacionPagoRepository;
+    @Mock private CierreRepository cierreRepository;
 
     private PagosService service;
 
     @BeforeEach
     void setUp() {
         service = new PagosService(pagoPresupuestoRepository, pagoVentaRepository, tipoPagoRepository, medioPagoRepository,
-                ventaRepository, presupuestoRepository, variosRepository, descuentoRepository, presupuestoService, auditLogService, clienteRepository);
+                ventaRepository, presupuestoRepository, variosRepository, descuentoRepository, presupuestoService, auditLogService,
+                clienteRepository, auditoriaAnulacionPagoRepository, cierreRepository);
     }
 
     private TipoPago createTipoPago(Integer id, String tipo) {
@@ -80,7 +85,7 @@ class PagosServiceTest {
         p.setIdTipoPago(createTipoPago(1, "SENIA"));
         p.setIdMedioPago(createMedioPago(1, "EFECTIVO", "Efectivo"));
 
-        when(pagoPresupuestoRepository.findByIdPresupuestoAndEnabledTrue(10)).thenReturn(List.of(p));
+        when(pagoPresupuestoRepository.findByIdPresupuesto(10)).thenReturn(List.of(p));
 
         List<PagoDTO> result = service.getPagosByPresupuesto(10);
 

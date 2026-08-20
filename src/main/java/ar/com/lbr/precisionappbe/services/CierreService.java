@@ -100,7 +100,9 @@ public class CierreService {
         Instant endOfDay = todayLocal.plusDays(1).atStartOfDay(ZONE_ARGENTINA).toInstant();
 
         if (cierreRepository.existsByCerrado(false)) {
-            throw new IllegalArgumentException("No se puede iniciar un nuevo cierre de caja porque existe un cierre anterior que aún permanece abierto. Por favor, realice el arqueo y cierre la caja abierta antes de continuar.");
+            throw new IllegalArgumentException(
+                    "No se puede iniciar un nuevo cierre de caja porque existe un cierre anterior que aún permanece abierto. "
+                            + "Por favor, realice el arqueo y cierre la caja abierta antes de continuar.");
         }
 
         if (cierreRepository.existsByFechaCierreBetween(startOfDay, endOfDay)) {

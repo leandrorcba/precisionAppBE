@@ -107,7 +107,8 @@ public class ClienteService {
 
         clienteDTOS.forEach(dto -> {
             dto.setPunto(puntoMap.get(dto.getIdCliente()));
-            dto.setPresupuestosPendientesEntregados(presupuestoRepository.countPresupuestosImpagosConTrabajosEntregados(dto.getIdCliente()));
+            dto.setPresupuestosPendientesEntregados(
+                    presupuestoRepository.countPresupuestosImpagosConTrabajosEntregados(dto.getIdCliente()));
         });
 
         return new ClienteResponse(clienteDTOS, clientePage.getTotalElements());

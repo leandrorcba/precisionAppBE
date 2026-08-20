@@ -59,7 +59,8 @@ class ClienteServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ClienteService(clienteRepository, clientesMapper, utilsService, puntoRepository, folderService, auditLogService, presupuestoRepository);
+        service = new ClienteService(clienteRepository, clientesMapper, utilsService,
+                puntoRepository, folderService, auditLogService, presupuestoRepository);
     }
 
     @Test

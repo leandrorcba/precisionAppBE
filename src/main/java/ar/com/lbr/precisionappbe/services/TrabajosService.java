@@ -87,8 +87,9 @@ public class TrabajosService {
         entity.setIdMateriales(dto.getIdMateriales());
         entity.setPrecioMaterial(dto.getPrecioMaterial() != null ? dto.getPrecioMaterial() : BigDecimal.ZERO);
         entity.setPrecioTrabajo(dto.getPrecioTrabajo() != null ? dto.getPrecioTrabajo() : BigDecimal.ZERO);
-        entity.setPrecioCorte(dto.getPrecioCorte() != null ? dto.getPrecioCorte() : BigDecimal.ZERO);
-        boolean isEspecial = Boolean.TRUE.equals(dto.getGrabado()) || Boolean.TRUE.equals(dto.getCarteles()) || Boolean.TRUE.equals(dto.getCortesEspeciales());
+        boolean isEspecial = Boolean.TRUE.equals(dto.getGrabado())
+                || Boolean.TRUE.equals(dto.getCarteles())
+                || Boolean.TRUE.equals(dto.getCortesEspeciales());
         entity.setVinilo(isEspecial ? BigDecimal.ZERO : (dto.getVinilo() != null ? dto.getVinilo() : BigDecimal.ZERO));
         entity.setExtra(isEspecial ? BigDecimal.ZERO : (dto.getExtra() != null ? dto.getExtra() : BigDecimal.ZERO));
         entity.setVectorizado(isEspecial ? BigDecimal.ZERO : (dto.getVectorizado() != null ? dto.getVectorizado() : BigDecimal.ZERO));
@@ -293,7 +294,9 @@ public class TrabajosService {
         entity.setPrecioTrabajo(dto.getPrecioTrabajo() != null ? dto.getPrecioTrabajo() : BigDecimal.ZERO);
         entity.setPrecioCorte(dto.getPrecioCorte() != null ? dto.getPrecioCorte() : BigDecimal.ZERO);
 
-        boolean isEspecial = Boolean.TRUE.equals(dto.getGrabado()) || Boolean.TRUE.equals(dto.getCarteles()) || Boolean.TRUE.equals(dto.getCortesEspeciales());
+        boolean isEspecial = Boolean.TRUE.equals(dto.getGrabado())
+                || Boolean.TRUE.equals(dto.getCarteles())
+                || Boolean.TRUE.equals(dto.getCortesEspeciales());
         entity.setVinilo(isEspecial ? BigDecimal.ZERO : (dto.getVinilo() != null ? dto.getVinilo() : BigDecimal.ZERO));
         entity.setExtra(isEspecial ? BigDecimal.ZERO : (dto.getExtra() != null ? dto.getExtra() : BigDecimal.ZERO));
         entity.setVectorizado(isEspecial ? BigDecimal.ZERO : (dto.getVectorizado() != null ? dto.getVectorizado() : BigDecimal.ZERO));
