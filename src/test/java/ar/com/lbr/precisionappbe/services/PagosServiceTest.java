@@ -33,6 +33,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -263,5 +264,35 @@ class PagosServiceTest {
 
         assertThat(p.getEnabled()).isFalse();
         verify(pagoPresupuestoRepository).save(p);
+    }
+
+    @Test
+    void anularPago_venta_marksAnuladoAndLogsAudit() {
+        Venta v = new Venta();
+        v.setId(88);
+
+        PagoVenta pv = new PagoVenta();
+        pv.setId(99);
+        pv.setIdVenta(v);
+        pv.setMonto(BigDecimal.valueOf(500));
+        pv.setFechaHora(java.time.Instant.now());
+        pv.setEnabled(true);
+        pv.setAnulado(false);
+        pv.setIdTipoPago(createTipoPago(3, "VENTAS"));
+        pv.setIdMedioPago(createMedioPago(1, "EFECTIVO", "Efectivo"));
+
+        when(pagoPresupuestoRepository.findByIdAndEnabledTrue(99)).thenReturn(Optional.empty());
+        when(pagoVentaRepository.findByIdAndEnabledTrue(99)).thenReturn(Optional.of(pv));
+        when(pagoVentaRepository.save(any(PagoVenta.class))).thenReturn(pv);
+        when(cierreRepository.findFirstByCerradoTrueOrderByFechaCierreDesc()).thenReturn(Optional.empty());
+
+        PagoDTO result = service.anularPago(99, "Error de tipeo");
+
+        assertThat(result).isNotNull();
+        assertThat(pv.getEnabled()).isFalse();
+        assertThat(pv.getAnulado()).isTrue();
+        assertThat(pv.getMotivoAnulado()).isEqualTo("Error de tipeo");
+        verify(auditoriaAnulacionPagoRepository).save(any());
+        verify(auditLogService).log(eq("ANULAR"), eq("PAGOS"), eq("99"), any(), any());
     }
 }

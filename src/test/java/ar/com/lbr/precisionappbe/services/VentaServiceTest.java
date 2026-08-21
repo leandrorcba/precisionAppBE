@@ -74,7 +74,7 @@ class VentaServiceTest {
         PagoVenta pago = new PagoVenta();
         pago.setIdVenta(v1);
         pago.setMonto(new BigDecimal("50.00"));
-        when(pagoVentaRepository.findByIdVenta_IdIn(Collections.singletonList(10)))
+        when(pagoVentaRepository.findByIdVenta_IdInAndEnabledTrue(Collections.singletonList(10)))
                 .thenReturn(Collections.singletonList(pago));
 
         // Act
@@ -101,7 +101,7 @@ class VentaServiceTest {
 
         when(ventaRepository.findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class)))
                 .thenReturn(Collections.singletonList(v1));
-        when(pagoVentaRepository.findByIdVenta_IdIn(Collections.singletonList(20)))
+        when(pagoVentaRepository.findByIdVenta_IdInAndEnabledTrue(Collections.singletonList(20)))
                 .thenReturn(Collections.emptyList());
 
         // Act
@@ -126,7 +126,7 @@ class VentaServiceTest {
 
         when(ventaRepository.findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class)))
                 .thenReturn(Collections.singletonList(v1));
-        when(pagoVentaRepository.findByIdVenta_IdIn(Collections.singletonList(30)))
+        when(pagoVentaRepository.findByIdVenta_IdInAndEnabledTrue(Collections.singletonList(30)))
                 .thenReturn(Collections.emptyList());
 
         // Act
@@ -145,7 +145,7 @@ class VentaServiceTest {
 
         when(ventaRepository.findByFechaHoraVentaBetween(any(Instant.class), any(Instant.class)))
                 .thenReturn(Collections.singletonList(v1));
-        when(pagoVentaRepository.findByIdVenta_IdIn(Collections.singletonList(40)))
+        when(pagoVentaRepository.findByIdVenta_IdInAndEnabledTrue(Collections.singletonList(40)))
                 .thenReturn(Collections.emptyList());
 
         List<VentaDTO> result = service.getAllVentas(null, null, false);
@@ -167,7 +167,7 @@ class VentaServiceTest {
         p1.setMonto(new BigDecimal("100.00"));
         PagoVenta p2 = new PagoVenta();
         p2.setMonto(new BigDecimal("150.00"));
-        when(pagoVentaRepository.findByIdVenta_Id(50)).thenReturn(Arrays.asList(p1, p2));
+        when(pagoVentaRepository.findByIdVenta_IdAndEnabledTrue(50)).thenReturn(Arrays.asList(p1, p2));
 
         // Act
         VentaDTO result = service.getVentaById(50);
@@ -270,7 +270,7 @@ class VentaServiceTest {
         existing.setId(80);
         existing.setPrecioVenta(new BigDecimal("100.00"));
         when(ventaRepository.findById(80)).thenReturn(Optional.of(existing));
-        when(pagoVentaRepository.findByIdVenta_Id(80)).thenReturn(Collections.emptyList());
+        when(pagoVentaRepository.findByIdVenta_IdAndEnabledTrue(80)).thenReturn(Collections.emptyList());
 
         VentaDTO inputDto = new VentaDTO();
         inputDto.setPrecioVenta(new BigDecimal("120.00"));
@@ -310,7 +310,7 @@ class VentaServiceTest {
 
         PagoVenta pago = new PagoVenta();
         pago.setMonto(new BigDecimal("10.00"));
-        when(pagoVentaRepository.findByIdVenta_Id(80)).thenReturn(Collections.singletonList(pago));
+        when(pagoVentaRepository.findByIdVenta_IdAndEnabledTrue(80)).thenReturn(Collections.singletonList(pago));
 
         // Act & Assert
         assertThatThrownBy(() -> service.updateVenta(80, new VentaDTO()))

@@ -77,7 +77,7 @@ public class VentaService {
         if (idsVentas == null || idsVentas.isEmpty()) {
             return java.util.Collections.emptyMap();
         }
-        List<PagoVenta> pagos = pagoVentaRepository.findByIdVenta_IdIn(idsVentas);
+        List<PagoVenta> pagos = pagoVentaRepository.findByIdVenta_IdInAndEnabledTrue(idsVentas);
         return pagos.stream().collect(Collectors.groupingBy(
             p -> p.getIdVenta().getId(),
             Collectors.reducing(BigDecimal.ZERO, PagoVenta::getMonto, BigDecimal::add)
@@ -89,7 +89,7 @@ public class VentaService {
                 .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
         VentaDTO dto = VentaDTO.toDTO(venta);
         if (dto != null) {
-            BigDecimal montoAbonado = pagoVentaRepository.findByIdVenta_Id(id).stream()
+            BigDecimal montoAbonado = pagoVentaRepository.findByIdVenta_IdAndEnabledTrue(id).stream()
                     .map(PagoVenta::getMonto)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             dto.setMontoAbonado(montoAbonado);
@@ -118,7 +118,7 @@ public class VentaService {
         Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
 
-        BigDecimal montoAbonado = pagoVentaRepository.findByIdVenta_Id(id).stream()
+        BigDecimal montoAbonado = pagoVentaRepository.findByIdVenta_IdAndEnabledTrue(id).stream()
                 .map(PagoVenta::getMonto)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (montoAbonado.compareTo(BigDecimal.ZERO) > 0) {

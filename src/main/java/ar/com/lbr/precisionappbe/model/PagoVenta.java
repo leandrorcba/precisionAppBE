@@ -71,4 +71,24 @@ public class PagoVenta {
     @Column(name = "notas")
     private String notas;
 
+    @Column(name = "enabled", nullable = false)
+    private Boolean enabled = true;
+
+    @Column(name = "anulado", nullable = false)
+    private Boolean anulado = false;
+
+    @Size(max = 250)
+    @Column(name = "motivo_anulado", length = 250)
+    private String motivoAnulado;
+
+    @Column(name = "fecha_anulado")
+    private Instant fechaAnulado;
+
+    @Size(max = 50)
+    @Column(name = "usuario_creador", length = 50)
+    private String usuarioCreador;
+
+    @Size(max = 50)
+    @Column(name = "usuario_anulador", length = 50)
+    private String usuarioAnulador;
 }

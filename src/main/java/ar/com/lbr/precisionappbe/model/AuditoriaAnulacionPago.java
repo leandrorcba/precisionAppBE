@@ -26,8 +26,11 @@ public class AuditoriaAnulacionPago {
     @Column(name = "id_pago", nullable = false)
     private Integer idPago;
 
-    @Column(name = "id_presupuesto", nullable = false)
+    @Column(name = "id_presupuesto")
     private Integer idPresupuesto;
+
+    @Column(name = "id_venta")
+    private Integer idVenta;
 
     @Column(name = "monto", nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;

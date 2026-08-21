@@ -248,6 +248,9 @@ public class PagosService {
         mapCommonFields(dto, tipoPago, pago);
         pago.setIdVenta(venta);
         pago.setFechaHora(Instant.now());
+        pago.setEnabled(true);
+        pago.setAnulado(false);
+        pago.setUsuarioCreador(getCurrentUsername());
         PagoVenta saved = pagoVentaRepository.save(pago);
 
         PagoDTO resultDto = toDTO(saved);
@@ -346,62 +349,107 @@ public class PagosService {
 
     @org.springframework.transaction.annotation.Transactional
     public PagoDTO anularPago(Integer id, String motivo) {
-        PagoPresupuesto pago = pagoPresupuestoRepository.findByIdAndEnabledTrue(id)
+        java.util.Optional<PagoPresupuesto> maybePresupuesto = pagoPresupuestoRepository.findByIdAndEnabledTrue(id);
+        if (maybePresupuesto.isPresent()) {
+            PagoPresupuesto pago = maybePresupuesto.get();
+
+            Cierre ultimoCierreCerrado = cierreRepository.findFirstByCerradoTrueOrderByFechaCierreDesc().orElse(null);
+            if (ultimoCierreCerrado != null && !pago.getFechaHora().isAfter(ultimoCierreCerrado.getFechaCierre())) {
+                throw new IllegalArgumentException(
+                        "No se puede anular un pago realizado antes o durante el último cierre de caja bloqueado. "
+                                + "Por favor, registre un ajuste.");
+            }
+
+            pago.setEnabled(false);
+            pago.setAnulado(true);
+            pago.setMotivoAnulado(motivo);
+            pago.setFechaAnulado(Instant.now());
+            pago.setUsuarioAnulador(getCurrentUsername());
+            PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
+
+            // Fetch client name to log in AuditoriaAnulacionPago
+            String clientName = "";
+            Presupuesto pres = presupuestoRepository.findById(pago.getIdPresupuesto()).orElse(null);
+            if (pres != null && pres.getIdCliente() != null) {
+                clientName = clienteRepository.findById(pres.getIdCliente())
+                        .map(Cliente::getNombreCliente).orElse("");
+            }
+
+            AuditoriaAnulacionPago audit = new AuditoriaAnulacionPago();
+            audit.setIdPago(pago.getId());
+            audit.setIdPresupuesto(pago.getIdPresupuesto());
+            audit.setMonto(pago.getMonto());
+            audit.setClienteNombre(clientName);
+            audit.setUsuarioCreador(pago.getUsuarioCreador());
+            audit.setUsuarioAnulador(pago.getUsuarioAnulador());
+            audit.setFechaHoraAnulacion(Instant.now());
+            audit.setMotivo(motivo);
+            audit.setFechaHoraPago(pago.getFechaHora());
+            audit.setTipoPago(pago.getIdTipoPago() != null ? pago.getIdTipoPago().getTipo() : "-");
+            String medioDesc = "-";
+            if (pago.getIdMedioPago() != null) {
+                medioDesc = pago.getIdMedioPago().getDescripcion() != null
+                        ? pago.getIdMedioPago().getDescripcion() : pago.getIdMedioPago().getTipo();
+            }
+            audit.setMedioPago(medioDesc);
+            auditoriaAnulacionPagoRepository.save(audit);
+
+            if (pago.getIdTipoPago().getTipo().equalsIgnoreCase("PRESUPUESTO")) {
+                List<Descuento> discounts = descuentoRepository.findByIdPresupuesto(pago.getIdPresupuesto());
+                List<Descuento> cashDiscounts = discounts.stream().filter(d -> d.getIdTipoDescuento() == 1).collect(Collectors.toList());
+                if (!cashDiscounts.isEmpty()) {
+                    descuentoRepository.deleteAll(cashDiscounts);
+                }
+            }
+            updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
+
+            PagoDTO result = toDTO(saved);
+            auditLogService.log("ANULAR", "PAGOS", id.toString(),
+                    "Pago #" + id + " del Presupuesto #" + pago.getIdPresupuesto() + " anulado. Motivo: " + motivo, result);
+            return result;
+        }
+
+        PagoVenta pagoVenta = pagoVentaRepository.findByIdAndEnabledTrue(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado o ya anulado: " + id));
 
         Cierre ultimoCierreCerrado = cierreRepository.findFirstByCerradoTrueOrderByFechaCierreDesc().orElse(null);
-        if (ultimoCierreCerrado != null && !pago.getFechaHora().isAfter(ultimoCierreCerrado.getFechaCierre())) {
+        if (ultimoCierreCerrado != null && !pagoVenta.getFechaHora().isAfter(ultimoCierreCerrado.getFechaCierre())) {
             throw new IllegalArgumentException(
                     "No se puede anular un pago realizado antes o durante el último cierre de caja bloqueado. "
                             + "Por favor, registre un ajuste.");
         }
 
-        pago.setEnabled(false);
-        pago.setAnulado(true);
-        pago.setMotivoAnulado(motivo);
-        pago.setFechaAnulado(Instant.now());
-        pago.setUsuarioAnulador(getCurrentUsername());
-        PagoPresupuesto saved = pagoPresupuestoRepository.save(pago);
-
-        // Fetch client name to log in AuditoriaAnulacionPago
-        String clientName = "";
-        Presupuesto pres = presupuestoRepository.findById(pago.getIdPresupuesto()).orElse(null);
-        if (pres != null && pres.getIdCliente() != null) {
-            clientName = clienteRepository.findById(pres.getIdCliente())
-                    .map(Cliente::getNombreCliente).orElse("");
-        }
+        pagoVenta.setEnabled(false);
+        pagoVenta.setAnulado(true);
+        pagoVenta.setMotivoAnulado(motivo);
+        pagoVenta.setFechaAnulado(Instant.now());
+        pagoVenta.setUsuarioAnulador(getCurrentUsername());
+        PagoVenta savedVenta = pagoVentaRepository.save(pagoVenta);
 
         AuditoriaAnulacionPago audit = new AuditoriaAnulacionPago();
-        audit.setIdPago(pago.getId());
-        audit.setIdPresupuesto(pago.getIdPresupuesto());
-        audit.setMonto(pago.getMonto());
-        audit.setClienteNombre(clientName);
-        audit.setUsuarioCreador(pago.getUsuarioCreador());
-        audit.setUsuarioAnulador(pago.getUsuarioAnulador());
+        audit.setIdPago(pagoVenta.getId());
+        audit.setIdVenta(pagoVenta.getIdVenta() != null ? pagoVenta.getIdVenta().getId() : null);
+        audit.setIdPresupuesto(null);
+        audit.setMonto(pagoVenta.getMonto());
+        audit.setClienteNombre("Venta Directa #" + (pagoVenta.getIdVenta() != null ? pagoVenta.getIdVenta().getId() : "-"));
+        audit.setUsuarioCreador(pagoVenta.getUsuarioCreador());
+        audit.setUsuarioAnulador(pagoVenta.getUsuarioAnulador());
         audit.setFechaHoraAnulacion(Instant.now());
         audit.setMotivo(motivo);
-        audit.setFechaHoraPago(pago.getFechaHora());
-        audit.setTipoPago(pago.getIdTipoPago() != null ? pago.getIdTipoPago().getTipo() : "-");
+        audit.setFechaHoraPago(pagoVenta.getFechaHora());
+        audit.setTipoPago(pagoVenta.getIdTipoPago() != null ? pagoVenta.getIdTipoPago().getTipo() : "VENTAS");
         String medioDesc = "-";
-        if (pago.getIdMedioPago() != null) {
-            medioDesc = pago.getIdMedioPago().getDescripcion() != null
-                    ? pago.getIdMedioPago().getDescripcion() : pago.getIdMedioPago().getTipo();
+        if (pagoVenta.getIdMedioPago() != null) {
+            medioDesc = pagoVenta.getIdMedioPago().getDescripcion() != null
+                    ? pagoVenta.getIdMedioPago().getDescripcion() : pagoVenta.getIdMedioPago().getTipo();
         }
         audit.setMedioPago(medioDesc);
         auditoriaAnulacionPagoRepository.save(audit);
 
-        if (pago.getIdTipoPago().getTipo().equalsIgnoreCase("PRESUPUESTO")) {
-            List<Descuento> discounts = descuentoRepository.findByIdPresupuesto(pago.getIdPresupuesto());
-            List<Descuento> cashDiscounts = discounts.stream().filter(d -> d.getIdTipoDescuento() == 1).collect(Collectors.toList());
-            if (!cashDiscounts.isEmpty()) {
-                descuentoRepository.deleteAll(cashDiscounts);
-            }
-        }
-        updatePresupuestoCobradoStatus(pago.getIdPresupuesto());
-
-        PagoDTO result = toDTO(saved);
+        PagoDTO result = toDTO(savedVenta);
         auditLogService.log("ANULAR", "PAGOS", id.toString(),
-                "Pago #" + id + " del Presupuesto #" + pago.getIdPresupuesto() + " anulado. Motivo: " + motivo, result);
+                "Pago #" + id + " de la Venta #" + (pagoVenta.getIdVenta() != null ? pagoVenta.getIdVenta().getId() : "-")
+                        + " anulado. Motivo: " + motivo, result);
         return result;
     }
 
@@ -534,7 +582,7 @@ public class PagosService {
         dto.setFechaAnulado(p.getFechaAnulado());
         dto.setUsuarioCreador(p.getUsuarioCreador());
         dto.setUsuarioAnulador(p.getUsuarioAnulador());
-        dto.setAnulable(isPagoAnulable(p));
+        dto.setAnulable(isPagoAnulable(p.getFechaHora(), p.getAnulado(), p.getEnabled()));
         dto.setTipoPago(buildTipoPagoDTO(p.getIdTipoPago()));
         dto.setMedioPago(buildMedioPagoDTO(p.getIdMedioPago()));
         if (p.getIdTarjeta() != null) {
@@ -557,20 +605,19 @@ public class PagosService {
         return dto;
     }
 
-    private boolean isPagoAnulable(PagoPresupuesto p) {
-        if (Boolean.TRUE.equals(p.getAnulado()) || !Boolean.TRUE.equals(p.getEnabled())) {
+    private boolean isPagoAnulable(Instant fechaHora, Boolean anulado, Boolean enabled) {
+        if (Boolean.TRUE.equals(anulado) || !Boolean.TRUE.equals(enabled)) {
             return false;
         }
         Cierre ultimoCierreCerrado = cierreRepository.findFirstByCerradoTrueOrderByFechaCierreDesc().orElse(null);
         if (ultimoCierreCerrado == null) {
             return true;
         }
-        return p.getFechaHora().isAfter(ultimoCierreCerrado.getFechaCierre());
+        return fechaHora.isAfter(ultimoCierreCerrado.getFechaCierre());
     }
 
     private PagoDTO toDTO(PagoVenta p) {
         PagoDTO dto = new PagoDTO();
-        dto.setAnulado(false);
         dto.setId(p.getId());
         dto.setIdVenta(p.getIdVenta() != null ? p.getIdVenta().getId() : null);
         dto.setMonto(p.getMonto());
@@ -578,7 +625,14 @@ public class PagosService {
         dto.setCuotas(p.getCuotas());
         dto.setAutorizacion(p.getAutorizacion());
         dto.setNotas(p.getNotas());
-        dto.setEnabled(true);
+        dto.setEnabled(p.getEnabled() != null ? p.getEnabled() : true);
+        dto.setAnulado(Boolean.TRUE.equals(p.getAnulado()));
+        dto.setMotivoAnulado(p.getMotivoAnulado());
+        dto.setFechaAnulado(p.getFechaAnulado());
+        dto.setUsuarioCreador(p.getUsuarioCreador());
+        dto.setUsuarioAnulador(p.getUsuarioAnulador());
+        dto.setAnulable(isPagoAnulable(p.getFechaHora(), p.getAnulado(), p.getEnabled()));
+        dto.setClienteNombre("Venta Directa #" + (p.getIdVenta() != null ? p.getIdVenta().getId() : "-"));
         dto.setTipoPago(buildTipoPagoDTO(p.getIdTipoPago()));
         dto.setMedioPago(buildMedioPagoDTO(p.getIdMedioPago()));
         if (p.getIdTarjeta() != null) {
