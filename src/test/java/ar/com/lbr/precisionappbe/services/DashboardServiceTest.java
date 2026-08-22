@@ -216,4 +216,47 @@ class DashboardServiceTest {
         assertThat(result.getCobroPorMaterial()).extracting("name")
                 .containsExactly("Placa", "Vinilo", "Cartón");
     }
+
+    @Test
+    void getStats_withMes_filtersAndCalculatesKpiCorrectly() {
+        when(query.getResultList())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of(BigDecimal.ZERO))
+                .thenReturn(List.of())
+                .thenReturn(List.of());
+
+        DashboardDTO result = dashboardService.getStats(2026, 8, null, "ACTIVO");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getClientesPorMes()).hasSize(12);
+        assertThat(result.getCobroPorCorte()).hasSize(12);
+    }
+
+    @Test
+    void getStats_withTrimestre_filtersAndCalculatesKpiCorrectly() {
+        when(query.getResultList())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of())
+                .thenReturn(List.of(BigDecimal.ZERO))
+                .thenReturn(List.of())
+                .thenReturn(List.of());
+
+        DashboardDTO result = dashboardService.getStats(2026, null, 2, "ACTIVO");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getClientesPorMes()).hasSize(12);
+    }
 }

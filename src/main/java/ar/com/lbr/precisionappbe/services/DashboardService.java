@@ -3,6 +3,7 @@ package ar.com.lbr.precisionappbe.services;
 import ar.com.lbr.precisionappbe.dto.DashboardDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,45 +27,68 @@ public class DashboardService {
     };
 
     public DashboardDTO getStats(int year, String origen) {
+        return getStats(year, null, null, origen);
+    }
+
+    public DashboardDTO getStats(int year, Integer mes, Integer trimestre, String origen) {
+        Integer startMonth = null;
+        Integer endMonth = null;
+        if (mes != null && mes >= 1 && mes <= 12) {
+            startMonth = mes;
+            endMonth = mes;
+        } else if (trimestre != null && trimestre >= 1 && trimestre <= 4) {
+            startMonth = (trimestre - 1) * 3 + 1;
+            endMonth = trimestre * 3;
+        }
+
         DashboardDTO dto = new DashboardDTO();
 
         // 1. New clients per month
-        List<DashboardDTO.MonthlyClientes> clientesPorMes = getClientesPorMes(year, origen);
+        List<DashboardDTO.MonthlyClientes> clientesPorMes = getClientesPorMes(year, startMonth, endMonth, origen);
         dto.setClientesPorMes(clientesPorMes);
 
         // 2. Machine minutes per machine per month
-        List<Map<String, Object>> minutosPorMaquina = getMinutosPorMaquina(year, origen);
+        List<Map<String, Object>> minutosPorMaquina = getMinutosPorMaquina(year, startMonth, endMonth, origen);
         dto.setMinutosPorMaquina(minutosPorMaquina);
 
         // 3. Material revenue (Ventas directas)
-        List<DashboardDTO.MaterialRevenue> cobroPorMaterial = getCobroPorMaterialVentas(year, origen);
+        List<DashboardDTO.MaterialRevenue> cobroPorMaterial = getCobroPorMaterialVentas(year, startMonth, endMonth, origen);
         dto.setCobroPorMaterial(cobroPorMaterial);
 
         // 3b. Materiales en Trabajos
-        List<DashboardDTO.MaterialRevenue> cobroPorMaterialTrabajos = getCobroPorMaterialTrabajos(year, origen);
+        List<DashboardDTO.MaterialRevenue> cobroPorMaterialTrabajos = getCobroPorMaterialTrabajos(year, startMonth, endMonth, origen);
         dto.setCobroPorMaterialTrabajos(cobroPorMaterialTrabajos);
 
         // 4. Cutting revenue per month
-        List<DashboardDTO.MonthlyCorte> cobroPorCorte = getCobroPorCorte(year, origen);
+        List<DashboardDTO.MonthlyCorte> cobroPorCorte = getCobroPorCorte(year, startMonth, endMonth, origen);
         dto.setCobroPorCorte(cobroPorCorte);
 
-        // 5. Additional services revenue per month (Vectorizado, Extra, Vinilo)
-        List<DashboardDTO.MonthlyServicios> cobroPorServicios = getCobroPorServicios(year, origen);
+        // 5. Additional services revenue per month (Vectorizado, Extra, Vinilo, Posicionador)
+        List<DashboardDTO.MonthlyServicios> cobroPorServicios = getCobroPorServicios(year, startMonth, endMonth, origen);
         dto.setCobroPorServicios(cobroPorServicios);
 
         // KPI metrics calculations
-        dto.setTotalClientesNuevos(clientesPorMes.stream().mapToLong(DashboardDTO.MonthlyClientes::getClientes).sum());
-        dto.setTotalMinutosCorte(minutosPorMaquina.stream().mapToLong(map -> {
-            long sum = 0;
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
-                if (!entry.getKey().equals("name") && entry.getValue() instanceof Number) {
-                    sum += ((Number) entry.getValue()).longValue();
-                }
-            }
-            return sum;
-        }).sum());
+        final Integer sm = startMonth;
+        final Integer em = endMonth;
+
+        dto.setTotalClientesNuevos(clientesPorMes.stream()
+                .filter(m -> isMonthInRange(getMonthIndex(m.getName()), sm, em))
+                .mapToLong(DashboardDTO.MonthlyClientes::getClientes).sum());
+
+        dto.setTotalMinutosCorte(minutosPorMaquina.stream()
+                .filter(m -> isMonthInRange(getMonthIndex((String) m.get("name")), sm, em))
+                .mapToLong(map -> {
+                    long sum = 0;
+                    for (Map.Entry<String, Object> entry : map.entrySet()) {
+                        if (!entry.getKey().equals("name") && entry.getValue() instanceof Number) {
+                            sum += ((Number) entry.getValue()).longValue();
+                        }
+                    }
+                    return sum;
+                }).sum());
 
         BigDecimal totalCorte = cobroPorCorte.stream()
+                .filter(m -> isMonthInRange(getMonthIndex(m.getName()), sm, em))
                 .map(DashboardDTO.MonthlyCorte::getCorte)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dto.setTotalCobradoCorte(totalCorte);
@@ -80,21 +104,22 @@ public class DashboardService {
         dto.setTotalMaterialTrabajos(totalMaterialTrabajos);
 
         BigDecimal totalServicios = cobroPorServicios.stream()
+                .filter(s -> isMonthInRange(getMonthIndex(s.getName()), sm, em))
                 .map(s -> s.getVectorizado().add(s.getDiseno()).add(s.getVinilo()).add(s.getPosicionador()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dto.setTotalCobradoServicios(totalServicios);
 
         // Paid amounts calculations
-        Map<String, BigDecimal> budgetPayments = getBudgetPaymentDistribution(year, origen);
+        Map<String, BigDecimal> budgetPayments = getBudgetPaymentDistribution(year, startMonth, endMonth, origen);
         BigDecimal pagadoCorte = budgetPayments.get("pagadoCorte");
         BigDecimal pagadoMaterialTrabajos = budgetPayments.get("pagadoMaterialTrabajos");
         BigDecimal pagadoServicios = budgetPayments.get("pagadoServicios");
-        BigDecimal pagadoVentaMateriales = getPagadoVentasMateriales(year, origen);
+        BigDecimal pagadoVentaMateriales = getPagadoVentasMateriales(year, startMonth, endMonth, origen);
 
         if ("HISTORICO".equalsIgnoreCase(origen) || "TODOS".equalsIgnoreCase(origen)) {
-            BigDecimal histCorte = getHistoricalCorteTotal(year);
-            BigDecimal histMaterialTrabajos = getHistoricalMaterialTrabajosTotal(year);
-            BigDecimal histServicios = getHistoricalServiciosTotal(year);
+            BigDecimal histCorte = getHistoricalCorteTotal(year, startMonth, endMonth);
+            BigDecimal histMaterialTrabajos = getHistoricalMaterialTrabajosTotal(year, startMonth, endMonth);
+            BigDecimal histServicios = getHistoricalServiciosTotal(year, startMonth, endMonth);
 
             if ("HISTORICO".equalsIgnoreCase(origen)) {
                 pagadoCorte = histCorte;
@@ -113,15 +138,16 @@ public class DashboardService {
         dto.setTotalPagadoServicios(pagadoServicios);
 
         // 6. Material purchases monthly
-        List<DashboardDTO.MonthlyCompras> comprasMaterialesPorMes = getComprasMaterialesPorMes(year, origen);
+        List<DashboardDTO.MonthlyCompras> comprasMaterialesPorMes = getComprasMaterialesPorMes(year, startMonth, endMonth, origen);
         dto.setComprasMaterialesPorMes(comprasMaterialesPorMes);
 
         // 7. Material purchases by type
-        List<DashboardDTO.MaterialRevenue> comprasPorMaterial = getComprasPorMaterial(year, origen);
+        List<DashboardDTO.MaterialRevenue> comprasPorMaterial = getComprasPorMaterial(year, startMonth, endMonth, origen);
         dto.setComprasPorMaterial(comprasPorMaterial);
 
         // KPI
         BigDecimal totalCompras = comprasMaterialesPorMes.stream()
+                .filter(m -> isMonthInRange(getMonthIndex(m.getName()), sm, em))
                 .map(DashboardDTO.MonthlyCompras::getCompras)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dto.setTotalComprasMateriales(totalCompras);
@@ -129,7 +155,37 @@ public class DashboardService {
         return dto;
     }
 
-    private List<DashboardDTO.MonthlyClientes> getClientesPorMes(int year, String origen) {
+    private int getMonthIndex(String name) {
+        for (int i = 0; i < MONTH_NAMES.length; i++) {
+            if (MONTH_NAMES[i].equalsIgnoreCase(name)) {
+                return i + 1;
+            }
+        }
+        return 0;
+    }
+
+    private boolean isMonthInRange(int month, Integer startMonth, Integer endMonth) {
+        if (startMonth == null || endMonth == null) {
+            return true;
+        }
+        return month >= startMonth && month <= endMonth;
+    }
+
+    private String buildMonthFilter(String dateExpr, Integer startMonth, Integer endMonth) {
+        if (startMonth == null || endMonth == null) {
+            return "";
+        }
+        return " AND MONTH(" + dateExpr + ") BETWEEN :startMonth AND :endMonth ";
+    }
+
+    private void applyMonthParams(Query query, Integer startMonth, Integer endMonth) {
+        if (startMonth != null && endMonth != null) {
+            query.setParameter("startMonth", startMonth);
+            query.setParameter("endMonth", endMonth);
+        }
+    }
+
+    private List<DashboardDTO.MonthlyClientes> getClientesPorMes(int year, Integer startMonth, Integer endMonth, String origen) {
         String sql = "SELECT MONTH(fecha_creacion) as mes, COUNT(id_cliente) as cant " +
                 "FROM clientes " +
                 "WHERE YEAR(fecha_creacion) = :year AND disabled = 0 ";
@@ -140,11 +196,12 @@ public class DashboardService {
             sql += "AND id_cliente <= 20895 ";
         }
 
+        sql += buildMonthFilter("fecha_creacion", startMonth, endMonth);
         sql += "GROUP BY MONTH(fecha_creacion)";
 
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
 
         long[] monthlyCounts = new long[12];
         for (Object res : results) {
@@ -163,8 +220,7 @@ public class DashboardService {
         return list;
     }
 
-    private List<Map<String, Object>> getMinutosPorMaquina(int year, String origen) {
-        // Fetch all active/enabled machines to pre-populate the keys
+    private List<Map<String, Object>> getMinutosPorMaquina(int year, Integer startMonth, Integer endMonth, String origen) {
         String sqlMaquinas = "SELECT id_maquina, nombre_maquina FROM maquinas";
         List<?> machinesResult = entityManager.createNativeQuery(sqlMaquinas).getResultList();
         Map<Integer, String> machineNames = new HashMap<>();
@@ -173,18 +229,19 @@ public class DashboardService {
             machineNames.put(((Number) row[0]).intValue(), (String) row[1]);
         }
 
-        // Fetch machine minutes from jobs (active + historical)
         String sqlMinutes;
         if ("ACTIVO".equalsIgnoreCase(origen)) {
             sqlMinutes = "SELECT t.id_maquina, MONTH(p.fecha_hora_presupuesto) as mes, SUM(t.tiempo_de_corte) as total_min " +
                     "FROM trabajo_presupuestado t " +
                     "JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "WHERE YEAR(p.fecha_hora_presupuesto) = :year AND p.aprobado = 1 AND t.seleccionado = 1 AND t.id_maquina IS NOT NULL " +
+                    buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                     "GROUP BY t.id_maquina, MONTH(p.fecha_hora_presupuesto)";
         } else if ("HISTORICO".equalsIgnoreCase(origen)) {
             sqlMinutes = "SELECT h.id_maquina, MONTH(h.fecha) as mes, SUM(h.tiempo_de_corte) as total_min " +
                     "FROM historico_trabajos h " +
                     "WHERE YEAR(h.fecha) = :year AND h.id_maquina IS NOT NULL " +
+                    buildMonthFilter("h.fecha", startMonth, endMonth) +
                     "GROUP BY h.id_maquina, MONTH(h.fecha)";
         } else { // TODOS
             sqlMinutes = "SELECT id_maquina, mes, SUM(tiempo_de_corte) as total_min FROM (" +
@@ -193,32 +250,31 @@ public class DashboardService {
                     "  FROM trabajo_presupuestado t " +
                     "  JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "  WHERE p.aprobado = 1 AND t.seleccionado = 1 AND t.id_maquina IS NOT NULL " +
+                    buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                     "  UNION ALL " +
                     "  SELECT h.id_maquina, MONTH(h.fecha) as mes, h.tiempo_de_corte, YEAR(h.fecha) as anio " +
                     "  FROM historico_trabajos h " +
                     "  WHERE h.id_maquina IS NOT NULL " +
+                    buildMonthFilter("h.fecha", startMonth, endMonth) +
                     ") unified " +
                     "WHERE anio = :year " +
                     "GROUP BY id_maquina, mes";
         }
 
-        List<?> results = entityManager.createNativeQuery(sqlMinutes)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sqlMinutes).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
 
-        // Initialize 12 months maps
         List<Map<String, Object>> list = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
             Map<String, Object> monthMap = new LinkedHashMap<>();
             monthMap.put("name", MONTH_NAMES[i]);
-            // Pre-fill each machine with 0 minutes
             for (String mName : machineNames.values()) {
                 monthMap.put(mName, 0L);
             }
             list.add(monthMap);
         }
 
-        // Fill minutes from results
         for (Object res : results) {
             Object[] row = (Object[]) res;
             int machineId = ((Number) row[0]).intValue();
@@ -237,7 +293,7 @@ public class DashboardService {
         return list;
     }
 
-    private List<DashboardDTO.MaterialRevenue> getCobroPorMaterialVentas(int year, String origen) {
+    private List<DashboardDTO.MaterialRevenue> getCobroPorMaterialVentas(int year, Integer startMonth, Integer endMonth, String origen) {
         if ("HISTORICO".equalsIgnoreCase(origen)) {
             return new ArrayList<>();
         }
@@ -246,11 +302,12 @@ public class DashboardService {
                 "FROM ventas v " +
                 "JOIN materiales m ON v.id_materiales = m.id_materiales " +
                 "WHERE YEAR(v.fecha_hora_venta) = :year " +
+                buildMonthFilter("v.fecha_hora_venta", startMonth, endMonth) +
                 "GROUP BY m.materiales";
 
-        List<?> salesResults = entityManager.createNativeQuery(sqlSales)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sqlSales).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> salesResults = q.getResultList();
 
         List<DashboardDTO.MaterialRevenue> list = new ArrayList<>();
         for (Object res : salesResults) {
@@ -260,13 +317,11 @@ public class DashboardService {
             list.add(new DashboardDTO.MaterialRevenue(material, total));
         }
 
-        // Sort by revenue descending
         list.sort((a, b) -> b.getValue().compareTo(a.getValue()));
-
         return list;
     }
 
-    private List<DashboardDTO.MaterialRevenue> getCobroPorMaterialTrabajos(int year, String origen) {
+    private List<DashboardDTO.MaterialRevenue> getCobroPorMaterialTrabajos(int year, Integer startMonth, Integer endMonth, String origen) {
         String sqlJobs;
         if ("ACTIVO".equalsIgnoreCase(origen)) {
             sqlJobs = "SELECT m.materiales, SUM(t.precio_material) as total " +
@@ -274,11 +329,13 @@ public class DashboardService {
                     "JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "JOIN materiales m ON t.id_materiales = m.id_materiales " +
                     "WHERE YEAR(p.fecha_hora_presupuesto) = :year AND p.aprobado = 1 AND t.seleccionado = 1 " +
+                    buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                     "GROUP BY m.materiales";
         } else if ("HISTORICO".equalsIgnoreCase(origen)) {
             sqlJobs = "SELECT h.material, SUM(h.precio_material) as total " +
                     "FROM historico_trabajos h " +
                     "WHERE YEAR(h.fecha) = :year " +
+                    buildMonthFilter("h.fecha", startMonth, endMonth) +
                     "GROUP BY h.material";
         } else { // TODOS
             sqlJobs = "SELECT material, SUM(precio_material) as total FROM (" +
@@ -287,17 +344,19 @@ public class DashboardService {
                     "  JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "  JOIN materiales m ON t.id_materiales = m.id_materiales " +
                     "  WHERE p.aprobado = 1 AND t.seleccionado = 1 " +
+                    buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                     "  UNION ALL " +
                     "  SELECT h.material, h.precio_material, YEAR(h.fecha) as anio " +
                     "  FROM historico_trabajos h " +
+                    buildMonthFilter("h.fecha", startMonth, endMonth) +
                     ") unified " +
                     "WHERE anio = :year " +
                     "GROUP BY material";
         }
 
-        List<?> jobsResults = entityManager.createNativeQuery(sqlJobs)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sqlJobs).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> jobsResults = q.getResultList();
 
         List<DashboardDTO.MaterialRevenue> list = new ArrayList<>();
         for (Object res : jobsResults) {
@@ -307,24 +366,24 @@ public class DashboardService {
             list.add(new DashboardDTO.MaterialRevenue(material, total));
         }
 
-        // Sort by revenue descending
         list.sort((a, b) -> b.getValue().compareTo(a.getValue()));
-
         return list;
     }
 
-    private List<DashboardDTO.MonthlyCorte> getCobroPorCorte(int year, String origen) {
+    private List<DashboardDTO.MonthlyCorte> getCobroPorCorte(int year, Integer startMonth, Integer endMonth, String origen) {
         String sql;
         if ("ACTIVO".equalsIgnoreCase(origen)) {
             sql = "SELECT MONTH(p.fecha_hora_presupuesto) as mes, SUM(COALESCE(t.precio_corte, 0.00)) as total_corte " +
                     "FROM trabajo_presupuestado t " +
                     "JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "WHERE YEAR(p.fecha_hora_presupuesto) = :year AND p.aprobado = 1 AND t.seleccionado = 1 " +
+                    buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                     "GROUP BY MONTH(p.fecha_hora_presupuesto)";
         } else if ("HISTORICO".equalsIgnoreCase(origen)) {
             sql = "SELECT MONTH(h.fecha) as mes, SUM(COALESCE(h.precio_corte, 0.00)) as total_corte " +
                     "FROM historico_trabajos h " +
                     "WHERE YEAR(h.fecha) = :year " +
+                    buildMonthFilter("h.fecha", startMonth, endMonth) +
                     "GROUP BY MONTH(h.fecha)";
         } else { // TODOS
             sql = "SELECT mes, SUM(precio_corte) as total_corte FROM (" +
@@ -333,17 +392,19 @@ public class DashboardService {
                     "  FROM trabajo_presupuestado t " +
                     "  JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "  WHERE p.aprobado = 1 AND t.seleccionado = 1 " +
+                    buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                     "  UNION ALL " +
                     "  SELECT MONTH(h.fecha) as mes, COALESCE(h.precio_corte, 0.00) as precio_corte, YEAR(h.fecha) as anio " +
                     "  FROM historico_trabajos h " +
+                    buildMonthFilter("h.fecha", startMonth, endMonth) +
                     ") unified " +
                     "WHERE anio = :year " +
                     "GROUP BY mes";
         }
 
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
 
         BigDecimal[] monthlyAmounts = new BigDecimal[12];
         Arrays.fill(monthlyAmounts, BigDecimal.ZERO);
@@ -364,7 +425,7 @@ public class DashboardService {
         return list;
     }
 
-    private List<DashboardDTO.MonthlyServicios> getCobroPorServicios(int year, String origen) {
+    private List<DashboardDTO.MonthlyServicios> getCobroPorServicios(int year, Integer startMonth, Integer endMonth, String origen) {
         String sql;
         if ("ACTIVO".equalsIgnoreCase(origen)) {
             sql = "SELECT MONTH(p.fecha_hora_presupuesto) as mes, " +
@@ -375,6 +436,7 @@ public class DashboardService {
                     "FROM trabajo_presupuestado t " +
                     "JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "WHERE YEAR(p.fecha_hora_presupuesto) = :year AND p.aprobado = 1 AND t.seleccionado = 1 " +
+                    buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                     "GROUP BY MONTH(p.fecha_hora_presupuesto)";
         } else if ("HISTORICO".equalsIgnoreCase(origen)) {
             sql = "SELECT MONTH(h.fecha) as mes, " +
@@ -384,6 +446,7 @@ public class DashboardService {
                     "0.00 as total_posicionador " +
                     "FROM historico_trabajos h " +
                     "WHERE YEAR(h.fecha) = :year " +
+                    buildMonthFilter("h.fecha", startMonth, endMonth) +
                     "GROUP BY MONTH(h.fecha)";
         } else { // TODOS
             sql = "SELECT mes, SUM(vectorizado) as total_vectorizado, SUM(diseno) as total_diseno, " +
@@ -397,6 +460,7 @@ public class DashboardService {
                     "  FROM trabajo_presupuestado t " +
                     "  JOIN presupuesto p ON t.id_presupuesto = p.id_presupuesto " +
                     "  WHERE p.aprobado = 1 AND t.seleccionado = 1 " +
+                    buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                     "  UNION ALL " +
                     "  SELECT MONTH(h.fecha) as mes, " +
                     "         COALESCE(h.vectorizado, 0.00) as vectorizado, " +
@@ -405,14 +469,15 @@ public class DashboardService {
                     "         0.00 as posicionador, " +
                     "         YEAR(h.fecha) as anio " +
                     "  FROM historico_trabajos h " +
+                    buildMonthFilter("h.fecha", startMonth, endMonth) +
                     ") unified " +
                     "WHERE anio = :year " +
                     "GROUP BY mes";
         }
 
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
 
         BigDecimal[] vecAmounts = new BigDecimal[12];
         BigDecimal[] disAmounts = new BigDecimal[12];
@@ -447,7 +512,7 @@ public class DashboardService {
         return list;
     }
 
-    private List<DashboardDTO.MonthlyCompras> getComprasMaterialesPorMes(int year, String origen) {
+    private List<DashboardDTO.MonthlyCompras> getComprasMaterialesPorMes(int year, Integer startMonth, Integer endMonth, String origen) {
         if ("HISTORICO".equalsIgnoreCase(origen)) {
             List<DashboardDTO.MonthlyCompras> list = new ArrayList<>();
             for (int i = 0; i < 12; i++) {
@@ -459,11 +524,12 @@ public class DashboardService {
         String sql = "SELECT MONTH(fecha_hora_compra) as mes, SUM(COALESCE(monto_total, 0.00)) as total " +
                 "FROM compra_materiales " +
                 "WHERE YEAR(fecha_hora_compra) = :year " +
+                buildMonthFilter("fecha_hora_compra", startMonth, endMonth) +
                 "GROUP BY MONTH(fecha_hora_compra)";
 
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
 
         BigDecimal[] monthlyAmounts = new BigDecimal[12];
         Arrays.fill(monthlyAmounts, BigDecimal.ZERO);
@@ -484,7 +550,7 @@ public class DashboardService {
         return list;
     }
 
-    private List<DashboardDTO.MaterialRevenue> getComprasPorMaterial(int year, String origen) {
+    private List<DashboardDTO.MaterialRevenue> getComprasPorMaterial(int year, Integer startMonth, Integer endMonth, String origen) {
         if ("HISTORICO".equalsIgnoreCase(origen)) {
             return new ArrayList<>();
         }
@@ -492,11 +558,12 @@ public class DashboardService {
         String sql = "SELECT material, SUM(COALESCE(monto_total, 0.00)) as total " +
                 "FROM compra_materiales " +
                 "WHERE YEAR(fecha_hora_compra) = :year " +
+                buildMonthFilter("fecha_hora_compra", startMonth, endMonth) +
                 "GROUP BY material";
 
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
 
         List<DashboardDTO.MaterialRevenue> list = new ArrayList<>();
         for (Object res : results) {
@@ -506,13 +573,11 @@ public class DashboardService {
             list.add(new DashboardDTO.MaterialRevenue(material, total));
         }
 
-        // Sort descending
         list.sort((a, b) -> b.getValue().compareTo(a.getValue()));
-
         return list;
     }
 
-    private Map<String, BigDecimal> getBudgetPaymentDistribution(int year, String origen) {
+    private Map<String, BigDecimal> getBudgetPaymentDistribution(int year, Integer startMonth, Integer endMonth, String origen) {
         Map<String, BigDecimal> distribution = new HashMap<>();
         distribution.put("pagadoCorte", BigDecimal.ZERO);
         distribution.put("pagadoMaterialTrabajos", BigDecimal.ZERO);
@@ -534,11 +599,12 @@ public class DashboardService {
                 "FROM presupuesto p " +
                 "JOIN trabajo_presupuestado t ON t.id_presupuesto = p.id_presupuesto " +
                 "WHERE YEAR(p.fecha_hora_presupuesto) = :year AND p.aprobado = 1 AND t.seleccionado = 1 " +
+                buildMonthFilter("p.fecha_hora_presupuesto", startMonth, endMonth) +
                 "GROUP BY p.id_presupuesto";
 
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
 
         BigDecimal pagadoCorte = BigDecimal.ZERO;
         BigDecimal pagadoMaterialTrabajos = BigDecimal.ZERO;
@@ -569,7 +635,7 @@ public class DashboardService {
         return distribution;
     }
 
-    private BigDecimal getPagadoVentasMateriales(int year, String origen) {
+    private BigDecimal getPagadoVentasMateriales(int year, Integer startMonth, Integer endMonth, String origen) {
         if ("HISTORICO".equalsIgnoreCase(origen)) {
             return BigDecimal.ZERO;
         }
@@ -577,11 +643,12 @@ public class DashboardService {
         String sql = "SELECT SUM(COALESCE(pv.monto, 0.00)) " +
                 "FROM pago_venta pv " +
                 "JOIN ventas v ON pv.id_venta = v.id_ventas " +
-                "WHERE YEAR(v.fecha_hora_venta) = :year";
+                "WHERE YEAR(v.fecha_hora_venta) = :year AND (pv.enabled IS NULL OR pv.enabled = 1) " +
+                buildMonthFilter("v.fecha_hora_venta", startMonth, endMonth);
 
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
 
         if (results != null && !results.isEmpty() && results.get(0) != null) {
             return new BigDecimal(results.get(0).toString());
@@ -589,34 +656,39 @@ public class DashboardService {
         return BigDecimal.ZERO;
     }
 
-    private BigDecimal getHistoricalCorteTotal(int year) {
-        String sql = "SELECT SUM(COALESCE(h.precio_corte, 0.00)) FROM historico_trabajos h WHERE YEAR(h.fecha) = :year";
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+    private BigDecimal getHistoricalCorteTotal(int year, Integer startMonth, Integer endMonth) {
+        String sql = "SELECT SUM(COALESCE(h.precio_corte, 0.00)) FROM historico_trabajos h " +
+                "WHERE YEAR(h.fecha) = :year " +
+                buildMonthFilter("h.fecha", startMonth, endMonth);
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
         if (results != null && !results.isEmpty() && results.get(0) != null) {
             return new BigDecimal(results.get(0).toString());
         }
         return BigDecimal.ZERO;
     }
 
-    private BigDecimal getHistoricalMaterialTrabajosTotal(int year) {
-        String sql = "SELECT SUM(COALESCE(h.precio_material, 0.00)) FROM historico_trabajos h WHERE YEAR(h.fecha) = :year";
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+    private BigDecimal getHistoricalMaterialTrabajosTotal(int year, Integer startMonth, Integer endMonth) {
+        String sql = "SELECT SUM(COALESCE(h.precio_material, 0.00)) FROM historico_trabajos h " +
+                "WHERE YEAR(h.fecha) = :year " +
+                buildMonthFilter("h.fecha", startMonth, endMonth);
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
         if (results != null && !results.isEmpty() && results.get(0) != null) {
             return new BigDecimal(results.get(0).toString());
         }
         return BigDecimal.ZERO;
     }
 
-    private BigDecimal getHistoricalServiciosTotal(int year) {
+    private BigDecimal getHistoricalServiciosTotal(int year, Integer startMonth, Integer endMonth) {
         String sql = "SELECT SUM(COALESCE(h.vectorizado, 0.00) + COALESCE(h.extra, 0.00) + COALESCE(h.vinilo, 0.00)) " +
-                "FROM historico_trabajos h WHERE YEAR(h.fecha) = :year";
-        List<?> results = entityManager.createNativeQuery(sql)
-                .setParameter("year", year)
-                .getResultList();
+                "FROM historico_trabajos h WHERE YEAR(h.fecha) = :year " +
+                buildMonthFilter("h.fecha", startMonth, endMonth);
+        Query q = entityManager.createNativeQuery(sql).setParameter("year", year);
+        applyMonthParams(q, startMonth, endMonth);
+        List<?> results = q.getResultList();
         if (results != null && !results.isEmpty() && results.get(0) != null) {
             return new BigDecimal(results.get(0).toString());
         }

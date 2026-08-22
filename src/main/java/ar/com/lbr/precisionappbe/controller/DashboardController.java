@@ -27,11 +27,13 @@ public class DashboardController {
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<DashboardDTO>> getStats(
             @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "mes", required = false) Integer mes,
+            @RequestParam(value = "trimestre", required = false) Integer trimestre,
             @RequestParam(value = "origen", required = false, defaultValue = "ACTIVO") String origen) {
         if (year == null) {
             year = LocalDate.now().getYear();
         }
-        DashboardDTO stats = dashboardService.getStats(year, origen);
+        DashboardDTO stats = dashboardService.getStats(year, mes, trimestre, origen);
         return ResponseBuilder.ok("Estadísticas obtenidas con éxito", stats, 0L);
     }
 }
