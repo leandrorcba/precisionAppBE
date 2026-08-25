@@ -7,6 +7,7 @@ import ar.com.lbr.precisionappbe.services.CostosFijosService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/costos-fijos")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 public class CostosFijosController {
 
     private final CostosFijosService costosFijosService;

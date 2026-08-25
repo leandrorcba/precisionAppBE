@@ -6,6 +6,7 @@ import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +31,7 @@ public class VariosController {
     }
 
     @PutMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<ApiResponse<VariosDTO>> updateVarios(@RequestBody VariosDTO varios) {
         VariosDTO updatedVarios = variosService.updateVarios(varios);
         return ResponseBuilder.ok("Configuración actualizada con éxito", updatedVarios, 0L);

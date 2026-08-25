@@ -5,6 +5,7 @@ import ar.com.lbr.precisionappbe.services.PagosService;
 import ar.com.lbr.precisionappbe.util.ApiResponse;
 import ar.com.lbr.precisionappbe.util.ResponseBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -84,6 +85,7 @@ public class PagosController {
     }
 
     @GetMapping("/auditoria-anulaciones")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<ar.com.lbr.precisionappbe.model.AuditoriaAnulacionPago>>> getAuditoriaAnulaciones() {
         List<ar.com.lbr.precisionappbe.model.AuditoriaAnulacionPago> list = pagosService.getAuditoriaAnulaciones();
         return ResponseBuilder.ok("Auditoría de anulaciones obtenida con éxito", list, (long) list.size());
