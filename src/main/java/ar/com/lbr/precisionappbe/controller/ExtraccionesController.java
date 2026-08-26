@@ -37,14 +37,14 @@ public class ExtraccionesController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ExtraccionDTO>> createExtraccion(@RequestBody ExtraccionDTO dto) {
+    public ResponseEntity<ApiResponse<ExtraccionDTO>> createExtraccion(@jakarta.validation.Valid @RequestBody ExtraccionDTO dto) {
         ExtraccionDTO created = extraccionService.createExtraccion(dto);
         return ResponseBuilder.ok("Extracción creada con éxito", created, 1L);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ExtraccionDTO>> updateExtraccion(@PathVariable Integer id,
-            @RequestBody ExtraccionDTO dto) {
+            @jakarta.validation.Valid @RequestBody ExtraccionDTO dto) {
         ExtraccionDTO updated = extraccionService.updateExtraccion(id, dto);
         return ResponseBuilder.ok("Extracción actualizada con éxito", updated, 1L);
     }

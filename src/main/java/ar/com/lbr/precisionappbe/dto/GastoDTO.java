@@ -16,7 +16,10 @@ import java.time.Instant;
 public class GastoDTO {
 
     private Integer id;
+    @jakarta.validation.constraints.NotNull(message = "El monto del gasto es requerido")
+    @jakarta.validation.constraints.Positive(message = "El monto del gasto debe ser mayor a 0")
     private BigDecimal montoGasto;
+    @jakarta.validation.constraints.NotBlank(message = "El motivo del gasto no puede estar vacío")
     private String motivoGasto;
     private Integer idUsuario;
     private String responsableGasto;

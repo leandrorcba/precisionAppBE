@@ -19,6 +19,7 @@ public class ClienteDTO {
     private Integer idCliente;
     private String dniCliente;
     private String emailCliente;
+    @jakarta.validation.constraints.NotBlank(message = "El nombre del cliente no puede estar vacío")
     private String nombreCliente;
     private String telefonoCliente;
     private Instant fechaCreacion;

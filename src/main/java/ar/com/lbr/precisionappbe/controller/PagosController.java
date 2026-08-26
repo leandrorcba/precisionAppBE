@@ -57,12 +57,12 @@ public class PagosController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<PagoDTO>> createPago(@RequestBody PagoDTO dto) {
+    public ResponseEntity<ApiResponse<PagoDTO>> createPago(@jakarta.validation.Valid @RequestBody PagoDTO dto) {
         return ResponseBuilder.ok("Pago creado con éxito", pagosService.createPago(dto), 1L);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<PagoDTO>> updatePago(@PathVariable Integer id, @RequestBody PagoDTO dto) {
+    public ResponseEntity<ApiResponse<PagoDTO>> updatePago(@PathVariable Integer id, @jakarta.validation.Valid @RequestBody PagoDTO dto) {
         return ResponseBuilder.ok("Pago actualizado con éxito", pagosService.updatePago(id, dto), 1L);
     }
 

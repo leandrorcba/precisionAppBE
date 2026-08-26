@@ -32,7 +32,7 @@ public class GastoController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<GastoDTO>> createGasto(@RequestBody GastoDTO dto) {
+    public ResponseEntity<ApiResponse<GastoDTO>> createGasto(@jakarta.validation.Valid @RequestBody GastoDTO dto) {
         GastoDTO created = gastoService.createGasto(dto);
         return ResponseBuilder.ok("Gasto creado con éxito", created, 1L);
     }

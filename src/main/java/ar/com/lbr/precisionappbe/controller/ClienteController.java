@@ -76,13 +76,13 @@ public class ClienteController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ClienteDTO>> createCliente(@RequestBody ClienteDTO cliente) {
+    public ResponseEntity<ApiResponse<ClienteDTO>> createCliente(@jakarta.validation.Valid @RequestBody ClienteDTO cliente) {
         ClienteDTO clienteDto = clienteService.createCliente(cliente);
         return ResponseBuilder.ok("Cliente creado con éxito", clienteDto, 0L);
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<ClienteDTO>> updateCliente(@RequestBody ClienteDTO cliente) {
+    public ResponseEntity<ApiResponse<ClienteDTO>> updateCliente(@jakarta.validation.Valid @RequestBody ClienteDTO cliente) {
         ClienteDTO clienteDto = clienteService.updateCliente(cliente);
         return ResponseBuilder.ok("Cliente actualizado con éxito", clienteDto, 0L);
     }

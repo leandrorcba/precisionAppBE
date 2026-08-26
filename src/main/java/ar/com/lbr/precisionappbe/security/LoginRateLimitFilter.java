@@ -40,6 +40,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
         String ip = resolveClientIp(request);
         long now = Instant.now().getEpochSecond();
+        cleanupExpiredEntries(now);
 
         AttemptWindow window = attempts.compute(ip, (key, existing) -> {
             if (existing == null || now - existing.windowStart >= WINDOW_SECONDS) {
@@ -61,6 +62,12 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void cleanupExpiredEntries(long now) {
+        if (attempts.size() > 50) {
+            attempts.entrySet().removeIf(entry -> now - entry.getValue().windowStart >= WINDOW_SECONDS);
+        }
     }
 
     private String resolveClientIp(HttpServletRequest request) {

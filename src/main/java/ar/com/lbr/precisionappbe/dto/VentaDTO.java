@@ -19,9 +19,16 @@ public class VentaDTO {
     private Integer id;
     private LocalDate fechaVenta;
     private LocalTime horaVenta;
+    @jakarta.validation.constraints.NotNull(message = "El material es requerido")
     private Integer idMateriales;
+    @jakarta.validation.constraints.NotNull(message = "El precio del material es requerido")
+    @jakarta.validation.constraints.PositiveOrZero(message = "El precio del material debe ser mayor o igual a 0")
     private BigDecimal precioMaterial;
+    @jakarta.validation.constraints.NotNull(message = "La cantidad es requerida")
+    @jakarta.validation.constraints.Positive(message = "La cantidad debe ser mayor a 0")
     private Integer cantidad;
+    @jakarta.validation.constraints.NotNull(message = "El precio de venta es requerido")
+    @jakarta.validation.constraints.PositiveOrZero(message = "El precio de venta debe ser mayor o igual a 0")
     private BigDecimal precioVenta;
     private String material;
     private String superficie;

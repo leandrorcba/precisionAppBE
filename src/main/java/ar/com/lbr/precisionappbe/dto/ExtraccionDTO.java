@@ -17,7 +17,10 @@ public class ExtraccionDTO {
 
     private Integer id;
     private Integer idUsuario;
+    @jakarta.validation.constraints.NotNull(message = "El monto de la extracción es requerido")
+    @jakarta.validation.constraints.Positive(message = "El monto de la extracción debe ser mayor a 0")
     private BigDecimal montoExtraccion;
+    @jakarta.validation.constraints.NotBlank(message = "El motivo de la extracción no puede estar vacío")
     private String motivoExtraccion;
     private Instant fechaExtraccion;
 

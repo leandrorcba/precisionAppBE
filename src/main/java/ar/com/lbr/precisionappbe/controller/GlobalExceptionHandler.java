@@ -43,6 +43,18 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse<>(false, "Formato de fecha inválido: " + ex.getParsedString(), null, 0L));
     }
 
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidationExceptions(
+            org.springframework.web.bind.MethodArgumentNotValidException ex) {
+        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .reduce((first, second) -> first + "; " + second)
+                .orElse("Error de validación en los datos enviados");
+        log.warn("Validation error: {}", errorMessage);
+        return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(false, errorMessage, null, 0L));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntime(RuntimeException ex) {
         log.error("Unhandled runtime exception", ex);

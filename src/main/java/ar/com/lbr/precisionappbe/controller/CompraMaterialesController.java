@@ -40,7 +40,7 @@ public class CompraMaterialesController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<CompraMaterialesDTO>> createCompra(
-            @RequestBody CompraMaterialesDTO dto,
+            @jakarta.validation.Valid @RequestBody CompraMaterialesDTO dto,
             Principal principal) {
         try {
             CompraMaterialesDTO created = compraMaterialesService.createCompra(dto, principal.getName());

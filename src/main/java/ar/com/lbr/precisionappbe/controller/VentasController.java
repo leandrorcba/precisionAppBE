@@ -44,14 +44,14 @@ public class VentasController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<VentaDTO>> createVenta(@RequestBody VentaDTO dto) {
+    public ResponseEntity<ApiResponse<VentaDTO>> createVenta(@jakarta.validation.Valid @RequestBody VentaDTO dto) {
         VentaDTO created = ventaService.createVenta(dto);
         return ResponseBuilder.ok("Venta creada con éxito", created, 1L);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<VentaDTO>> updateVenta(@PathVariable Integer id,
-            @RequestBody VentaDTO dto) {
+            @jakarta.validation.Valid @RequestBody VentaDTO dto) {
         VentaDTO updated = ventaService.updateVenta(id, dto);
         return ResponseBuilder.ok("Venta actualizada con éxito", updated, 1L);
     }
