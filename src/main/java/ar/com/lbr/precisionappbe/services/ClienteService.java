@@ -26,7 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
+@Transactional(readOnly = true)
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
@@ -114,6 +117,7 @@ public class ClienteService {
         return new ClienteResponse(clienteDTOS, clientePage.getTotalElements());
     }
 
+    @Transactional
     public ClienteDTO createCliente(ClienteDTO dto) {
 
         TipoCliente tipoCliente = utilsService.getTipoClienteById(dto.getIdTipoCliente());
@@ -138,6 +142,7 @@ public class ClienteService {
         return dto;
     }
 
+    @Transactional
     public void rehabilitarCliente(Integer id) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
@@ -147,6 +152,7 @@ public class ClienteService {
                 "Cliente '" + cliente.getNombreCliente() + "' habilitado", cliente);
     }
 
+    @Transactional
     public void deleteCliente(Integer id) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente con ID " + id + " no encontrado"));
@@ -164,6 +170,7 @@ public class ClienteService {
         return dto;
     }
 
+    @Transactional
     public ClienteDTO updateCliente(ClienteDTO dto) {
 
         TipoCliente tipoCliente = utilsService.getTipoClienteById(dto.getIdTipoCliente());

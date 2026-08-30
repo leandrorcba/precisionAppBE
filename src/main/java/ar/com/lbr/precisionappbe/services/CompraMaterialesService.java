@@ -17,7 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
+@Transactional(readOnly = true)
 public class CompraMaterialesService {
 
     private static final ZoneId ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
@@ -78,6 +81,7 @@ public class CompraMaterialesService {
                 }).collect(Collectors.toList());
     }
 
+    @Transactional
     public CompraMaterialesDTO createCompra(CompraMaterialesDTO dto, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
@@ -115,6 +119,7 @@ public class CompraMaterialesService {
         return savedDto;
     }
 
+    @Transactional
     public void deleteCompra(Integer id) {
         CompraMateriale compra = compraMaterialeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Compra de material no encontrada con ID: " + id));

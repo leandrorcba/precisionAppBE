@@ -17,8 +17,10 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class MaterialesService {
 
     private final MaterialeRepository materialeRepository;
@@ -86,6 +88,7 @@ public class MaterialesService {
         return dtos;
     }
 
+    @Transactional
     public MaterialDTO createMaterial(MaterialDTO dto) {
         Material material = new Material();
         material.setMateriales(dto.getMateriales());
@@ -107,6 +110,7 @@ public class MaterialesService {
         return result;
     }
 
+    @Transactional
     public MaterialDTO updateMaterial(Integer id, MaterialDTO dto) {
         Material material = materialeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
@@ -130,6 +134,7 @@ public class MaterialesService {
         return result;
     }
 
+    @Transactional
     public void deleteMaterial(Integer id) {
         Material material = materialeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
@@ -140,6 +145,7 @@ public class MaterialesService {
                 "Material '" + material.getMateriales() + "' deshabilitado", material);
     }
 
+    @Transactional
     public MaterialDTO rehabilitarMaterial(Integer id) {
         Material material = materialeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
@@ -247,6 +253,7 @@ public class MaterialesService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public PrecioMaterialesDTO updatePrecioMaterial(Integer id, PrecioMaterialDTO dto) {
         PrecioMateriale precioMateriale = precioMaterialRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Precio de material no encontrado con id: " + id));

@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class VentaService {
 
     private static final ZoneId ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
@@ -97,6 +98,7 @@ public class VentaService {
         return dto;
     }
 
+    @Transactional
     public VentaDTO createVenta(VentaDTO dto) {
         Venta venta = new Venta();
         mapDtoToEntity(dto, venta);
@@ -114,6 +116,7 @@ public class VentaService {
         return savedDto;
     }
 
+    @Transactional
     public VentaDTO updateVenta(Integer id, VentaDTO dto) {
         Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Venta no encontrada"));

@@ -39,8 +39,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class PagosService {
 
     private static final Set<String> TIPOS_PRESUPUESTO = Set.of("SENIA", "PRESUPUESTO", "AJUSTE");
@@ -168,6 +170,7 @@ public class PagosService {
     // CREATE
     // ---------------------------------------------------------------
 
+    @Transactional
     public PagoDTO createPago(PagoDTO dto) {
         TipoPago tipoPago = resolveTipoPago(dto);
         if (TIPOS_PRESUPUESTO.contains(tipoPago.getTipo())) {
@@ -265,6 +268,7 @@ public class PagosService {
     // UPDATE
     // ---------------------------------------------------------------
 
+    @Transactional
     public PagoDTO updatePago(Integer id, PagoDTO dto) {
         TipoPago tipoPago = resolveTipoPago(dto);
         if (TIPOS_PRESUPUESTO.contains(tipoPago.getTipo())) {
@@ -319,6 +323,7 @@ public class PagosService {
     // DELETE
     // ---------------------------------------------------------------
 
+    @Transactional
     public void deletePago(Integer id) {
         java.util.Optional<PagoPresupuesto> maybePago = pagoPresupuestoRepository.findByIdAndEnabledTrue(id);
         if (maybePago.isPresent()) {

@@ -30,9 +30,11 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class CierreService {
 
     private final CierreRepository cierreRepository;
@@ -88,6 +90,7 @@ public class CierreService {
         return new CierreResponse(cierreDTOs, cierresPage.getTotalElements());
     }
 
+    @Transactional
     public CierreDTO createCierre(CierreDTO dto, String username) {
         // Validar si ya hay un cierre para el día de hoy
         LocalDate todayLocal = LocalDate.now(ZONE_ARGENTINA);
@@ -127,6 +130,7 @@ public class CierreService {
         return CierreDTO.toDTO(saved);
     }
 
+    @Transactional
     public CierreDTO updateCierre(Integer id, CierreDTO dto) {
         Cierre cierre = cierreRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cierre no encontrado con ID: " + id));
@@ -153,6 +157,7 @@ public class CierreService {
         return CierreDTO.toDTO(saved);
     }
 
+    @Transactional
     public CierreDTO cerrarCierre(Integer id) {
         Cierre cierre = cierreRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cierre no encontrado con ID: " + id));

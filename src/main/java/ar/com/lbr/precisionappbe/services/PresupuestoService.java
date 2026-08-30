@@ -34,9 +34,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class PresupuestoService {
 
     private final PresupuestoRepository presupuestoRepository;
@@ -176,6 +178,7 @@ public class PresupuestoService {
     }
 
 
+    @Transactional
     public PresupuestoDTO createPresupuesto(PresupuestoDTO dto) {
 
         dto.setFechaHoraPresupuesto(Instant.now());
@@ -200,6 +203,7 @@ public class PresupuestoService {
         return dto;
     }
 
+    @Transactional
     public PresupuestoDTO updatePresupuesto(PresupuestoDTO dto) {
 
         Presupuesto presupuestoEntity = presupuestoMapper.toEntity(dto, false);
@@ -215,6 +219,7 @@ public class PresupuestoService {
         return dto;
     }
 
+    @Transactional
     public PresupuestoDTO aprobarPresupuesto(Integer idPresupuesto, List<AprobarPresupuestoDTO> items) {
         Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
                 .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));

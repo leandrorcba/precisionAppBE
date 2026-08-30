@@ -16,8 +16,11 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
@@ -63,6 +66,7 @@ public class UserService {
                 .orElse(null);
     }
 
+    @Transactional
     public UserDTO createUser(UserDTO userDTO) {
         // Validaciones de creación según rol
         User currentUser = getCurrentUser();
@@ -91,6 +95,7 @@ public class UserService {
         return mapToDTO(savedUser);
     }
 
+    @Transactional
     public UserDTO updateUser(Integer id, UserDTO userDTO) {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
@@ -145,6 +150,7 @@ public class UserService {
         return mapToDTO(updatedUser);
     }
 
+    @Transactional
     public void changePassword(Integer targetUserId, String newPassword) {
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
@@ -179,6 +185,7 @@ public class UserService {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permisos para cambiar contraseñas");
     }
 
+    @Transactional
     public void deleteUser(Integer id) {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));

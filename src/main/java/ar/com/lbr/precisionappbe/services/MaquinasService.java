@@ -4,12 +4,14 @@ import ar.com.lbr.precisionappbe.dto.MaquinaDTO;
 import ar.com.lbr.precisionappbe.model.Maquina;
 import ar.com.lbr.precisionappbe.repositories.MaquinasRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class MaquinasService {
 
     private final MaquinasRepository maquinasRepository;
@@ -24,6 +26,7 @@ public class MaquinasService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public MaquinaDTO createMaquina(MaquinaDTO dto) {
         Maquina maquina = new Maquina();
         maquina.setNombreMaquina(dto.getTitle());
@@ -35,6 +38,7 @@ public class MaquinasService {
         return dto;
     }
 
+    @Transactional
     public MaquinaDTO updateMaquina(MaquinaDTO dto) {
         Maquina maquina = maquinasRepository.findById(dto.getId())
                 .orElseThrow(() -> new RuntimeException("Maquina no encontrada: " + dto.getId()));

@@ -5,12 +5,14 @@ import ar.com.lbr.precisionappbe.model.Gasto;
 import ar.com.lbr.precisionappbe.repositories.GastoRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class GastoService {
 
     private final GastoRepository gastoRepository;
@@ -27,6 +29,7 @@ public class GastoService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public GastoDTO createGasto(GastoDTO dto) {
         Gasto gasto = new Gasto();
         gasto.setMontoGasto(dto.getMontoGasto());
@@ -45,6 +48,7 @@ public class GastoService {
         return result;
     }
 
+    @Transactional
     public void deleteGasto(Integer id) {
         Gasto gasto = gastoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Gasto no encontrado con ID: " + id));

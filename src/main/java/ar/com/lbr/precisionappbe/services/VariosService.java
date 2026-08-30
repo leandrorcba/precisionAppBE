@@ -8,9 +8,11 @@ import ar.com.lbr.precisionappbe.repositories.VariosHistorialRepository;
 import ar.com.lbr.precisionappbe.repositories.VariosRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ar.com.lbr.precisionappbe.services.AuditLogService;
 
 @Service
+@Transactional(readOnly = true)
 public class VariosService {
 
     private final VariosRepository variosRepository;
@@ -30,6 +32,7 @@ public class VariosService {
         return VariosDTO.toDTO(varios);
     }
 
+    @Transactional
     public VariosDTO updateVarios(VariosDTO dto) {
         Varios varios = variosRepository.findAll().stream().findFirst().orElse(new Varios());
         varios.setPrecioMinuto(dto.getPrecioMinuto());

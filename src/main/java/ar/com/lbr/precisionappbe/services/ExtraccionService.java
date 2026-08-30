@@ -4,6 +4,7 @@ import ar.com.lbr.precisionappbe.dto.ExtraccionDTO;
 import ar.com.lbr.precisionappbe.model.Extraccione;
 import ar.com.lbr.precisionappbe.repositories.ExtraccionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class ExtraccionService {
 
     private final ExtraccionRepository extraccionRepository;
@@ -34,6 +36,7 @@ public class ExtraccionService {
                  .collect(Collectors.toList());
     }
 
+    @Transactional
     public ExtraccionDTO createExtraccion(ExtraccionDTO dto) {
         Extraccione extraccione = new Extraccione();
         extraccione.setIdUsuario(dto.getIdUsuario());
@@ -51,6 +54,7 @@ public class ExtraccionService {
         return result;
     }
 
+    @Transactional
     public ExtraccionDTO updateExtraccion(Integer id, ExtraccionDTO dto) {
         Extraccione extraccione = extraccionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Extracción no encontrada"));
@@ -72,6 +76,7 @@ public class ExtraccionService {
         return result;
     }
 
+    @Transactional
     public void deleteExtraccion(Integer id) {
         Extraccione extraccione = extraccionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Extracción no encontrada"));

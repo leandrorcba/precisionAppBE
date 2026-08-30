@@ -27,7 +27,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
+@Transactional(readOnly = true)
 public class TrabajosService {
 
     private final TrabajoPresupuestadoRepository trabajosRepository;
@@ -70,6 +73,7 @@ public class TrabajosService {
         this.eventsRepository = eventsRepository;
     }
 
+    @Transactional
     public TrabajoPresupuestadoDTO createTrabajo(TrabajoPresupuestadoDTO dto) {
 
         Cliente cliente = presupuestoService.getClienteByPresupuestoId(dto.getIdPresupuesto());
@@ -118,6 +122,7 @@ public class TrabajosService {
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
+    @Transactional
     public TrabajoPresupuestadoDTO updateSeleccionado(Integer idTrabajo, Boolean newValue) {
         TrabajoPresupuestado entity = trabajosRepository.findById(idTrabajo)
                 .orElseThrow(() -> new RuntimeException("Trabajo no encontrado: " + idTrabajo));
@@ -178,6 +183,7 @@ public class TrabajosService {
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
+    @Transactional
     public TrabajoPresupuestadoDTO updateEstado(Integer idTrabajo, EstadoTrabajo nuevoEstado) {
         TrabajoPresupuestado entity = trabajosRepository.findById(idTrabajo)
                 .orElseThrow(() -> new RuntimeException("Trabajo no encontrado: " + idTrabajo));
@@ -189,31 +195,35 @@ public class TrabajosService {
         presupuestoService.actualizarPdfFisico(entity.getIdPresupuesto());
 
         auditLogService.log("MODIFICAR", "TRABAJOS", idTrabajo.toString(),
-                "Trabajo #" + idTrabajo + " cambió de estado a: " + nuevoEstado);
+                "Trabajo #" + idTrabajo + " cambió estado a: " + nuevoEstado.name());
 
         return TrabajoPresupuestadoDTO.toDTO(saved);
     }
 
-    private List<TrabajoPresupuestado> getSeleccionados(Integer idPresupuesto) {
-        return trabajosRepository.findByIdPresupuesto(idPresupuesto).stream()
+    private void propagarEstadosAPresupuesto(Integer idPresupuesto) {
+        List<TrabajoPresupuestado> trabajos = trabajosRepository.findByIdPresupuesto(idPresupuesto);
+        
+        // Consider only selected jobs for state propagation
+        List<TrabajoPresupuestado> trabajosSeleccionados = trabajos.stream()
                 .filter(t -> Boolean.TRUE.equals(t.getSeleccionado()))
                 .collect(Collectors.toList());
-    }
 
-    private void propagarEstadosAPresupuesto(Integer idPresupuesto) {
-        List<TrabajoPresupuestado> seleccionados = getSeleccionados(idPresupuesto);
-        
-        boolean todosRealizados = !seleccionados.isEmpty() &&
-                seleccionados.stream().allMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado())
-                        || EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
-                        
-        boolean todosEntregados = !seleccionados.isEmpty() &&
-                seleccionados.stream().allMatch(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
-                
-        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
-                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
-                
-        if (todosRealizados) {
+        if (trabajosSeleccionados.isEmpty()) {
+            return;
+        }
+
+        boolean todosRealizadosOEntregados = trabajosSeleccionados.stream()
+                .allMatch(t -> EstadoTrabajo.REALIZADO.equals(t.getEstado()) || EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
+
+        boolean todosEntregados = trabajosSeleccionados.stream()
+                .allMatch(t -> EstadoTrabajo.ENTREGADO.equals(t.getEstado()));
+
+        Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto).orElse(null);
+        if (presupuesto == null) {
+            return;
+        }
+
+        if (todosRealizadosOEntregados) {
             presupuesto.setRealizado(true);
             if (presupuesto.getFechaRealizado() == null) {
                 presupuesto.setFechaRealizado(Instant.now());
@@ -228,6 +238,7 @@ public class TrabajosService {
         presupuestoRepository.save(presupuesto);
     }
 
+    @Transactional
     public void confirmarPresupuesto(Integer idPresupuesto) {
         Presupuesto presupuesto = presupuestoRepository.findById(idPresupuesto)
                 .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado: " + idPresupuesto));
@@ -276,6 +287,7 @@ public class TrabajosService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public TrabajoPresupuestadoDTO updateTrabajo(Integer idTrabajo, TrabajoPresupuestadoDTO dto) {
         TrabajoPresupuestado entity = trabajosRepository.findById(idTrabajo)
                 .orElseThrow(() -> new EntityNotFoundException("Trabajo no encontrado: " + idTrabajo));
