@@ -29,7 +29,11 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"POST".equals(request.getMethod()) || !LOGIN_PATH.equals(request.getServletPath());
+        if (!"POST".equals(request.getMethod()) || !LOGIN_PATH.equals(request.getServletPath())) {
+            return true;
+        }
+        String ip = resolveClientIp(request);
+        return "127.0.0.1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip) || "localhost".equals(ip);
     }
 
     @Override
