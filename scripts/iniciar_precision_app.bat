@@ -52,6 +52,9 @@ set "JAVA_EXEC=java"
 if defined JAVA21_HOME (
     if exist "%JAVA21_HOME%\bin\java.exe" set "JAVA_EXEC=%JAVA21_HOME%\bin\java.exe"
 ) else (
+    for /d %%i in ("C:\Program Files\Zulu\zulu-21*") do (
+        if exist "%%i\bin\java.exe" set "JAVA_EXEC=%%i\bin\java.exe"
+    )
     for /d %%i in ("C:\Program Files\Eclipse Adoptium\jdk-21*") do (
         if exist "%%i\bin\java.exe" set "JAVA_EXEC=%%i\bin\java.exe"
     )
@@ -67,14 +70,15 @@ if defined JAVA21_HOME (
 echo Levantando servidor Backend (Spring Boot con Java 21)...
 start "Backend - Spring Boot" powershell -NoProfile -Command "$host.UI.RawUI.WindowTitle = 'Backend - Spring Boot'; & '%JAVA_EXEC%' '-Dserver.port=10080' '-DDB_PASSWORD=Escaramujo;01' '-DJWT_SECRET=28Hl0Hq1a3rFX25bNKAsP1YvCsl9TB2rc+znyJgYXfc=' '-DCORS_ALLOWED_ORIGINS=https://precision.lbrebolini.net,http://localhost:10081,http://localhost' '-DSUPER_ADMIN_PASSWORD=Escaramujo;01' -jar C:\precision_app\precisionAppBE.jar | Tee-Object -FilePath C:\precision_app\backend.log"
 
-:: 5. Levantar NGINX (servidor web del Frontend)
-echo Levantando servidor Frontend (NGINX)...
-cd C:\nginx
-start nginx.exe
+:: 5. Levantar Frontend NGINX y Grafana en Docker
+echo Levantando servidores en Docker (NGINX Frontend + Grafana)...
+cd /d "C:\precision_app"
+docker compose up -d
 
 echo ===================================================
 echo Servidores iniciados con exito!
-echo URL local: http://localhost:10081
-echo URL publica: https://precision.lbrebolini.net
+echo URL Aplicacion: http://localhost:10081
+echo URL Grafana:    http://localhost:30000
+echo URL Publica:    https://precision.lbrebolini.net
 echo ===================================================
 pause
