@@ -1,4 +1,4 @@
-﻿# =========================================================================
+# =========================================================================
 # Backup y Rotacion de Base de Datos - PrecisionApp
 # =========================================================================
 param(
@@ -13,65 +13,86 @@ if (-not (Test-Path $backupDir)) {
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 }
 
+# 2. Cargar variables desde .env si existe
+$envFile = Join-Path $PSScriptRoot ".env"
+if (-not (Test-Path $envFile)) {
+    $envFile = "C:\precision_app\.env"
+}
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith("#") -and $line.Contains("=")) {
+            $parts = $line.Split("=", 2)
+            [Environment]::SetEnvironmentVariable($parts[0].Trim(), $parts[1].Trim(), "Process")
+        }
+    }
+}
+
+$dbUser = if ($env:DB_USER) { $env:DB_USER } else { "root" }
+$dbPass = $env:DB_PASSWORD
+$dbName = if ($env:DB_NAME) { $env:DB_NAME } else { "precision_v2" }
+
+if (-not $dbPass) {
+    Write-Host "[ADVERTENCIA] No se encontro DB_PASSWORD en .env ni en variables de entorno." -ForegroundColor Yellow
+    $dbPass = Read-Host -Prompt "Ingrese la contrasena de MySQL root"
+}
+
 $now = Get-Date
 $dateStr = $now.ToString("yyyy_MM_dd_HHmmss")
 $currentMonthKey = $now.ToString("yyyy_MM")
-$sqlFile = Join-Path $backupDir "precision_v2_$dateStr.sql"
-$zipFile = Join-Path $backupDir "precision_v2_$dateStr.zip"
+$sqlFile = Join-Path $backupDir "$($dbName)_$dateStr.sql"
+$zipFile = Join-Path $backupDir "$($dbName)_$dateStr.zip"
 $mysqlDump = "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqldump.exe"
 
-Write-Host "Generando dump de la base de datos precision_v2..." -ForegroundColor Cyan
+Write-Host "Generando dump de la base de datos $dbName..." -ForegroundColor Cyan
 
-& $mysqlDump -u root -p"Escaramujo;01" --single-transaction --quick --routines --triggers precision_v2 --result-file="$sqlFile"
+& $mysqlDump -u $dbUser "-p$dbPass" --single-transaction --quick --routines --triggers $dbName --result-file="$sqlFile"
 
 if (-not (Test-Path $sqlFile) -or (Get-Item $sqlFile).Length -eq 0) {
     Write-Host "[ERROR] El archivo de backup no se creo o esta vacio." -ForegroundColor Red
     exit 1
 }
 
-# 2. Comprimir a formato .zip
-Write-Host "Comprimiendo archivo de backup..." -ForegroundColor Cyan
+# 3. Comprimir a archivo .zip
+Write-Host "Comprimiendo backup a formato ZIP..." -ForegroundColor Cyan
 Compress-Archive -Path $sqlFile -DestinationPath $zipFile -Force
 Remove-Item -Path $sqlFile -Force
 
-$zipItem = Get-Item $zipFile
-$sizeKB = [math]::Round($zipItem.Length / 1KB, 2)
-Write-Host "-> Backup generado con exito: $($zipItem.Name) ($sizeKB KB)" -ForegroundColor Green
+$zipSize = (Get-Item $zipFile).Length / 1MB
+Write-Host "Backup comprimido exitosamente: $zipFile ($([math]::Round($zipSize, 2)) MB)" -ForegroundColor Green
 
-# 3. Sincronizacion con Carpeta de la Nube (Google Drive / OneDrive)
-if ($cloudDir -and $cloudDir.Trim() -ne "") {
-    if (Test-Path $cloudDir) {
-        Copy-Item -Path $zipFile -Destination $cloudDir -Force
-        Write-Host "-> Copia sincronizada a la nube: $cloudDir" -ForegroundColor Green
-    } else {
-        Write-Host "[AVISO] La carpeta de nube configurada ($cloudDir) no existe o no esta accesible." -ForegroundColor Yellow
-    }
+# 4. Sincronizacion opcional a la nube
+if ($cloudDir -and (Test-Path $cloudDir)) {
+    Write-Host "Sincronizando backup a almacenamiento en la nube: $cloudDir" -ForegroundColor Cyan
+    Copy-Item -Path $zipFile -Destination $cloudDir -Force
+    Write-Host "Sincronizacion en la nube completada." -ForegroundColor Green
 }
 
-# 4. Politica de Retencion y Rotacion Inteligente
-# - Mes Actual: Se conservan todos los backups diarios.
-# - Meses Anteriores: Se conserva solo el ultimo backup de cada mes (cierre mensual) y se eliminan los intermedios.
-Write-Host "Verificando politica de retencion de backups..." -ForegroundColor Cyan
+# 5. Politica de Retencion Mensual Inteligente
+Write-Host "Aplicando politica de retencion mensual inteligente..." -ForegroundColor Cyan
+$allBackups = Get-ChildItem -Path $backupDir -Filter "$($dbName)_*.zip" | Sort-Object CreationTime -Descending
 
-$allZips = Get-ChildItem -Path $backupDir -Filter "precision_v2_*.zip"
-$grouped = $allZips | Where-Object { $_.Name -match '^precision_v2_(\d{4}_\d{2})' } | Group-Object { $Matches[1] }
+# Agrupar por mes
+$byMonth = $allBackups | Group-Object {
+    if ($_.Name -match "$($dbName)_(\d{4}_\d{2})_") { $matches[1] } else { "otros" }
+}
 
-foreach ($group in $grouped) {
+foreach ($group in $byMonth) {
     $monthKey = $group.Name
-    if ($monthKey -ne $currentMonthKey) {
-        # Ordenar por nombre (o fecha) descendente
-        $sorted = $group.Group | Sort-Object Name -Descending
-        # El primero es el mas reciente (ultimo del mes) -> se preserva
-        $preserved = $sorted[0]
-        Write-Host "Mes anterior ($monthKey): preservando backup final de mes ($($preserved.Name))" -ForegroundColor Gray
-        
-        # Eliminar backups intermedios del mes anterior
-        $toDelete = $sorted | Select-Object -Skip 1
-        foreach ($f in $toDelete) {
-            Write-Host "  -> Eliminando backup intermedio antiguo: $($f.Name)" -ForegroundColor Yellow
-            Remove-Item -Path $f.FullName -Force
+    $items = $group.Group | Sort-Object CreationTime -Descending
+
+    if ($monthKey -eq $currentMonthKey) {
+        # Mes actual: conservar todos los backups de los ultimos 30 dias
+        continue
+    } else {
+        # Meses anteriores: conservar el mas reciente de ese mes como 'hito mensual' y borrar los demas
+        $keep = $items[0]
+        $toDelete = $items | Select-Object -Skip 1
+        foreach ($old in $toDelete) {
+            Write-Host "Depurando backup intermedio antiguo: $($old.Name)" -ForegroundColor DarkGray
+            Remove-Item -Path $old.FullName -Force
         }
     }
 }
 
-Write-Host "Operacion de backup y rotacion finalizada." -ForegroundColor Green
+Write-Host "Proceso de backup y rotacion finalizado con exito." -ForegroundColor Green

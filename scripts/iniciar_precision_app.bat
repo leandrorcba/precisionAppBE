@@ -1,17 +1,36 @@
 @echo off
 title Iniciando PrecisionApp
 echo ===================================================
-echo Verificando y cargando base de datos inicial...
+echo Verificando y cargando variables de entorno...
 echo ===================================================
 
-set "MYSQL_CMD=C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
-set "DB_USER=root"
-set "DB_PASS=Escaramujo;01"
+:: 1. Cargar variables desde .env si existe
+if exist "%~dp0.env" (
+    for /f "usebackq tokens=1,* delims==" %%a in ("%~dp0.env") do (
+        if not "%%a"=="" if not "%%a:~0,1%"=="#" set "%%a=%%b"
+    )
+) else if exist "C:\precision_app\.env" (
+    for /f "usebackq tokens=1,* delims==" %%a in ("C:\precision_app\.env") do (
+        if not "%%a"=="" if not "%%a:~0,1%"=="#" set "%%a=%%b"
+    )
+)
 
-:: 1. Crear la base de datos precision_v2 si no existe
+if not defined DB_USER set "DB_USER=root"
+if not defined DB_PASS set "DB_PASS=%DB_PASSWORD%"
+if not defined SERVER_PORT set "SERVER_PORT=10080"
+if not defined CORS_ALLOWED_ORIGINS set "CORS_ALLOWED_ORIGINS=https://precision.lbrebolini.net,http://localhost:10081,http://localhost"
+set "MYSQL_CMD=C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
+
+if not defined DB_PASS (
+    echo [ADVERTENCIA] No se detecto DB_PASSWORD en .env o variables de entorno.
+    set /p "DB_PASS=Ingrese la clave de MySQL root: "
+    set "DB_PASSWORD=%DB_PASS%"
+)
+
+:: 2. Crear la base de datos precision_v2 si no existe
 "%MYSQL_CMD%" -u %DB_USER% -p"%DB_PASS%" -e "CREATE DATABASE IF NOT EXISTS precision_v2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>nul
 
-:: 2. Validar si precisionschema existe y contiene tablas
+:: 3. Validar si precisionschema existe y contiene tablas
 set "TABLE_COUNT=0"
 for /f "tokens=*" %%a in ('"%MYSQL_CMD%" -u %DB_USER% -p"%DB_PASS%" -s -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'precisionschema';" 2^>nul') do (
     set "TABLE_COUNT=%%a"
@@ -25,7 +44,6 @@ if %TABLE_COUNT% GTR 0 (
     echo Base de datos precisionschema no existe o esta vacia. Creando y buscando el archivo .sql mas reciente...
     "%MYSQL_CMD%" -u %DB_USER% -p"%DB_PASS%" -e "CREATE DATABASE IF NOT EXISTS precisionschema CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     
-    :: Buscar dinamicamente el archivo .sql mas reciente en C:\precision_app\
     set "DUMP_FILE="
     for /f "delims=" %%f in ('dir /b /o:-d "C:\precision_app\*.sql" 2^>nul') do (
         if not defined DUMP_FILE set "DUMP_FILE=C:\precision_app\%%f"
@@ -40,14 +58,7 @@ if %TABLE_COUNT% GTR 0 (
     )
 )
 
-:: 3. Definir variables de entorno requeridas por el Backend
-set DB_PASSWORD=Escaramujo;01
-set JWT_SECRET=28Hl0Hq1a3rFX25bNKAsP1YvCsl9TB2rc+znyJgYXfc=
-set CORS_ALLOWED_ORIGINS=https://precision.lbrebolini.net,http://localhost:10081,http://localhost
-set SUPER_ADMIN_PASSWORD=Escaramujo;01
-set SERVER_PORT=10080
-
-:: Detectar ejecutable de Java 21 (coexistencia con Java 8 Legacy)
+:: 4. Detectar ejecutable de Java 21 (coexistencia con Java 8 Legacy)
 set "JAVA_EXEC=java"
 if defined JAVA21_HOME (
     if exist "%JAVA21_HOME%\bin\java.exe" set "JAVA_EXEC=%JAVA21_HOME%\bin\java.exe"
@@ -66,14 +77,14 @@ if defined JAVA21_HOME (
     )
 )
 
-:: 4. Levantar el Backend (Spring Boot)
+:: 5. Levantar el Backend (Spring Boot)
 echo Levantando servidor Backend (Spring Boot con Java 21)...
-start "Backend - Spring Boot" powershell -NoProfile -Command "$host.UI.RawUI.WindowTitle = 'Backend - Spring Boot'; & '%JAVA_EXEC%' '-Dserver.port=10080' '-DDB_PASSWORD=Escaramujo;01' '-DJWT_SECRET=28Hl0Hq1a3rFX25bNKAsP1YvCsl9TB2rc+znyJgYXfc=' '-DCORS_ALLOWED_ORIGINS=https://precision.lbrebolini.net,http://localhost:10081,http://localhost' '-DSUPER_ADMIN_PASSWORD=Escaramujo;01' -jar C:\precision_app\precisionAppBE.jar | Tee-Object -FilePath C:\precision_app\backend.log"
+start "Backend - Spring Boot" powershell -NoProfile -Command "$host.UI.RawUI.WindowTitle = 'Backend - Spring Boot'; & '%JAVA_EXEC%' '-Dserver.port=%SERVER_PORT%' '-DDB_PASSWORD=%DB_PASSWORD%' '-DJWT_SECRET=%JWT_SECRET%' '-DCORS_ALLOWED_ORIGINS=%CORS_ALLOWED_ORIGINS%' '-DSUPER_ADMIN_PASSWORD=%SUPER_ADMIN_PASSWORD%' -jar C:\precision_app\precisionAppBE.jar | Tee-Object -FilePath C:\precision_app\backend.log"
 
-:: 5. Levantar Frontend NGINX y Grafana en Docker
-echo Levantando servidores en Docker (NGINX Frontend + Grafana)...
+:: 6. Levantar Frontend NGINX, Grafana y Prometheus en Docker
+echo Levantando servidores en Docker (NGINX Frontend + Grafana + Prometheus)...
 cd /d "C:\precision_app"
-docker compose up -d
+docker compose up -d --remove-orphans
 
 echo ===================================================
 echo Servidores iniciados con exito!
